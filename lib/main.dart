@@ -310,6 +310,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
     final useDeviceViewport = viewport.width < 430;
     return Scaffold(
       backgroundColor: bg,
+      resizeToAvoidBottomInset: true,
       body: Align(
         alignment: Alignment.center,
         child: SizedBox(
@@ -358,42 +359,60 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
     child: Center(child: _logo(size: 220)),
   );
 
-  Widget _loginScreen(Color fg) => Padding(
-    key: const ValueKey('login'),
-    padding: const EdgeInsets.fromLTRB(26, 38, 26, 28),
-    child: Column(
-      children: [
-        const Spacer(),
-        _logo(size: 170),
-        Text('Memory', style: _headline(fg, 34)),
-        const SizedBox(height: 8),
-        Text(
-          'Your circle is waiting.',
-          style: _small(fg.withValues(alpha: .68)),
+  Widget _loginScreen(Color fg) {
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    return SingleChildScrollView(
+      key: const ValueKey('login'),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: EdgeInsets.fromLTRB(26, 44, 26, 28 + keyboard),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight:
+              MediaQuery.sizeOf(context).height -
+              MediaQuery.paddingOf(context).vertical -
+              72,
         ),
-        const Spacer(),
-        _field('Email or username', _loginId, 'roy@memory.app or @roy'),
-        const SizedBox(height: 12),
-        _field('Password', _loginPassword, 'Your password', obscure: true),
-        const SizedBox(height: 12),
-        _pill('Continue', _login, color: kCoral, foreground: Colors.white),
-        const SizedBox(height: 110),
-        _pill(
-          'Create account',
-          () => setState(() => auth = AuthScreen.create),
-          color: dark ? kCream : kCharcoal,
-          foreground: dark ? kCharcoal : Colors.white,
+        child: Column(
+          children: [
+            const SizedBox(height: 28),
+            _logo(size: 150),
+            Text('Memory', style: _headline(fg, 34)),
+            const SizedBox(height: 8),
+            Text(
+              'Your circle is waiting.',
+              style: _small(fg.withValues(alpha: .68)),
+            ),
+            const SizedBox(height: 28),
+            _field('Email or username', _loginId, 'roy@memory.app or @roy'),
+            const SizedBox(height: 12),
+            _field('Password', _loginPassword, 'Your password', obscure: true),
+            const SizedBox(height: 12),
+            _pill('Continue', _login, color: kCoral, foreground: Colors.white),
+            const SizedBox(height: 28),
+            _pill(
+              'Create account',
+              () => setState(() => auth = AuthScreen.create),
+              color: dark ? kCream : kCharcoal,
+              foreground: dark ? kCharcoal : Colors.white,
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 
   Widget _createScreen(Color fg) => Stack(
     key: const ValueKey('create'),
     children: [
       Positioned.fill(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(26, 78, 26, 28),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            26,
+            78,
+            26,
+            28 + MediaQuery.viewInsetsOf(context).bottom,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
