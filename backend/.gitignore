@@ -1,0 +1,13 @@
+# dependency directory
+node_modules/
+
+# build directory
+dist/
+
+# environment files
+.env
+.env.*
+!.env.example
+
+# uploaded files
+uploads/

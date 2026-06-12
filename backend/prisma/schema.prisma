@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  firstName    String   @map("first_name") @db.VarChar(50)
+  lastName     String   @map("last_name") @db.VarChar(50)
+  username     String   @unique @db.VarChar(30)
+  email        String   @unique @db.VarChar(100)
+  phone        String   @db.VarChar(20)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  avatarUrl    String?  @map("avatar_url") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  memories            Memory[]
+  sentMessages        Message[]          @relation("SentMessages")
+  receivedMessages    Message[]          @relation("ReceivedMessages")
+  userMemberships     CircleMembership[] @relation("UserMemberships")
+  memberMemberships   CircleMembership[] @relation("MemberMemberships")
+
+  // @unique already creates an index for username and email.
+  // Extra index on phone for contact-sync lookups.
+  @@index([phone], name: "idx_users_phone")
+  @@index([createdAt], name: "idx_users_created_at")
+  @@map("users")
+}
+
+model CircleMembership {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  memberId  String   @map("member_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user   User @relation("UserMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  member User @relation("MemberMemberships", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, memberId], name: "unique_user_member")
+  // Fast lookup: "who are user X's circle members?"
+  @@index([userId], name: "idx_circle_user_id")
+  // Fast reverse lookup: "which circles is member X part of?"
+  @@index([memberId], name: "idx_circle_member_id")
+  @@map("circle_memberships")
+}
+
+model Memory {
+  id             String   @id @default(uuid())
+  creatorId      String   @map("creator_id")
+  caption        String   @db.Text
+  videoUrl       String   @map("video_url") @db.VarChar(255)
+  gradientColors String[] @map("gradient_colors")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  // Fast lookup: "all memories by creator X, newest first"
+  @@index([creatorId, createdAt(sort: Desc)], name: "idx_memories_creator_created")
+  @@map("memories")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String   @map("sender_id")
+  receiverId String   @map("receiver_id")
+  timestamp  DateTime @default(now())
+  text       String   @db.Text
+  isRead     Boolean  @default(false) @map("is_read")
+
+  // Relations
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  // Fast conversation thread lookup (both directions), ordered by time
+  @@index([senderId, receiverId, timestamp(sort: Desc)], name: "idx_messages_conversation")
+  @@index([receiverId, isRead], name: "idx_messages_unread")
+  @@map("messages")
+}
