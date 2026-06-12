@@ -4,6 +4,7 @@ import {
   MinLength,
   MaxLength,
   Matches,
+  IsBoolean,
 } from 'class-validator';
 
 export class RegisterDto {
@@ -33,4 +34,7 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   password: string;
+
+  @IsBoolean()
+  acceptedTerms: boolean;
 }

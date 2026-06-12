@@ -46,6 +46,7 @@ export class AuthController {
       email:     body.email,
       phone:     body.phone,
       password:  body.password,
+      acceptedTerms: body.accepted_terms ?? body.acceptedTerms,
     });
     return { token: result.token, user: toSnakeUser(result.user) };
   }

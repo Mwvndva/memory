@@ -22,6 +22,7 @@ model User {
   streakDays   Int      @default(0) @map("streak_days")
   countryRank  Int      @default(1) @map("country_rank")
   globalRank   Int?     @map("global_rank")
+  acceptedTermsAt DateTime? @map("accepted_terms_at")
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations

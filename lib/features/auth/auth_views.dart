@@ -177,6 +177,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   String passwordStatus = 'Use at least 8 characters.';
   bool passwordOk = false;
   late CountryInfo selectedCountry;
+  bool acceptedTerms = false;
 
   @override
   void initState() {
@@ -227,6 +228,17 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     _validatePassword();
     if (!usernameOk || !passwordOk) return;
 
+    if (!acceptedTerms) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must agree to the Terms & Conditions to register.'),
+          backgroundColor: kCoralDark,
+        ),
+      );
+      return;
+    }
+
     await ref.read(authProvider.notifier).createAccount(
           firstName: _firstName.text.trim(),
           lastName: _lastName.text.trim(),
@@ -234,6 +246,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           email: _email.text.trim().toLowerCase(),
           phone: '${selectedCountry.flag} ${_phone.text.trim()}',
           password: _password.text,
+          acceptedTerms: acceptedTerms,
         );
 
     if (!mounted) return;
@@ -309,6 +322,69 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     const SizedBox(height: 6),
                     _status(passwordStatus, passwordOk),
                     const SizedBox(height: 14),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          acceptedTerms = !acceptedTerms;
+                        });
+                      },
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: acceptedTerms
+                                  ? kCoral
+                                  : (dark ? kDarkCream : kCream),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: acceptedTerms
+                                    ? Colors.transparent
+                                    : (dark ? Colors.white : kCharcoal).withValues(alpha: 0.2),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: acceptedTerms
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    color: Colors.white,
+                                    size: 14,
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: dark ? kCream : kCharcoal,
+                                ),
+                                children: [
+                                  const TextSpan(text: 'I agree to the '),
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: GestureDetector(
+                                      onTap: () => _showTermsSheet(context, dark),
+                                      child: const Text(
+                                        'Terms and Conditions',
+                                        style: TextStyle(
+                                          color: kCoral,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
                     _pill(
                       'Create account',
                       _onSubmit,
@@ -336,6 +412,168 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showTermsSheet(BuildContext context, bool dark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return Container(
+          height: MediaQuery.sizeOf(context).height * 0.8,
+          margin: const EdgeInsets.all(18),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          decoration: BoxDecoration(
+            color: dark ? kDarkPaper : Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Terms & Conditions',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: (dark ? kCream : kCharcoal).withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: dark ? kCream : kCharcoal,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Last Updated: June 2026',
+                        style: TextStyle(
+                          color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _termsSection('1. Welcome to Memory', 
+                        'Memory ("we", "us", or "our") provides a private daily social sharing platform for intimate circles. By creating an account or using the Memory app, you agree to comply with and be bound by these Terms & Conditions and all applicable laws of the Republic of Kenya.',
+                        dark,
+                      ),
+                      _termsSection('2. Privacy & Consent (Kenya Data Protection Act, 2019)', 
+                        'Your privacy is critical to us. By registering an account, you explicitly consent to the collection, storage, and processing of your personal data—including your name, email, phone number, and uploaded media files (memories). All personal data is processed in strict compliance with the Kenya Data Protection Act, 2019 and registration guidelines set by the Office of the Data Protection Commissioner (ODPC). We do not sell or share your personal data with third-party advertising companies.',
+                        dark,
+                      ),
+                      _termsSection('3. User-Generated Content & Liabilities (Cybercrimes Act, 2018)', 
+                        'You are solely responsible for the video memories and captions you post to your circle. Under the Computer Misuse and Cybercrimes Act, 2018 of Kenya, it is a criminal offense to upload or share content that is pornographic, hateful, harassing, defamatory, or infringes on another person\'s copyright. We reserve the right to suspend or delete your account immediately and report violations to relevant authorities if illegal or prohibited content is detected.',
+                        dark,
+                      ),
+                      _termsSection('4. Account Security', 
+                        'You are responsible for safeguarding your password and account details. You agree to notify us immediately of any unauthorized use or security breach of your account.',
+                        dark,
+                      ),
+                      _termsSection('5. Limitation of Liability', 
+                        'The Memory app is provided "as is" without warranties of any kind. We shall not be liable for any indirect, incidental, or punitive damages arising from your use of the app, service disruptions, or unauthorized access to user data.',
+                        dark,
+                      ),
+                      _termsSection('6. Dispute Resolution & Governing Law', 
+                        'These terms are governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes, claims, or controversies arising out of or relating to these terms shall be subject to the exclusive jurisdiction of the competent courts in Nairobi, Kenya.',
+                        dark,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: kCoral,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      'I Understand',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _termsSection(String heading, String body, bool dark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            heading,
+            style: const TextStyle(
+              color: kCoralDark,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            body,
+            style: TextStyle(
+              color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+              fontSize: 12.5,
+              height: 1.45,
+            ),
+          ),
+        ],
       ),
     );
   }

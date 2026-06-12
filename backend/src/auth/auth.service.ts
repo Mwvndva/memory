@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   ConflictException,
   UnauthorizedException,
@@ -37,6 +38,10 @@ export class AuthService {
   // ─── Registration ──────────────────────────────────────────────────────────
 
   async register(dto: RegisterDto) {
+    if (!dto.acceptedTerms) {
+      throw new BadRequestException('You must accept the Terms and Conditions to register.');
+    }
+
     // 1. Uniqueness checks (fast — username and email have unique indexes)
     const [existingEmail, existingUsername] = await Promise.all([
       this.prisma.user.findUnique({ where: { email: dto.email } }),
@@ -60,6 +65,7 @@ export class AuthService {
         phone:        dto.phone,
         country:      flagEmoji,
         passwordHash,
+        acceptedTermsAt: new Date(),
       },
       select: {
         id: true, username: true, firstName: true, lastName: true, email: true,

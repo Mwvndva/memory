@@ -83,6 +83,7 @@ class AuthNotifier extends StateNotifier<UserProfile> {
     required String email,
     required String phone,
     required String password,
+    required bool acceptedTerms,
   }) async {
     final cleanUsername = username.replaceFirst('@', '');
     if (kUseMockBackend) {
@@ -104,6 +105,7 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           'email': email,
           'phone': phone,
           'password': password,
+          'accepted_terms': acceptedTerms,
         });
 
         final token = response.data['token'];
