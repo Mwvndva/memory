@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
-
+import 'package:image_picker/image_picker.dart';
+import '../../core/api_config.dart';
 import '../../core/theme.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/chat_repository.dart';
@@ -71,8 +72,12 @@ class CircleChatListView extends ConsumerWidget {
                       child: CircleAvatar(
                         radius: 22,
                         backgroundColor: kCoral,
-                        backgroundImage: user.avatarBytes == null ? null : MemoryImage(user.avatarBytes!),
-                        child: user.avatarBytes == null
+                        backgroundImage: user.avatarBytes != null
+                            ? MemoryImage(user.avatarBytes!)
+                            : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                                ? NetworkImage(_formatImageUrl(user.avatarUrl!)) as ImageProvider
+                                : null),
+                        child: (user.avatarBytes == null && (user.avatarUrl == null || user.avatarUrl!.isEmpty))
                             ? Text(
                                 user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : 'R',
                                 style: const TextStyle(
@@ -102,7 +107,7 @@ class CircleChatListView extends ConsumerWidget {
                     ),
                   )
                 else
-                  ...circleMembers.map((member) => _chatRow(context, member.firstName.isNotEmpty ? member.firstName : member.username, dark, ref)),
+                  ...circleMembers.map((member) => _chatRow(context, member, dark, ref)),
               ],
             ),
           ],
@@ -111,7 +116,8 @@ class CircleChatListView extends ConsumerWidget {
     );
   }
 
-  Widget _chatRow(BuildContext context, String name, bool dark, WidgetRef ref) {
+  Widget _chatRow(BuildContext context, CircleMember member, bool dark, WidgetRef ref) {
+    final name = member.firstName.isNotEmpty ? member.firstName : member.username;
     return GestureDetector(
       onTap: () {
         ref.read(chatProvider.notifier).decrementNotifications();
@@ -128,13 +134,18 @@ class CircleChatListView extends ConsumerWidget {
           children: [
             CircleAvatar(
               backgroundColor: kCoral,
-              child: Text(
-                name[0],
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
+              backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
+                  ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
+                  : null,
+              child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
+                  ? Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -754,30 +765,69 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     ),
                     child: Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [kCoral, kAmber],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 36,
-                            backgroundColor: dark ? kDarkPaper : kPaper,
-                            backgroundImage: user.avatarBytes == null ? null : MemoryImage(user.avatarBytes!),
-                            child: user.avatarBytes == null
-                                ? Text(
-                                    displayFirstName.isNotEmpty ? displayFirstName[0].toUpperCase() : '?',
-                                    style: const TextStyle(
-                                      color: kCoral,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w900,
+                        GestureDetector(
+                          onTap: () async {
+                            final file = await ImagePicker().pickImage(
+                              source: ImageSource.gallery,
+                              imageQuality: 82,
+                            );
+                            if (file == null) return;
+                            final bytes = await file.readAsBytes();
+                            await ref.read(authProvider.notifier).updateAvatar(bytes);
+                          },
+                          child: Stack(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [kCoral, kAmber],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 36,
+                                  backgroundColor: dark ? kDarkPaper : kPaper,
+                                  backgroundImage: user.avatarBytes != null
+                                      ? MemoryImage(user.avatarBytes!)
+                                      : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                                          ? NetworkImage(_formatImageUrl(user.avatarUrl!)) as ImageProvider
+                                          : null),
+                                  child: (user.avatarBytes == null && (user.avatarUrl == null || user.avatarUrl!.isEmpty))
+                                      ? Text(
+                                          displayFirstName.isNotEmpty ? displayFirstName[0].toUpperCase() : '?',
+                                          style: const TextStyle(
+                                            color: kCoral,
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: kCoral,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: dark ? kDarkPaper : kPaper,
+                                      width: 2,
                                     ),
-                                  )
-                                : null,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt_rounded,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -1243,4 +1293,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       ),
     );
   }
+}
+
+String _formatImageUrl(String url) {
+  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+    final uri = Uri.parse(url);
+    final baseUri = Uri.parse(kBaseUrl);
+    return uri.replace(host: baseUri.host, port: baseUri.port).toString();
+  }
+  return url;
 }

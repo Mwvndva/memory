@@ -8,6 +8,7 @@ class UserProfile {
     required this.email,
     required this.phone,
     this.avatarBytes,
+    this.avatarUrl,
     this.isAuthenticated = false,
     this.streakDays = 0,
     this.circlePulseDays = 0,
@@ -21,6 +22,7 @@ class UserProfile {
   final String email;
   final String phone;
   final Uint8List? avatarBytes;
+  final String? avatarUrl;
   final bool isAuthenticated;
   final int streakDays;
   final int circlePulseDays;
@@ -39,6 +41,7 @@ class UserProfile {
       circlePulseDays: 0,
       countryRank: 1,
       globalRank: null,
+      avatarUrl: null,
     );
   }
 
@@ -54,6 +57,7 @@ class UserProfile {
     int? circlePulseDays,
     int? countryRank,
     int? globalRank,
+    String? avatarUrl,
   }) {
     return UserProfile(
       firstName: firstName ?? this.firstName,
@@ -62,6 +66,7 @@ class UserProfile {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       avatarBytes: avatarBytes ?? this.avatarBytes,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       streakDays: streakDays ?? this.streakDays,
       circlePulseDays: circlePulseDays ?? this.circlePulseDays,

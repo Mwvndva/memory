@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import '../core/theme.dart';
 import '../core/api_config.dart';
 import '../core/api_client.dart';
@@ -126,8 +127,20 @@ class AuthNotifier extends StateNotifier<UserProfile> {
     }
   }
 
-  void updateAvatar(Uint8List bytes) {
+  Future<void> updateAvatar(Uint8List bytes) async {
     state = state.copyWith(avatarBytes: bytes);
+    if (kUseMockBackend) return;
+    try {
+      final dio = _ref.read(apiClientProvider);
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          bytes,
+          filename: 'avatar.jpg',
+        ),
+      });
+      await dio.post('/users/me/avatar', data: formData);
+      await fetchProfile();
+    } catch (_) {}
   }
 
   Future<bool> login(String id, String password) async {
@@ -176,6 +189,7 @@ class AuthNotifier extends StateNotifier<UserProfile> {
             username:  userJson['username']   ?? '',
             email:     userJson['email']      ?? '',
             phone:     userJson['phone']      ?? '',
+            avatarUrl: userJson['avatar_url'] as String?,
             isAuthenticated: true,
           );
           _saveSession();
@@ -203,6 +217,7 @@ class AuthNotifier extends StateNotifier<UserProfile> {
         email:     data['email'] as String? ?? '',
         phone:     data['phone'] as String? ?? '',
         avatarBytes: state.avatarBytes,
+        avatarUrl: data['avatarUrl'] as String?,
         isAuthenticated: true,
         streakDays: stats['streakDays'] as int? ?? 0,
         circlePulseDays: stats['circlePulseDays'] as int? ?? 0,
