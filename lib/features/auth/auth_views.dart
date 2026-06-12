@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme.dart';
 import '../../core/api_config.dart';
+import '../../core/countries.dart';
 import '../../repositories/auth_repository.dart';
 
 class LoadingView extends ConsumerStatefulWidget {
@@ -175,15 +176,15 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   bool usernameOk = false;
   String passwordStatus = 'Use at least 8 characters.';
   bool passwordOk = false;
-  String selectedCountry = '🇰🇪';
-
-  final countryCodes = const [
-    '🇰🇪', '🇺🇸', '🇬🇧', '🇨🇦', '🇳🇬', '🇿🇦', '🇬🇭', '🇺🇬', '🇹🇿', '🇷🇼', '🇪🇹', '🇪🇬', '🇮🇳', '🇵🇰', '🇧🇩', '🇨🇳', '🇯🇵', '🇰🇷', '🇦🇺', '🇳🇿', '🇫🇷', '🇩🇪', '🇮🇹', '🇪🇸', '🇧🇷', '🇲🇽', '🇦🇪', '🇸🇦',
-  ];
+  late CountryInfo selectedCountry;
 
   @override
   void initState() {
     super.initState();
+    selectedCountry = kCountries.firstWhere(
+      (c) => c.code == 'KE',
+      orElse: () => kCountries[0],
+    );
     _username.addListener(_validateUsername);
     _password.addListener(_validatePassword);
     _confirmPassword.addListener(_validatePassword);
@@ -231,7 +232,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           lastName: _lastName.text.trim(),
           username: _username.text.trim(),
           email: _email.text.trim().toLowerCase(),
-          phone: '$selectedCountry ${_phone.text.trim()}',
+          phone: '${selectedCountry.flag} ${_phone.text.trim()}',
           password: _password.text,
         );
 
@@ -355,30 +356,67 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
         Row(
           children: [
             SizedBox(
-              width: 84,
-              child: DropdownButtonFormField<String>(
+              width: 96,
+              child: DropdownButtonFormField<CountryInfo>(
                 initialValue: selectedCountry,
-                iconSize: 16,
+                dropdownColor: dark ? kDarkPaper : kPaper,
+                borderRadius: BorderRadius.circular(16),
+                icon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+                ),
+                iconSize: 20,
                 isDense: true,
-                menuMaxHeight: 270,
-                items: countryCodes
+                isExpanded: true,
+                menuMaxHeight: 350,
+                items: kCountries
                     .map(
-                      (c) => DropdownMenuItem(
+                      (c) => DropdownMenuItem<CountryInfo>(
                         value: c,
-                        child: Center(
-                          child: Text(c, style: const TextStyle(fontSize: 18)),
+                        child: Row(
+                          children: [
+                            Text(c.flag, style: const TextStyle(fontSize: 18)),
+                            const SizedBox(width: 8),
+                            Text(
+                              c.code,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: dark ? kCream : kCharcoal,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              c.dialCode,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
                     .toList(),
-                selectedItemBuilder: (context) => countryCodes
+                selectedItemBuilder: (context) => kCountries
                     .map(
-                      (c) => Center(
-                        child: Text(c, style: const TextStyle(fontSize: 18)),
+                      (c) => Row(
+                        children: [
+                          Text(c.flag, style: const TextStyle(fontSize: 18)),
+                          const SizedBox(width: 6),
+                          Text(
+                            c.code,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: dark ? kCream : kCharcoal,
+                            ),
+                          ),
+                        ],
                       ),
                     )
                     .toList(),
-                onChanged: (v) => setState(() => selectedCountry = v ?? '🇰🇪'),
+                onChanged: (v) => setState(() => selectedCountry = v ?? kCountries[0]),
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: dark ? kDarkCream : kCream,
