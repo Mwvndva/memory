@@ -860,16 +860,6 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   const SizedBox(height: 12),
                   // Details Section Cards
                   _sectionCard(
-                    'IDENTITY',
-                    [
-                      _detailRow('First name', displayFirstName, false, dark),
-                      _detailRow('Last name', displayLastName, false, dark),
-                      _detailRow('Username', '@$displayUsername', true, dark),
-                    ],
-                    dark,
-                  ),
-                  const SizedBox(height: 8),
-                  _sectionCard(
                     'CONTACT',
                     [
                       _detailRow('Email', displayEmail, false, dark),
