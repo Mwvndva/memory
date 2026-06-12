@@ -50,6 +50,7 @@ export class AuthService {
     const passwordHash = await argon2.hash(dto.password, ARGON2_OPTIONS);
 
     // 3. Persist user
+    const flagEmoji = dto.phone.split(' ')[0] || '🇰🇪';
     const user = await this.prisma.user.create({
       data: {
         firstName:    dto.firstName,
@@ -57,6 +58,7 @@ export class AuthService {
         username:     dto.username,
         email:        dto.email,
         phone:        dto.phone,
+        country:      flagEmoji,
         passwordHash,
       },
       select: {
