@@ -382,20 +382,23 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
 
   Widget _createScreen(Color fg) => SingleChildScrollView(
     key: const ValueKey('create'),
-    padding: const EdgeInsets.fromLTRB(26, 22, 26, 28),
+    padding: const EdgeInsets.fromLTRB(26, 8, 26, 28),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 58,
-          height: 34,
-          child: _pill(
-            'Back',
-            () => setState(() => auth = AuthScreen.login),
-            compact: true,
+        Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 58,
+            height: 34,
+            child: _pill(
+              'Back',
+              () => setState(() => auth = AuthScreen.login),
+              compact: true,
+            ),
           ),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 18),
         Text('Create account', style: _headline(fg, 32)),
         const SizedBox(height: 8),
         Text(
@@ -1638,9 +1641,11 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
       Row(
         children: [
           SizedBox(
-            width: 72,
+            width: 84,
             child: DropdownButtonFormField<String>(
               initialValue: selectedCountry,
+              iconSize: 16,
+              isDense: true,
               menuMaxHeight: 270,
               items: countryCodes
                   .map(
@@ -1667,7 +1672,10 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 14,
+                ),
               ),
             ),
           ),
