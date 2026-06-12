@@ -307,12 +307,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
             borderRadius: BorderRadius.circular(
               MediaQuery.sizeOf(context).width < 430 ? 0 : 34,
             ),
-            child: Stack(
-              children: [
-                _appScaffold(),
-                if (auth != AuthScreen.app) _authLayer(),
-              ],
-            ),
+            child: auth == AuthScreen.app ? _appScaffold() : _authLayer(),
           ),
         ),
       ),
