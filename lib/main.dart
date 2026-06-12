@@ -380,91 +380,102 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
     ),
   );
 
-  Widget _createScreen(Color fg) => SingleChildScrollView(
+  Widget _createScreen(Color fg) => Stack(
     key: const ValueKey('create'),
-    padding: const EdgeInsets.fromLTRB(26, 8, 26, 28),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Align(
-          alignment: Alignment.topLeft,
-          child: SizedBox(
-            width: 58,
-            height: 34,
-            child: _pill(
-              'Back',
-              () => setState(() => auth = AuthScreen.login),
-              compact: true,
-            ),
+    children: [
+      Positioned.fill(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(26, 78, 26, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Create account', style: _headline(fg, 32)),
+              const SizedBox(height: 8),
+              Text(
+                'Start your circle with the real you.',
+                style: _small(fg.withValues(alpha: .68)),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: _field(
+                      'First name',
+                      TextEditingController(text: 'Roy'),
+                      'Roy',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _field(
+                      'Last name',
+                      TextEditingController(text: 'Nthiga'),
+                      'Nthiga',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _field('Username', _username, '@roykeepsmemories'),
+              _status(usernameStatus, usernameOk),
+              const SizedBox(height: 10),
+              _field(
+                'Email',
+                _email,
+                'roy@memory.app',
+                keyboard: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 12),
+              _phoneField(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _field(
+                      'Password',
+                      _password,
+                      'Password',
+                      obscure: true,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _field(
+                      'Confirm password',
+                      _confirmPassword,
+                      'Repeat password',
+                      obscure: true,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              _status(passwordStatus, passwordOk),
+              const SizedBox(height: 14),
+              _pill(
+                'Create account',
+                _createAccount,
+                color: kCoral,
+                foreground: Colors.white,
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 18),
-        Text('Create account', style: _headline(fg, 32)),
-        const SizedBox(height: 8),
-        Text(
-          'Start your circle with the real you.',
-          style: _small(fg.withValues(alpha: .68)),
+      ),
+      Positioned(
+        left: 18,
+        top: 8,
+        child: SizedBox(
+          width: 58,
+          height: 34,
+          child: _pill(
+            'Back',
+            () => setState(() => auth = AuthScreen.login),
+            compact: true,
+          ),
         ),
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: _field(
-                'First name',
-                TextEditingController(text: 'Roy'),
-                'Roy',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _field(
-                'Last name',
-                TextEditingController(text: 'Nthiga'),
-                'Nthiga',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        _field('Username', _username, '@roykeepsmemories'),
-        _status(usernameStatus, usernameOk),
-        const SizedBox(height: 10),
-        _field(
-          'Email',
-          _email,
-          'roy@memory.app',
-          keyboard: TextInputType.emailAddress,
-        ),
-        const SizedBox(height: 12),
-        _phoneField(),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _field('Password', _password, 'Password', obscure: true),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _field(
-                'Confirm password',
-                _confirmPassword,
-                'Repeat password',
-                obscure: true,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        _status(passwordStatus, passwordOk),
-        const SizedBox(height: 14),
-        _pill(
-          'Create account',
-          _createAccount,
-          color: kCoral,
-          foreground: Colors.white,
-        ),
-      ],
-    ),
+      ),
+    ],
   );
 
   Widget _avatarScreen(Color fg) => Padding(
