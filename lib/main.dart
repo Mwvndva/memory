@@ -934,7 +934,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
   );
 
   Widget _messageComposer(MemoryItem m) => SizedBox(
-    height: 118,
+    height: 132,
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -981,20 +981,28 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
         ),
         const SizedBox(width: 8),
         SizedBox(
-          width: 28,
-          height: 118,
+          width: 30,
+          height: 132,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('❤️', style: TextStyle(fontSize: 18)),
-              Text('😂', style: TextStyle(fontSize: 18)),
-              Text('🔥', style: TextStyle(fontSize: 18)),
-              Text('😭', style: TextStyle(fontSize: 18)),
-              Text('✨', style: TextStyle(fontSize: 18)),
+            children: [
+              _emojiButton('❤️'),
+              _emojiButton('😂'),
+              _emojiButton('🔥'),
+              _emojiButton('😭'),
+              _emojiButton('✨'),
             ],
           ),
         ),
       ],
+    ),
+  );
+
+  Widget _emojiButton(String emoji) => SizedBox(
+    width: 24,
+    height: 24,
+    child: Center(
+      child: Text(emoji, style: const TextStyle(fontSize: 15, height: 1)),
     ),
   );
 
