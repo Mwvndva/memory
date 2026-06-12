@@ -127,9 +127,9 @@ class _LoginViewState extends ConsumerState<LoginView> {
                   style: _small(fg.withValues(alpha: .68)),
                 ),
                 const SizedBox(height: 28),
-                _field('Email or username', _loginId, 'roy@memory.app or @roy', dark),
+                _field('Email or username', _loginId, '', dark),
                 const SizedBox(height: 12),
-                _field('Password', _loginPassword, 'Your password', dark, obscure: true),
+                _field('Password', _loginPassword, '', dark, obscure: true),
                 if (_errorMessage.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   Text(
@@ -286,22 +286,22 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     Row(
                       children: [
                         Expanded(
-                          child: _field('First name', _firstName, 'Roy', dark),
+                          child: _field('First name', _firstName, '', dark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: _field('Last name', _lastName, 'Nthiga', dark),
+                          child: _field('Last name', _lastName, '', dark),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _field('Username', _username, '@roykeepsmemories', dark),
+                    _field('Username', _username, '', dark),
                     _status(usernameStatus, usernameOk),
                     const SizedBox(height: 10),
                     _field(
                       'Email',
                       _email,
-                      'roy@memory.app',
+                      '',
                       dark,
                       keyboard: TextInputType.emailAddress,
                     ),
@@ -311,11 +311,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     Row(
                       children: [
                         Expanded(
-                          child: _field('Password', _password, 'Password', dark, obscure: true),
+                          child: _field('Password', _password, '', dark, obscure: true),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: _field('Confirm password', _confirmPassword, 'Repeat password', dark, obscure: true),
+                          child: _field('Confirm password', _confirmPassword, '', dark, obscure: true),
                         ),
                       ],
                     ),
@@ -676,7 +676,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 keyboardType: TextInputType.phone,
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
                 decoration: InputDecoration(
-                  hintText: '712 345 678',
+                  hintText: '',
                   filled: true,
                   fillColor: dark ? kDarkCream : kCream,
                   border: OutlineInputBorder(

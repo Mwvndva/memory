@@ -86,6 +86,9 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
         final avatarStr = item['avatar'] as String? ?? '';
         final avatarColor = parseHexColor(avatarStr);
 
+        final creatorObj = item['creator'] as Map<String, dynamic>?;
+        final avatarUrl = creatorObj?['avatar_url'] as String?;
+
         return MemoryItem(
           person:    item['person']    as String? ?? '',
           initial:   item['initial']   as String? ?? '',
@@ -95,6 +98,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
           colors:    colors.isEmpty ? [avatarColor] : colors,
           ageHours:  (item['age_hours'] as num?)?.toDouble() ?? 0.0,
           videoPath: item['video_url'] as String?,
+          avatarUrl: avatarUrl,
         );
       }).toList();
 

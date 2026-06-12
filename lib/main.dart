@@ -5,10 +5,15 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'core/router.dart';
 import 'core/theme.dart';
+import 'features/capture/capture_views.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Pre-cache hardware cameras asynchronously
+  preloadCameras();
+
   final sharedPreferences = await SharedPreferences.getInstance();
 
   runApp(
@@ -54,7 +59,7 @@ class MemoryApp extends ConsumerWidget {
 
         return Scaffold(
           backgroundColor: bg,
-          resizeToAvoidBottomInset: true,
+          resizeToAvoidBottomInset: false,
           body: Center(
             child: SizedBox(
               width: useDeviceViewport ? viewport.width : 390,

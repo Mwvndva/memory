@@ -118,10 +118,12 @@ class CircleChatListView extends ConsumerWidget {
 
   Widget _chatRow(BuildContext context, CircleMember member, bool dark, WidgetRef ref) {
     final name = member.firstName.isNotEmpty ? member.firstName : member.username;
+    // Use username (not display name) as the key so WebSocket routing works
+    final chatKey = member.username;
     return GestureDetector(
       onTap: () {
         ref.read(chatProvider.notifier).decrementNotifications();
-        context.push('/chat/$name');
+        context.push('/chat/$chatKey');
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -208,6 +210,28 @@ class ChatInboxView extends ConsumerStatefulWidget {
 class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  bool _loadingHistory = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    if (kUseMockBackend) return;
+    setState(() => _loadingHistory = true);
+    try {
+      await ref.read(chatProvider.notifier).loadConversation(widget.contactName);
+    } catch (_) {}
+    if (mounted) setState(() => _loadingHistory = false);
+    // scroll to bottom after loading
+    Future.delayed(const Duration(milliseconds: 150), () {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -242,8 +266,14 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     final messages = chatState.messagesByContact[widget.contactName] ?? [];
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
-        padding: const EdgeInsets.fromLTRB(22, 64, 22, 40),
+        padding: EdgeInsets.fromLTRB(
+          22,
+          64,
+          22,
+          16 + MediaQuery.paddingOf(context).bottom,
+        ),
         decoration: _softBackground(dark),
         child: Column(
           children: [
@@ -267,17 +297,23 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
               ],
             ),
             const SizedBox(height: 24),
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                itemCount: messages.length,
-                padding: EdgeInsets.zero,
-                itemBuilder: (context, i) {
-                  final msg = messages[i];
-                  return _inboxBubble(msg.sender, msg.text, msg.isMine, dark);
-                },
+            if (_loadingHistory)
+              const Padding(
+                padding: EdgeInsets.only(top: 24),
+                child: Center(child: CircularProgressIndicator(color: kCoral)),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: messages.length,
+                  padding: EdgeInsets.zero,
+                  itemBuilder: (context, i) {
+                    final msg = messages[i];
+                    return _inboxBubble(msg.sender, msg.text, msg.isMine, dark);
+                  },
+                ),
               ),
-            ),
             const SizedBox(height: 10),
             Container(
               height: 52,
@@ -888,12 +924,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                       _policyRow(
                         'Terms & Conditions',
-                        () => _showPolicyDialog(
-                          context,
-                          'Terms & Conditions',
-                          'By using Memory, you agree to show the real version of your life. Do not upload offensive, illegal, or harmful content. You retain ownership of the content you post, but grant us a license to transmit it to your circle. Violation of circle trust can result in account suspension.',
-                          dark,
-                        ),
+                        () => _showFullTermsSheet(context, dark),
                         true,
                         dark,
                       ),
@@ -939,7 +970,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
+                  // Bottom safe area so logout button is above nav bar
+                  SizedBox(height: MediaQuery.paddingOf(context).bottom + 4),
                 ],
               ),
             ),
@@ -1039,26 +1072,62 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
   }
 
   Widget _statCard(BuildContext context, String title, String value, List<Color> colors, bool dark) {
+    final isStreak = title == 'Memories';
+    final emoji = isStreak ? '🔥' : '💫';
+    final subtitle = isStreak ? 'Day streak' : 'Circle active';
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: colors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: colors.first.withValues(alpha: 0.25),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: colors.first.withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 22)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 2),
           Text(
             title,
             style: const TextStyle(
@@ -1067,24 +1136,23 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
-                child: _sharePill('Instagram', () => _showShareCard(context, title, value, 'Instagram', colors, dark)),
+                child: _sharePill(
+                  '📸 Instagram',
+                  const Color(0xFFE1306C),
+                  () => _showShareCard(context, title, value, 'Instagram', colors, dark),
+                ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Expanded(
-                child: _sharePill('WhatsApp', () => _showShareCard(context, title, value, 'WhatsApp', colors, dark)),
+                child: _sharePill(
+                  '💬 WhatsApp',
+                  const Color(0xFF25D366),
+                  () => _showShareCard(context, title, value, 'WhatsApp', colors, dark),
+                ),
               ),
             ],
           ),
@@ -1093,21 +1161,28 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     );
   }
 
-  Widget _sharePill(String text, VoidCallback onTap) {
+  Widget _sharePill(String text, Color bg, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 28,
+        height: 30,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .92),
+          color: bg,
           borderRadius: BorderRadius.circular(999),
+          boxShadow: [
+            BoxShadow(
+              color: bg.withValues(alpha: 0.4),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           text,
           style: const TextStyle(
-            color: kCharcoal,
-            fontSize: 8,
+            color: Colors.white,
+            fontSize: 8.5,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -1115,15 +1190,20 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     );
   }
 
-  Widget _actionSheet(bool dark, {required Widget child}) => Container(
-        margin: const EdgeInsets.all(18),
+  Widget _actionSheet(bool dark, {required Widget child}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(18, 18, 18, 18),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: dark ? kDarkPaper : kPaper,
           borderRadius: BorderRadius.circular(26),
         ),
         child: child,
-      );
+      ),
+    );
+  }
 
   Widget _funCard({
     required String title,
@@ -1252,6 +1332,104 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           ),
         ),
       );
+
+  void _showFullTermsSheet(BuildContext context, bool dark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return Container(
+          height: MediaQuery.sizeOf(context).height * 0.88,
+          margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          decoration: BoxDecoration(
+            color: dark ? kDarkPaper : Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40, height: 5,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Terms & Conditions', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 20, fontWeight: FontWeight.w900)),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.08), shape: BoxShape.circle),
+                      child: Icon(Icons.close_rounded, color: dark ? kCream : kCharcoal, size: 18),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Last Updated: June 2026', style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 14),
+                      _termsItem('1. Welcome to Memory', 'Memory ("we", "us", or "our") provides a private daily social sharing platform for intimate circles. By creating an account or using the Memory app, you agree to comply with and be bound by these Terms & Conditions and all applicable laws of the Republic of Kenya.', dark),
+                      _termsItem('2. Privacy & Consent (Kenya Data Protection Act, 2019)', 'Your privacy is critical to us. By registering an account, you explicitly consent to the collection, storage, and processing of your personal data—including your name, email, phone number, and uploaded media files (memories). All personal data is processed in strict compliance with the Kenya Data Protection Act, 2019 and registration guidelines set by the Office of the Data Protection Commissioner (ODPC). We do not sell or share your personal data with third-party advertising companies.', dark),
+                      _termsItem('3. User-Generated Content & Liabilities (Cybercrimes Act, 2018)', 'You are solely responsible for the video memories and captions you post to your circle. Under the Computer Misuse and Cybercrimes Act, 2018 of Kenya, it is a criminal offense to upload or share content that is pornographic, hateful, harassing, defamatory, or infringes on another person\'s copyright. We reserve the right to suspend or delete your account immediately and report violations to relevant authorities if illegal or prohibited content is detected.', dark),
+                      _termsItem('4. Account Security', 'You are responsible for safeguarding your password and account details. You agree to notify us immediately of any unauthorized use or security breach of your account.', dark),
+                      _termsItem('5. Limitation of Liability', 'The Memory app is provided "as is" without warranties of any kind. We shall not be liable for any indirect, incidental, or punitive damages arising from your use of the app, service disruptions, or unauthorized access to user data.', dark),
+                      _termsItem('6. Dispute Resolution & Governing Law', 'These terms are governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes, claims, or controversies arising out of or relating to these terms shall be subject to the exclusive jurisdiction of the competent courts in Nairobi, Kenya.', dark),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: kCoral, borderRadius: BorderRadius.circular(999)),
+                    child: const Text('Close', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _termsItem(String heading, String body, bool dark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(heading, style: const TextStyle(color: kCoralDark, fontSize: 13, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text(body, style: TextStyle(color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8), fontSize: 12.5, height: 1.45)),
+        ],
+      ),
+    );
+  }
 
   void _showPolicyDialog(BuildContext context, String title, String content, bool dark) {
     showDialog(

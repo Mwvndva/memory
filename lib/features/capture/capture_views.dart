@@ -9,6 +9,17 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/theme.dart';
 import '../../repositories/memory_repository.dart';
 
+List<CameraDescription>? _globalCameras;
+
+Future<void> preloadCameras() async {
+  if (_globalCameras != null && _globalCameras!.isNotEmpty) return;
+  try {
+    _globalCameras = await availableCameras();
+  } catch (e) {
+    debugPrint('Error preloading cameras: $e');
+  }
+}
+
 class CameraCaptureView extends ConsumerStatefulWidget {
   const CameraCaptureView({super.key});
 
@@ -30,6 +41,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
   bool _isCameraInitialized = false;
   bool _isRecording = false;
   String? _recordedVideoPath;
+  int _selectedCameraIndex = 0;
 
   @override
   void initState() {
@@ -39,15 +51,25 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
 
   Future<void> _initCamera() async {
     try {
-      _cameras = await availableCameras();
+      if (_globalCameras == null || _globalCameras!.isEmpty) {
+        _globalCameras = await availableCameras();
+      }
+      _cameras = _globalCameras ?? [];
+
       if (_cameras.isNotEmpty) {
-        _cameraController = CameraController(
-          _cameras[0],
+        if (_selectedCameraIndex >= _cameras.length) {
+          _selectedCameraIndex = 0;
+        }
+
+        final controller = CameraController(
+          _cameras[_selectedCameraIndex],
           ResolutionPreset.medium,
           enableAudio: true,
         );
-        await _cameraController!.initialize();
-        if (mounted) {
+        _cameraController = controller;
+        await controller.initialize();
+
+        if (mounted && _cameraController == controller) {
           setState(() {
             _isCameraInitialized = true;
           });
@@ -55,6 +77,41 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
       }
     } catch (e) {
       debugPrint('Error initializing camera: $e');
+    }
+  }
+
+  Future<void> _switchCamera() async {
+    if (_cameras.isEmpty || _isRecording || _hasRecording) return;
+
+    final nextIndex = (_selectedCameraIndex + 1) % _cameras.length;
+
+    setState(() {
+      _isCameraInitialized = false;
+      _selectedCameraIndex = nextIndex;
+    });
+
+    if (_cameraController != null) {
+      final oldController = _cameraController!;
+      _cameraController = null;
+      await oldController.dispose();
+    }
+
+    try {
+      final controller = CameraController(
+        _cameras[_selectedCameraIndex],
+        ResolutionPreset.medium,
+        enableAudio: true,
+      );
+      _cameraController = controller;
+      await controller.initialize();
+
+      if (mounted && _cameraController == controller) {
+        setState(() {
+          _isCameraInitialized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error switching camera: $e');
     }
   }
 
@@ -173,64 +230,101 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
 
-    return Scaffold(
-      body: Container(
-        decoration: _softBackground(dark),
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              28,
-              24,
-              28,
-              94 + MediaQuery.paddingOf(context).bottom,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'What made you smile today?',
-                  style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Container(
+          decoration: _softBackground(dark),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                28,
+                24,
+                28,
+                94 + MediaQuery.paddingOf(context).bottom,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Text(
+                      'Record your memory',
+                      style: TextStyle(
+                        color: dark ? kCream : kCharcoal,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(child: _capturePreview()),
-                const SizedBox(height: 12),
-                Center(
-                  child: _hasRecording
-                      ? _pill(
-                          'Send to circle',
-                          _sendToCircle,
-                          dark,
-                          color: kCoral,
-                          foreground: Colors.white,
-                          width: 282,
-                        )
-                      : GestureDetector(
-                          onTap: _toggleRecording,
-                          child: Container(
-                            width: 82,
-                            height: 82,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: kCoral,
-                              border: Border.all(
-                                color: const Color(0xFFFFE7DD),
-                                width: 10,
+                  const SizedBox(height: 16),
+                  Expanded(child: _capturePreview()),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 82,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        _hasRecording
+                            ? _pill(
+                                'Send to circle',
+                                _sendToCircle,
+                                dark,
+                                color: kCoral,
+                                foreground: Colors.white,
+                                width: 282,
+                              )
+                            : GestureDetector(
+                                onTap: _toggleRecording,
+                                child: Container(
+                                  width: 82,
+                                  height: 82,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: kCoral,
+                                    border: Border.all(
+                                      color: const Color(0xFFFFE7DD),
+                                      width: 10,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    _isRecording ? Icons.stop_rounded : Icons.circle,
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                                ),
+                              ),
+                        if (!_hasRecording && !_isRecording && _cameras.length > 1)
+                          Positioned(
+                            right: 24,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                                border: Border.all(
+                                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: IconButton(
+                                tooltip: 'Switch camera',
+                                onPressed: _switchCamera,
+                                icon: Icon(
+                                  Icons.flip_camera_ios_rounded,
+                                  color: dark ? kCream : kCharcoal,
+                                ),
+                                iconSize: 22,
                               ),
                             ),
-                            child: Icon(
-                              _isRecording ? Icons.stop_rounded : Icons.circle,
-                              color: Colors.white,
-                              size: 30,
-                            ),
                           ),
-                        ),
-                ),
-              ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -266,21 +360,19 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                         ),
                       )
                     : Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-                          ),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Mock Video Preview\n(Looping Simulation)',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                        color: Colors.black,
+                        child: Center(
+                          child: _recordedVideoPath != null
+                              ? const CircularProgressIndicator(color: kCoral)
+                              : const Text(
+                                  'Mock Video Preview\n(Looping Simulation)',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       )
               else if (_isCameraInitialized && _cameraController != null)
@@ -292,13 +384,60 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                     child: CameraPreview(_cameraController!),
                   ),
                 )
+              else if (_cameras.isEmpty)
+                // Fallback for emulators with no camera hardware
+                Container(
+                  color: Colors.black87,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.videocam_off_rounded,
+                          color: Colors.white.withValues(alpha: 0.3),
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No camera detected',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               else
-                // Fallback static viewfinder
-                const Center(
-                  child: Icon(
-                    Icons.videocam_rounded,
-                    color: Colors.white24,
-                    size: 54,
+                // Premium loader while initializing
+                Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: CircularProgressIndicator(
+                            color: kCoral,
+                            strokeWidth: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Starting camera...',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -327,28 +466,6 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                         ),
                       ),
                     ],
-                  ),
-                ),
-
-              // 3. Fallback notice if emulator/fallback is active
-              if (!_hasRecording && !_isCameraInitialized)
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Fallback Viewfinder Active',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ),
                 ),
 

@@ -10,6 +10,7 @@ class MemoryItem {
     required this.colors,
     required this.ageHours,
     this.videoPath,
+    this.avatarUrl,
   });
 
   final String person;
@@ -20,6 +21,7 @@ class MemoryItem {
   final List<Color> colors;
   final double ageHours;
   final String? videoPath;
+  final String? avatarUrl;
 
   MemoryItem copyWith({
     String? person,
@@ -30,6 +32,7 @@ class MemoryItem {
     List<Color>? colors,
     double? ageHours,
     String? videoPath,
+    String? avatarUrl,
   }) {
     return MemoryItem(
       person: person ?? this.person,
@@ -40,6 +43,7 @@ class MemoryItem {
       colors: colors ?? this.colors,
       ageHours: ageHours ?? this.ageHours,
       videoPath: videoPath ?? this.videoPath,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
 }

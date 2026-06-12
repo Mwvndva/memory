@@ -9,6 +9,16 @@ import '../../core/theme.dart';
 import '../../models/memory_item.dart';
 import '../../repositories/chat_repository.dart';
 import '../../repositories/memory_repository.dart';
+import '../../core/api_config.dart';
+
+String _formatImageUrl(String url) {
+  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+    final uri = Uri.parse(url);
+    final baseUri = Uri.parse(kBaseUrl);
+    return url.replaceFirst(uri.authority, baseUri.authority);
+  }
+  return url;
+}
 
 class MainAppScaffold extends ConsumerWidget {
   const MainAppScaffold({super.key, required this.child});
@@ -23,6 +33,7 @@ class MainAppScaffold extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: bg,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           Positioned.fill(child: child),
@@ -196,6 +207,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
   VideoPlayerController? _feedVideoController;
   int? _enqueuedIndex;
   bool _isMuted = false;
+  bool _feedReady = false; // gates gradient: prevents purple flash before first video init
 
   @override
   void dispose() {
@@ -205,12 +217,18 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
 
   void _nextMemory(int count) {
     if (count == 0) return;
-    setState(() => _activeMemoryIndex = (_activeMemoryIndex + 1) % count);
+    setState(() {
+      _activeMemoryIndex = (_activeMemoryIndex + 1) % count;
+      _feedReady = false;
+    });
   }
 
   void _previousMemory(int count) {
     if (count == 0) return;
-    setState(() => _activeMemoryIndex = (_activeMemoryIndex - 1 + count) % count);
+    setState(() {
+      _activeMemoryIndex = (_activeMemoryIndex - 1 + count) % count;
+      _feedReady = false;
+    });
   }
 
   void _setGridOpen(bool open) {
@@ -237,7 +255,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     }
 
     if (m.videoPath == null || m.videoPath!.isEmpty) {
-      if (mounted) setState(() {});
+      // No video — mark ready immediately so the gradient/caption shows
+      if (mounted) setState(() { _feedReady = true; });
       return;
     }
 
@@ -265,6 +284,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
         setState(() {
           _feedVideoController = controller;
           _enqueuedIndex = index;
+          _feedReady = true;
         });
       } else {
         controller.dispose();
@@ -272,6 +292,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     } catch (e) {
       debugPrint('Error initializing feed video at index $index: $e');
       controller.dispose();
+      // Still mark ready so UI doesn't stay permanently black on error
+      if (mounted) setState(() { _feedReady = true; });
     }
   }
 
@@ -303,6 +325,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     final activeIndex = _activeMemoryIndex % listToUse.length;
     final m = listToUse[activeIndex];
 
+    final isUrlCaption = m.caption.startsWith('http://') || m.caption.startsWith('https://');
+    final isVideoLoading = m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized);
+    final showCaption = m.caption.isNotEmpty && !isUrlCaption && !isVideoLoading;
+
     // Trigger video initialization if active index changed
     if (activeIndex != _enqueuedIndex) {
       _enqueuedIndex = activeIndex;
@@ -312,6 +338,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.black, // prevent Material3 theme lavender from bleeding through
       body: GestureDetector(
         onVerticalDragEnd: (details) {
           if ((details.primaryVelocity ?? 0) < 0) _nextMemory(listToUse.length);
@@ -324,15 +351,26 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: m.colors,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  // Always show black until feed is ready — prevents purple gradient flash
+                  if (!_feedReady)
+                    Container(color: Colors.black)
+                  else
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: m.colors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
                     ),
-                  ),
+                  if (m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized))
+                    Container(
+                      color: Colors.black,
+                      child: const Center(
+                        child: CircularProgressIndicator(color: kCoral),
+                      ),
+                    ),
                   if (_feedVideoController != null && _feedVideoController!.value.isInitialized)
                     FittedBox(
                       fit: BoxFit.cover,
@@ -396,13 +434,18 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                     CircleAvatar(
                       radius: 23,
                       backgroundColor: m.avatar,
-                      child: Text(
-                        m.initial,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                      backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty
+                          ? NetworkImage(_formatImageUrl(m.avatarUrl!)) as ImageProvider
+                          : null,
+                      child: m.avatarUrl == null || m.avatarUrl!.isEmpty
+                          ? Text(
+                              m.initial,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            )
+                          : null,
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -425,34 +468,35 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 ),
               ),
             ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 56),
-                child: TweenAnimationBuilder<double>(
-                  key: ValueKey('caption_${m.person}_${m.caption}'),
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 550),
-                  curve: Curves.easeOutBack,
-                  builder: (context, value, child) => Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, 25 * (1 - value)),
-                      child: child,
+            if (showCaption)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 56),
+                  child: TweenAnimationBuilder<double>(
+                    key: ValueKey('caption_${m.person}_${m.caption}'),
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 550),
+                    curve: Curves.easeOutBack,
+                    builder: (context, value, child) => Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 25 * (1 - value)),
+                        child: child,
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    m.caption,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      height: 1.05,
+                    child: Text(
+                      m.caption,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        height: 1.05,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
             if (_composerOpen)
               Positioned(
                 left: 44,
@@ -708,14 +752,14 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
 
   Widget _emojiButton(String emoji, Function(String) onTap) => GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
+          HapticFeedback.mediumImpact();
           onTap(emoji);
         },
         child: SizedBox(
           width: 44,
-          height: 24,
+          height: 36,
           child: Center(
-            child: Text(emoji, style: const TextStyle(fontSize: 18, height: 1)),
+            child: Text(emoji, style: const TextStyle(fontSize: 28, height: 1)),
           ),
         ),
       );

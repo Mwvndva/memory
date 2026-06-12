@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../core/api_client.dart';
 import '../core/api_config.dart';
 import '../core/secure_storage.dart';
 import '../models/message.dart';
+import 'circles_repository.dart';
 
 // ─── Chat state ──────────────────────────────────────────────────────────────
 
@@ -150,6 +152,52 @@ class ChatNotifier extends StateNotifier<ChatState> {
       isMine:    isMine,
     );
     _appendMessage(sender, msg);
+  }
+
+  // ─── Load conversation history from REST API ─────────────────────────────
+
+  Future<void> loadConversation(String contactUsername) async {
+    if (kUseMockBackend) return;
+    try {
+      // Resolve username → userId via the circles list (already fetched)
+      final circles = _ref.read(circlesProvider);
+      final member = circles.where((m) => m.username == contactUsername).firstOrNull;
+      if (member == null) return; // not in circle, skip
+
+      final dio = _ref.read(apiClientProvider);
+      final response = await dio.get('/messages/history/${member.id}');
+      final body = response.data as Map<String, dynamic>? ?? {};
+      final rawList = body['data'] as List? ?? [];
+
+      final fetched = rawList.map((item) {
+        final d = item as Map<String, dynamic>;
+        // determine if the message is mine by checking sender username
+        final senderUsername = (d['sender'] as Map<String, dynamic>?)?['username'] as String? ?? '';
+        final isMine = senderUsername != contactUsername;
+        return Message(
+          id:        d['id']?.toString() ?? '',
+          sender:    isMine ? 'You' : contactUsername,
+          text:      d['text'] as String? ?? '',
+          timestamp: DateTime.tryParse(d['timestamp']?.toString() ?? '') ?? DateTime.now(),
+          isMine:    isMine,
+        );
+      }).toList();
+
+      if (fetched.isEmpty) return;
+
+      final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
+      // Merge: history first, then any messages already in state (sent this session)
+      final existing = state.messagesByContact[contactUsername] ?? [];
+      final merged = <Message>[];
+      final existingIds = existing.map((m) => m.id).toSet();
+      for (final m in fetched) {
+        if (!existingIds.contains(m.id)) merged.add(m);
+      }
+      merged.addAll(existing);
+      updatedMap[contactUsername] = merged;
+
+      state = state.copyWith(messagesByContact: updatedMap);
+    } catch (_) {}
   }
 
   // ─── Send a message ───────────────────────────────────────────────────────
