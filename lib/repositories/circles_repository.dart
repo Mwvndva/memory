@@ -59,7 +59,20 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
   // ─── Add a member by their user ID ──────────────────────────────────────
 
   Future<bool> addMember(String memberId) async {
-    if (kUseMockBackend) return false;
+    if (kUseMockBackend) {
+      final cleanId = memberId.trim().toLowerCase();
+      // Generate a mock member details based on the ID/username searched
+      final newMember = CircleMember(
+        id: memberId,
+        username: cleanId.contains('@') ? cleanId.replaceFirst('@', '') : cleanId,
+        firstName: memberId.length > 1 ? memberId[0].toUpperCase() + memberId.substring(1) : 'Member',
+      );
+      // Avoid duplicate adding
+      if (!state.any((m) => m.username.toLowerCase() == newMember.username.toLowerCase())) {
+        state = [...state, newMember];
+      }
+      return true;
+    }
     try {
       final dio = _ref.read(apiClientProvider);
       await dio.post('/circles/members', data: {'memberId': memberId});
@@ -73,7 +86,10 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
   // ─── Remove a member by their user ID ───────────────────────────────────
 
   Future<bool> removeMember(String memberId) async {
-    if (kUseMockBackend) return false;
+    if (kUseMockBackend) {
+      state = state.where((m) => m.id != memberId && m.username != memberId).toList();
+      return true;
+    }
     try {
       final dio = _ref.read(apiClientProvider);
       await dio.delete('/circles/members/$memberId');

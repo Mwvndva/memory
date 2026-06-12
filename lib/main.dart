@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'core/router.dart';
 import 'core/theme.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,12 +33,16 @@ class MemoryApp extends ConsumerWidget {
       title: 'Memory',
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Arial',
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+          ThemeData.light().textTheme,
+        ),
         colorScheme: ColorScheme.fromSeed(seedColor: kCoral, brightness: Brightness.light),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Arial',
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+          ThemeData.dark().textTheme,
+        ),
         colorScheme: ColorScheme.fromSeed(seedColor: kCoral, brightness: Brightness.dark),
       ),
       routerConfig: router,

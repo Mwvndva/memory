@@ -134,7 +134,7 @@ class AuthNotifier extends StateNotifier<UserProfile> {
     final cleanId = id.trim().replaceFirst('@', '').toLowerCase();
 
     if (kUseMockBackend) {
-      final matchLocal = (cleanId == state.username || cleanId == state.email.toLowerCase());
+      final matchLocal = (cleanId == state.username.toLowerCase() || cleanId == state.email.toLowerCase());
       final matchDefault = (cleanId == 'roykeepsmemories' || cleanId == 'roy@memory.app');
 
       if (matchLocal || matchDefault) {
@@ -188,22 +188,47 @@ class AuthNotifier extends StateNotifier<UserProfile> {
     }
   }
 
+  Future<void> fetchProfile() async {
+    if (kUseMockBackend) return;
+    try {
+      final dio = _ref.read(apiClientProvider);
+      final response = await dio.get('/users/me');
+      final data = response.data as Map<String, dynamic>;
+      final stats = data['stats'] as Map<String, dynamic>? ?? {};
+
+      state = UserProfile(
+        firstName: data['firstName'] as String? ?? '',
+        lastName:  data['lastName'] as String? ?? '',
+        username:  data['username'] as String? ?? '',
+        email:     data['email'] as String? ?? '',
+        phone:     data['phone'] as String? ?? '',
+        avatarBytes: state.avatarBytes,
+        isAuthenticated: true,
+        streakDays: stats['streakDays'] as int? ?? 0,
+        circlePulseDays: stats['circlePulseDays'] as int? ?? 0,
+        countryRank: stats['countryRank'] as int? ?? 1,
+        globalRank: stats['globalRank'] as int?,
+      );
+      _saveSession();
+    } catch (_) {}
+  }
+
   void authenticate() {
     state = state.copyWith(isAuthenticated: true);
     _saveSession();
   }
 
-  void logout() {
+  Future<void> logout() async {
     state = UserProfile.empty();
     try {
       final prefs = _ref.read(sharedPreferencesProvider);
-      _ref.read(secureStorageProvider).delete(key: 'auth_token');
-      prefs.remove('is_logged_in');
-      prefs.remove('user_first_name');
-      prefs.remove('user_last_name');
-      prefs.remove('user_username');
-      prefs.remove('user_email');
-      prefs.remove('user_phone');
+      await _ref.read(secureStorageProvider).delete(key: 'auth_token');
+      await prefs.remove('is_logged_in');
+      await prefs.remove('user_first_name');
+      await prefs.remove('user_last_name');
+      await prefs.remove('user_username');
+      await prefs.remove('user_email');
+      await prefs.remove('user_phone');
     } catch (_) {}
   }
 

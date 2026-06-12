@@ -9,6 +9,10 @@ class UserProfile {
     required this.phone,
     this.avatarBytes,
     this.isAuthenticated = false,
+    this.streakDays = 0,
+    this.circlePulseDays = 0,
+    this.countryRank = 1,
+    this.globalRank,
   });
 
   final String firstName;
@@ -18,6 +22,10 @@ class UserProfile {
   final String phone;
   final Uint8List? avatarBytes;
   final bool isAuthenticated;
+  final int streakDays;
+  final int circlePulseDays;
+  final int countryRank;
+  final int? globalRank;
 
   factory UserProfile.empty() {
     return const UserProfile(
@@ -27,6 +35,10 @@ class UserProfile {
       email: '',
       phone: '',
       isAuthenticated: false,
+      streakDays: 0,
+      circlePulseDays: 0,
+      countryRank: 1,
+      globalRank: null,
     );
   }
 
@@ -38,6 +50,10 @@ class UserProfile {
     String? phone,
     Uint8List? avatarBytes,
     bool? isAuthenticated,
+    int? streakDays,
+    int? circlePulseDays,
+    int? countryRank,
+    int? globalRank,
   }) {
     return UserProfile(
       firstName: firstName ?? this.firstName,
@@ -47,6 +63,10 @@ class UserProfile {
       phone: phone ?? this.phone,
       avatarBytes: avatarBytes ?? this.avatarBytes,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      streakDays: streakDays ?? this.streakDays,
+      circlePulseDays: circlePulseDays ?? this.circlePulseDays,
+      countryRank: countryRank ?? this.countryRank,
+      globalRank: globalRank ?? this.globalRank,
     );
   }
 }

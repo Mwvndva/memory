@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme.dart';
+import '../../core/api_config.dart';
 import '../../repositories/auth_repository.dart';
 
 class LoadingView extends ConsumerStatefulWidget {
@@ -598,11 +599,13 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     final List<Widget> listItems = [];
 
     // Prepend mock suggestions representing users already on Memory
-    final mockSuggestions = [
-      ('A', 'Amara', '@amara', kCoral),
-      ('M', 'Mum', '@mumsmemories', kMint),
-      ('L', 'Leo', '@leowalks', kSky),
-    ];
+    final mockSuggestions = kUseMockBackend
+        ? [
+            ('A', 'Amara', '@amara', kCoral),
+            ('M', 'Mum', '@mumsmemories', kMint),
+            ('L', 'Leo', '@leowalks', kSky),
+          ]
+        : <(String, String, String, Color)>[];
 
     for (final c in mockSuggestions) {
       listItems.add(_contactRow(

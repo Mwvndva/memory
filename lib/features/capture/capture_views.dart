@@ -93,14 +93,20 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
           });
 
           if (finalPath != null) {
-            _videoPlayerController = VideoPlayerController.file(File(finalPath));
+            final controller = VideoPlayerController.file(File(finalPath));
+            _videoPlayerController = controller;
             try {
-              await _videoPlayerController!.initialize();
-              await _videoPlayerController!.setLooping(true);
-              await _videoPlayerController!.play();
-              if (mounted) setState(() {});
+              await controller.initialize();
+              if (mounted && _videoPlayerController == controller) {
+                await controller.setLooping(true);
+                await controller.play();
+                setState(() {});
+              } else {
+                controller.dispose();
+              }
             } catch (e) {
               debugPrint('Error playing preview video: $e');
+              controller.dispose();
             }
           }
         }
@@ -131,12 +137,6 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
 
   void _sendToCircle() {
     final captionText = _captureCaption.text.trim();
-    if (captionText.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add a caption first!')),
-      );
-      return;
-    }
 
     // Capture dynamic memory
     ref.read(memoryProvider.notifier).addMemory(
@@ -179,7 +179,12 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(28, 24, 28, 94),
+            padding: EdgeInsets.fromLTRB(
+              28,
+              24,
+              28,
+              94 + MediaQuery.paddingOf(context).bottom,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -200,7 +205,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                           'Send to circle',
                           _sendToCircle,
                           dark,
-                          color: dark ? kCoral : kCharcoal,
+                          color: kCoral,
                           foreground: Colors.white,
                           width: 282,
                         )

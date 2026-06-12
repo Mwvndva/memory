@@ -32,7 +32,10 @@ class ChatState {
 // ─── Chat notifier ───────────────────────────────────────────────────────────
 
 class ChatNotifier extends StateNotifier<ChatState> {
-  ChatNotifier(this._ref) : super(_initialState) {
+  ChatNotifier(this._ref)
+      : super(kUseMockBackend
+            ? _initialState
+            : const ChatState(messagesByContact: {}, unreadNotifications: 0)) {
     if (!kUseMockBackend) {
       _initWebSocket();
     }

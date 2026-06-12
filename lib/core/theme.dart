@@ -49,12 +49,32 @@ final themeChoiceProvider = StateNotifierProvider<ThemeNotifier, ThemeChoice>((r
   return ThemeNotifier(prefs);
 });
 
+class SystemBrightnessNotifier extends StateNotifier<Brightness> with WidgetsBindingObserver {
+  SystemBrightnessNotifier() : super(WidgetsBinding.instance.platformDispatcher.platformBrightness) {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    state = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+}
+
+final systemBrightnessProvider = StateNotifierProvider<SystemBrightnessNotifier, Brightness>((ref) {
+  return SystemBrightnessNotifier();
+});
+
 final isDarkProvider = Provider<bool>((ref) {
   final choice = ref.watch(themeChoiceProvider);
   if (choice == ThemeChoice.dark) return true;
   if (choice == ThemeChoice.light) return false;
   
-  // System theme fallback context-free
-  final platform = WidgetsBinding.instance.platformDispatcher.platformBrightness;
-  return platform == Brightness.dark;
+  final systemBrightness = ref.watch(systemBrightnessProvider);
+  return systemBrightness == Brightness.dark;
 });

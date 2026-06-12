@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
@@ -28,7 +29,7 @@ class MainAppScaffold extends ConsumerWidget {
           Positioned(
             left: 18,
             right: 18,
-            bottom: 18,
+            bottom: 18 + MediaQuery.paddingOf(context).bottom,
             child: _tabBar(context, currentPath, dark, ref),
           ),
         ],
@@ -44,8 +45,25 @@ class MainAppScaffold extends ConsumerWidget {
       height: 58,
       padding: const EdgeInsets.all(7),
       decoration: BoxDecoration(
-        color: (dark ? kDarkPaper : kPaper).withValues(alpha: .9),
+        gradient: LinearGradient(
+          colors: dark
+              ? [kDarkPaper.withValues(alpha: 0.95), kCharcoal.withValues(alpha: 0.9)]
+              : [Colors.white.withValues(alpha: 0.92), kCream.withValues(alpha: 0.88)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: kCoral.withValues(alpha: 0.12),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -93,10 +111,26 @@ class MainAppScaffold extends ConsumerWidget {
             Container(
               height: 44,
               decoration: BoxDecoration(
-                color: active
-                    ? (dark ? const Color(0xFF4A2B27) : const Color(0xFFFFE7DD))
-                    : Colors.transparent,
+                gradient: active
+                    ? LinearGradient(
+                        colors: dark
+                            ? [const Color(0xFFE84F3B), const Color(0xFFE84F3B).withValues(alpha: 0.75)]
+                            : [const Color(0xFFFF6B57), const Color(0xFFFF826E)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: active ? null : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
+                boxShadow: active
+                    ? [
+                        BoxShadow(
+                          color: kCoral.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        )
+                      ]
+                    : null,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -105,7 +139,7 @@ class MainAppScaffold extends ConsumerWidget {
                     icon,
                     size: 18,
                     color: active
-                        ? kCoral
+                        ? Colors.white
                         : (dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62)),
                   ),
                   const SizedBox(width: 6),
@@ -113,10 +147,10 @@ class MainAppScaffold extends ConsumerWidget {
                     label,
                     style: TextStyle(
                       color: active
-                          ? kCoral
+                          ? Colors.white
                           : (dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62)),
                       fontSize: 12,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: active ? FontWeight.w800 : FontWeight.w600,
                     ),
                   ),
                 ],
@@ -128,11 +162,11 @@ class MainAppScaffold extends ConsumerWidget {
                 top: -3,
                 child: CircleAvatar(
                   radius: 9,
-                  backgroundColor: kCoral,
+                  backgroundColor: active ? Colors.white : kCoral,
                   child: Text(
                     badge,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: active ? kCoral : Colors.white,
                       fontSize: 9,
                       fontWeight: FontWeight.w900,
                     ),
@@ -160,7 +194,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
   bool _fromGrid = false;
 
   VideoPlayerController? _feedVideoController;
-  int? _lastInitializedIndex;
+  int? _enqueuedIndex;
   bool _isMuted = false;
 
   @override
@@ -192,11 +226,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
   }
 
   Future<void> _initFeedVideo(MemoryItem m, int index) async {
-    if (index == _lastInitializedIndex) return;
+    if (index != _activeMemoryIndex) return;
 
     final oldController = _feedVideoController;
     _feedVideoController = null;
-    _lastInitializedIndex = null;
     if (oldController != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         oldController.dispose();
@@ -231,7 +264,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
       if (mounted && _activeMemoryIndex == index) {
         setState(() {
           _feedVideoController = controller;
-          _lastInitializedIndex = index;
+          _enqueuedIndex = index;
         });
       } else {
         controller.dispose();
@@ -271,7 +304,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     final m = listToUse[activeIndex];
 
     // Trigger video initialization if active index changed
-    if (activeIndex != _lastInitializedIndex) {
+    if (activeIndex != _enqueuedIndex) {
+      _enqueuedIndex = activeIndex;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _initFeedVideo(m, activeIndex);
       });
@@ -316,7 +350,16 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
               left: 22,
               child: _roundIcon(
                 _fromGrid && !_gridOpen ? Icons.arrow_back_ios_new_rounded : Icons.grid_view_rounded,
-                () => _setGridOpen(true),
+                () {
+                  if (_fromGrid && !_gridOpen) {
+                    setState(() {
+                      _fromGrid = false;
+                      _activeMemoryIndex = 0;
+                    });
+                  } else {
+                    _setGridOpen(true);
+                  }
+                },
               ),
             ),
             Positioned(
@@ -336,50 +379,76 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
               top: top + 34,
               left: 0,
               right: 0,
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 23,
-                    backgroundColor: m.avatar,
-                    child: Text(
-                      m.initial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey('header_${m.person}_${m.caption}'),
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 450),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) => Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, -15 * (1 - value)),
+                    child: child,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 23,
+                      backgroundColor: m.avatar,
+                      child: Text(
+                        m.initial,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    m.person,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
+                    const SizedBox(height: 6),
+                    Text(
+                      m.person,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  Text(
-                    m.time,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
+                    Text(
+                      m.time,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 56),
-                child: Text(
-                  m.caption,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    height: 1.05,
+                child: TweenAnimationBuilder<double>(
+                  key: ValueKey('caption_${m.person}_${m.caption}'),
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 550),
+                  curve: Curves.easeOutBack,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 25 * (1 - value)),
+                      child: child,
+                    ),
+                  ),
+                  child: Text(
+                    m.caption,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      height: 1.05,
+                    ),
                   ),
                 ),
               ),
@@ -388,12 +457,24 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
               Positioned(
                 left: 44,
                 right: 16,
-                bottom: 94,
+                bottom: 94 + MediaQuery.paddingOf(context).bottom,
                 child: _messageComposer(m),
               ),
             if (_gridOpen)
               Positioned.fill(
-                child: _memoryGrid(archivedMemories, dark),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 50 * (1 - value)),
+                      child: child,
+                    ),
+                  ),
+                  child: _memoryGrid(archivedMemories, dark),
+                ),
               ),
           ],
         ),
@@ -402,6 +483,41 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
   }
 
   Widget _memoryGrid(List<MemoryItem> archived, bool dark) {
+    if (archived.isEmpty) {
+      return Container(
+        color: dark ? kCharcoal : kPaper,
+        padding: const EdgeInsets.fromLTRB(26, 82, 26, 90),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Spacer(),
+                Text(
+                  'All memories',
+                  style: TextStyle(
+                    color: dark ? kCream : kCharcoal,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const Spacer(),
+                _smallClose(() => _setGridOpen(false), dark),
+              ],
+            ),
+            const Expanded(
+              child: Center(
+                child: Text(
+                  'No archived memories yet.\nMemories older than 24h will appear here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     // Generate a fixed 12 grid items repeating if archived is short
     final gridItems = List.generate(12, (i) => archived[i % archived.length]);
 
@@ -449,36 +565,48 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 ),
                 itemBuilder: (_, i) {
                   final m = gridItems[i];
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _fromGrid = true;
-                        _activeMemoryIndex = i;
-                      });
-                      _setGridOpen(false);
-                    },
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        gradient: LinearGradient(
-                          colors: m.colors,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: Duration(milliseconds: 200 + (i * 30)), // Staggered scale-in!
+                    curve: Curves.easeOutBack,
+                    builder: (context, value, child) => Transform.scale(
+                      scale: value,
+                      child: Opacity(
+                        opacity: value,
+                        child: child,
                       ),
-                      child: Align(
-                        alignment: Alignment.bottomLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.all(7),
-                          child: CircleAvatar(
-                            radius: 11,
-                            backgroundColor: m.avatar,
-                            child: Text(
-                              m.initial,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _fromGrid = true;
+                          _activeMemoryIndex = i % archived.length;
+                        });
+                        _setGridOpen(false);
+                      },
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: m.colors,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.all(7),
+                            child: CircleAvatar(
+                              radius: 11,
+                              backgroundColor: m.avatar,
+                              child: Text(
+                                m.initial,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
                             ),
                           ),
@@ -532,7 +660,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                         style: TextStyle(
                           color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
                           fontSize: 12,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -549,7 +677,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 11,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -560,7 +688,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
           ),
           const SizedBox(width: 8),
           SizedBox(
-            width: 30,
+            width: 44,
             height: 132,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -579,12 +707,15 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
   }
 
   Widget _emojiButton(String emoji, Function(String) onTap) => GestureDetector(
-        onTap: () => onTap(emoji),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap(emoji);
+        },
         child: SizedBox(
-          width: 24,
+          width: 44,
           height: 24,
           child: Center(
-            child: Text(emoji, style: const TextStyle(fontSize: 15, height: 1)),
+            child: Text(emoji, style: const TextStyle(fontSize: 18, height: 1)),
           ),
         ),
       );

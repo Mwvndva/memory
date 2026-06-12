@@ -8,6 +8,18 @@ import '../core/theme.dart';
 import '../models/memory_item.dart';
 import 'auth_repository.dart';
 
+Color parseHexColor(String hexStr) {
+  var clean = hexStr.replaceAll('#', '').trim();
+  if (clean.length == 6) {
+    clean = 'FF$clean';
+  } else if (clean.length == 8) {
+    clean = 'FF${clean.substring(clean.length - 6)}';
+  } else {
+    return const Color(0xFFFF6B57);
+  }
+  return Color(int.tryParse(clean, radix: 16) ?? 0xFFFF6B57);
+}
+
 class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
   MemoryNotifier(this._ref) : super(kUseMockBackend ? _defaultMemories : const []) {
     if (!kUseMockBackend) {
@@ -67,15 +79,12 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       final list = rawList.map((item) {
         // gradient_colors is a list of hex strings like "#FF6B57"
         final List<Color> colors = (item['gradient_colors'] as List? ?? []).map((colorStr) {
-          final clean = (colorStr as String).replaceFirst('#', '');
-          final hexInt = int.tryParse(clean, radix: 16) ?? 0xFFFF6B57;
-          return Color(0xFF000000 | hexInt);
+          return parseHexColor(colorStr as String);
         }).toList();
 
         // avatar is a single deterministic hex string from the backend
-        final avatarStr = (item['avatar'] as String? ?? '').replaceFirst('#', '');
-        final avatarHex = int.tryParse(avatarStr, radix: 16) ?? 0xFFFF6B57;
-        final avatarColor = Color(0xFF000000 | avatarHex);
+        final avatarStr = item['avatar'] as String? ?? '';
+        final avatarColor = parseHexColor(avatarStr);
 
         return MemoryItem(
           person:    item['person']    as String? ?? '',
@@ -117,7 +126,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       try {
         final dio = _ref.read(apiClientProvider);
         final List<String> colorsHex = colors.map((c) {
-          return '#${c.toARGB32().toRadixString(16).padLeft(8, '0')}';
+          return '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
         }).toList();
 
         final formData = FormData.fromMap({

@@ -18,6 +18,10 @@ model User {
   phone        String   @db.VarChar(20)
   passwordHash String   @map("password_hash") @db.VarChar(255)
   avatarUrl    String?  @map("avatar_url") @db.VarChar(255)
+  country      String   @default("") @db.VarChar(50)
+  streakDays   Int      @default(0) @map("streak_days")
+  countryRank  Int      @default(1) @map("country_rank")
+  globalRank   Int?     @map("global_rank")
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations

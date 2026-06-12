@@ -14,6 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Logger } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { MessagesService } from '../messages/messages.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 // ─── Socket data attached per connection ───────────────────────────────────
 interface AuthenticatedSocket extends WebSocket {
@@ -49,6 +50,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
     private readonly messagesService: MessagesService,
+    private readonly prisma: PrismaService,
   ) {}
 
   // ─── Connection: validate JWT from query param ─────────────────────────────
@@ -110,17 +112,27 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // Resolve receiver by username → userId from Redis/DB
     const receiverSocket = this._findByUsername(payload.receiver);
-    const receiverId = receiverSocket?.userId;
+    let receiverId = receiverSocket?.userId;
 
     if (!receiverId) {
-      // Receiver not connected; still persist the message
-      // We'll need the receiver's DB id — skip delivery, just save
+      // Receiver not connected; query DB for their UUID
+      const dbUser = await this.prisma.user.findUnique({
+        where: { username: payload.receiver },
+        select: { id: true },
+      });
+      if (dbUser) {
+        receiverId = dbUser.id;
+      }
+    }
+
+    if (!receiverId) {
+      throw new WsException(`Receiver user "${payload.receiver}" not found`);
     }
 
     // Persist to PostgreSQL
     const message = await this.messagesService.create({
       senderId: client.userId,
-      receiverId: receiverId ?? payload.receiver, // graceful fallback
+      receiverId: receiverId,
       text: payload.text.trim(),
     });
 
