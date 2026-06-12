@@ -64,7 +64,7 @@ class LoginView extends ConsumerStatefulWidget {
 }
 
 class _LoginViewState extends ConsumerState<LoginView> {
-  final _loginId = TextEditingController(text: 'roy@memory.app');
+  final _loginId = TextEditingController();
   final _loginPassword = TextEditingController();
   String _errorMessage = '';
 
@@ -164,11 +164,11 @@ class CreateAccountView extends ConsumerStatefulWidget {
 }
 
 class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
-  final _firstName = TextEditingController(text: 'Roy');
-  final _lastName = TextEditingController(text: 'Nthiga');
-  final _username = TextEditingController(text: '@roykeepsmemories');
-  final _email = TextEditingController(text: 'roy@memory.app');
-  final _phone = TextEditingController(text: '712 345 678');
+  final _firstName = TextEditingController();
+  final _lastName = TextEditingController();
+  final _username = TextEditingController();
+  final _email = TextEditingController();
+  final _phone = TextEditingController();
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
 
