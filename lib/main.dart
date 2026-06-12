@@ -136,36 +136,36 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
 
   final unavailable = {'roy', 'memory', 'amara', 'leo', 'mum'};
   final countryCodes = const [
-    ('🇰🇪 Kenya +254', '+254'),
-    ('🇺🇸 United States +1', '+1'),
-    ('🇬🇧 United Kingdom +44', '+44'),
-    ('🇨🇦 Canada +1', '+1'),
-    ('🇳🇬 Nigeria +234', '+234'),
-    ('🇿🇦 South Africa +27', '+27'),
-    ('🇬🇭 Ghana +233', '+233'),
-    ('🇺🇬 Uganda +256', '+256'),
-    ('🇹🇿 Tanzania +255', '+255'),
-    ('🇷🇼 Rwanda +250', '+250'),
-    ('🇪🇹 Ethiopia +251', '+251'),
-    ('🇪🇬 Egypt +20', '+20'),
-    ('🇮🇳 India +91', '+91'),
-    ('🇵🇰 Pakistan +92', '+92'),
-    ('🇧🇩 Bangladesh +880', '+880'),
-    ('🇨🇳 China +86', '+86'),
-    ('🇯🇵 Japan +81', '+81'),
-    ('🇰🇷 South Korea +82', '+82'),
-    ('🇦🇺 Australia +61', '+61'),
-    ('🇳🇿 New Zealand +64', '+64'),
-    ('🇫🇷 France +33', '+33'),
-    ('🇩🇪 Germany +49', '+49'),
-    ('🇮🇹 Italy +39', '+39'),
-    ('🇪🇸 Spain +34', '+34'),
-    ('🇧🇷 Brazil +55', '+55'),
-    ('🇲🇽 Mexico +52', '+52'),
-    ('🇦🇪 United Arab Emirates +971', '+971'),
-    ('🇸🇦 Saudi Arabia +966', '+966'),
+    '🇰🇪',
+    '🇺🇸',
+    '🇬🇧',
+    '🇨🇦',
+    '🇳🇬',
+    '🇿🇦',
+    '🇬🇭',
+    '🇺🇬',
+    '🇹🇿',
+    '🇷🇼',
+    '🇪🇹',
+    '🇪🇬',
+    '🇮🇳',
+    '🇵🇰',
+    '🇧🇩',
+    '🇨🇳',
+    '🇯🇵',
+    '🇰🇷',
+    '🇦🇺',
+    '🇳🇿',
+    '🇫🇷',
+    '🇩🇪',
+    '🇮🇹',
+    '🇪🇸',
+    '🇧🇷',
+    '🇲🇽',
+    '🇦🇪',
+    '🇸🇦',
   ];
-  String selectedCountry = '+254';
+  String selectedCountry = '🇰🇪';
 
   @override
   void initState() {
@@ -298,15 +298,17 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
   @override
   Widget build(BuildContext context) {
     final bg = dark ? const Color(0xFF11100F) : const Color(0xFFFFF4E4);
+    final viewport = MediaQuery.sizeOf(context);
+    final useDeviceViewport = viewport.width < 430;
     return Scaffold(
       backgroundColor: bg,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 390, maxHeight: 844),
+      body: Align(
+        alignment: Alignment.center,
+        child: SizedBox(
+          width: useDeviceViewport ? viewport.width : 390,
+          height: useDeviceViewport ? viewport.height : 844,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(
-              MediaQuery.sizeOf(context).width < 430 ? 0 : 34,
-            ),
+            borderRadius: BorderRadius.circular(useDeviceViewport ? 0 : 34),
             child: auth == AuthScreen.app ? _appScaffold() : _authLayer(),
           ),
         ),
@@ -436,12 +438,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
         Row(
           children: [
             Expanded(
-              child: _field(
-                'Password',
-                _password,
-                'Uppercase and lowercase',
-                obscure: true,
-              ),
+              child: _field('Password', _password, 'Password', obscure: true),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -454,6 +451,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
             ),
           ],
         ),
+        const SizedBox(height: 6),
         _status(passwordStatus, passwordOk),
         const SizedBox(height: 14),
         _pill(
@@ -1640,19 +1638,28 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
       Row(
         children: [
           SizedBox(
-            width: 132,
+            width: 72,
             child: DropdownButtonFormField<String>(
               initialValue: selectedCountry,
-              isExpanded: true,
+              menuMaxHeight: 270,
               items: countryCodes
                   .map(
                     (c) => DropdownMenuItem(
-                      value: c.$2,
-                      child: Text(c.$1, overflow: TextOverflow.ellipsis),
+                      value: c,
+                      child: Center(
+                        child: Text(c, style: const TextStyle(fontSize: 18)),
+                      ),
                     ),
                   )
                   .toList(),
-              onChanged: (v) => setState(() => selectedCountry = v ?? '+254'),
+              selectedItemBuilder: (context) => countryCodes
+                  .map(
+                    (c) => Center(
+                      child: Text(c, style: const TextStyle(fontSize: 18)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) => setState(() => selectedCountry = v ?? '🇰🇪'),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: dark ? kDarkCream : kCream,
@@ -1660,6 +1667,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
                 ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10),
               ),
             ),
           ),
