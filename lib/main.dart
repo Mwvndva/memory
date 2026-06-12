@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 void main() => runApp(const MemoryApp());
@@ -123,7 +123,14 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
   bool composerOpen = false;
   bool gridOpen = false;
   bool fromGrid = false;
+  bool captureCaptionOpen = false;
+  String? activeChat;
   int activeMemory = 0;
+  int newNotifications = 3;
+  int circleCount = 12;
+  final _captureCaption = TextEditingController();
+  Offset captureCaptionOffset = const Offset(78, 250);
+  double captureCaptionSize = 24;
   String usernameStatus = 'Choose something people recognize.';
   bool usernameOk = false;
   String passwordStatus = 'Use at least 8 characters.';
@@ -187,6 +194,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
     _email.dispose();
     _password.dispose();
     _confirmPassword.dispose();
+    _captureCaption.dispose();
     super.dispose();
   }
 
@@ -714,6 +722,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
 
   Widget _memoryScreen() {
     final m = current;
+    final top = MediaQuery.paddingOf(context).top;
     return GestureDetector(
       onVerticalDragEnd: (details) {
         if ((details.primaryVelocity ?? 0) < 0) _nextMemory();
@@ -733,9 +742,8 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
               ),
             ),
           ),
-          _statusBar(Colors.white),
           Positioned(
-            top: 58,
+            top: top + 16,
             left: 22,
             child: _roundIcon(
               fromGrid && !gridOpen
@@ -750,12 +758,12 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
             ),
           ),
           Positioned(
-            top: 58,
+            top: top + 16,
             right: 22,
             child: _roundIcon(Icons.volume_up_rounded, () {}),
           ),
           Positioned(
-            top: 76,
+            top: top + 34,
             left: 0,
             right: 0,
             child: Column(
@@ -808,8 +816,8 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
           ),
           if (composerOpen)
             Positioned(
-              left: 54,
-              right: 20,
+              left: 44,
+              right: 16,
               bottom: 94,
               child: _messageComposer(m),
             ),
@@ -906,140 +914,197 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
     ),
   );
 
-  Widget _messageComposer(MemoryItem m) => Row(
-    children: [
-      Expanded(
-        child: Container(
-          height: 50,
-          padding: const EdgeInsets.only(left: 16, right: 6),
-          decoration: BoxDecoration(
-            color: dark ? kDarkPaper : Colors.white,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Send ${m.person} a message',
-                  style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              Container(
-                width: 54,
-                height: 38,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: kCoral,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Text(
-                  'Send',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      const SizedBox(width: 8),
-      Column(
-        children: const [
-          Text('❤️'),
-          SizedBox(height: 7),
-          Text('😂'),
-          SizedBox(height: 7),
-          Text('🔥'),
-          SizedBox(height: 7),
-          Text('😭'),
-          SizedBox(height: 7),
-          Text('✨'),
-        ],
-      ),
-    ],
-  );
-
-  Widget _captureScreen() => Container(
-    padding: const EdgeInsets.fromLTRB(28, 82, 28, 94),
-    decoration: _softBackground(),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _messageComposer(MemoryItem m) => SizedBox(
+    height: 118,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        _statusBar(dark ? kCream : kCharcoal, overlay: false),
-        Text(
-          'What made you smile today?',
-          style: TextStyle(
-            color: dark ? kCream : kCharcoal,
-            fontSize: 12,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 16),
         Expanded(
           child: Container(
-            width: double.infinity,
+            height: 50,
+            padding: const EdgeInsets.only(left: 16, right: 6),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4A2B27), Color(0xFFA84538)],
-              ),
+              color: dark ? kDarkPaper : Colors.white,
+              borderRadius: BorderRadius.circular(999),
             ),
-            child: Center(
-              child: Text(
-                hasRecording ? 'A little weekend\nmemory' : '',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Center(
-          child: hasRecording
-              ? _pill(
-                  'Send to circle',
-                  () {},
-                  color: dark ? kCoral : kCharcoal,
-                  foreground: Colors.white,
-                  width: 282,
-                )
-              : GestureDetector(
-                  onTap: () => setState(() => hasRecording = true),
-                  child: Container(
-                    width: 82,
-                    height: 82,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: kCoral,
-                      border: Border.all(
-                        color: const Color(0xFFFFE7DD),
-                        width: 10,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.circle,
-                      color: Colors.white,
-                      size: 30,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Send ${m.person} a message',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
+                Container(
+                  width: 54,
+                  height: 38,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: kCoral,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    'Send',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 28,
+          height: 118,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text('❤️', style: TextStyle(fontSize: 18)),
+              Text('😂', style: TextStyle(fontSize: 18)),
+              Text('🔥', style: TextStyle(fontSize: 18)),
+              Text('😭', style: TextStyle(fontSize: 18)),
+              Text('✨', style: TextStyle(fontSize: 18)),
+            ],
+          ),
         ),
       ],
     ),
   );
 
-  Widget _circleScreen() => Container(
+  Widget _captureScreen() => Container(
+    decoration: _softBackground(),
+    child: SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(28, 24, 28, 94),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'What made you smile today?',
+              style: TextStyle(
+                color: dark ? kCream : kCharcoal,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(child: _capturePreview()),
+            const SizedBox(height: 12),
+            Center(
+              child: hasRecording
+                  ? _pill(
+                      'Send to circle',
+                      () => setState(() {
+                        hasRecording = false;
+                        captureCaptionOpen = false;
+                        _captureCaption.clear();
+                      }),
+                      color: dark ? kCoral : kCharcoal,
+                      foreground: Colors.white,
+                      width: 282,
+                    )
+                  : GestureDetector(
+                      onTap: () => setState(() {
+                        hasRecording = true;
+                        captureCaptionOpen = false;
+                      }),
+                      child: Container(
+                        width: 82,
+                        height: 82,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: kCoral,
+                          border: Border.all(
+                            color: const Color(0xFFFFE7DD),
+                            width: 10,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.circle,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _capturePreview() => GestureDetector(
+    onTap: hasRecording
+        ? () => setState(() => captureCaptionOpen = true)
+        : null,
+    child: Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4A2B27), Color(0xFFA84538)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          if (!hasRecording)
+            const Center(
+              child: Icon(
+                Icons.videocam_rounded,
+                color: Colors.white24,
+                size: 54,
+              ),
+            ),
+          if (hasRecording && captureCaptionOpen) _captureCaptionEditor(),
+        ],
+      ),
+    ),
+  );
+
+  Widget _captureCaptionEditor() => Positioned(
+    left: captureCaptionOffset.dx,
+    top: captureCaptionOffset.dy,
+    child: GestureDetector(
+      onScaleUpdate: (details) => setState(() {
+        captureCaptionOffset += details.focalPointDelta;
+        captureCaptionSize = (captureCaptionSize * details.scale).clamp(16, 42);
+      }),
+      child: SizedBox(
+        width: 210,
+        child: TextField(
+          controller: _captureCaption,
+          autofocus: true,
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: captureCaptionSize,
+            fontWeight: FontWeight.w900,
+            height: 1.05,
+          ),
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            hintText: 'Add caption',
+            hintStyle: TextStyle(color: Colors.white70),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Widget _circleScreen() =>
+      activeChat == null ? _chatListScreen() : _inboxScreen(activeChat!);
+
+  Widget _chatListScreen() => Container(
     padding: const EdgeInsets.fromLTRB(22, 74, 22, 94),
     decoration: _softBackground(),
     child: Stack(
@@ -1095,14 +1160,106 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
     ),
   );
 
+  Widget _inboxScreen(String name) => Container(
+    padding: const EdgeInsets.fromLTRB(22, 64, 22, 94),
+    decoration: _softBackground(),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            _smallClose(() => setState(() => activeChat = null)),
+            const SizedBox(width: 12),
+            CircleAvatar(backgroundColor: kCoral, child: Text(name[0])),
+            const SizedBox(width: 10),
+            Text(
+              name,
+              style: TextStyle(
+                color: dark ? kCream : kCharcoal,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _inboxBubble(name, 'Reacted 😂 to your memory', false),
+        _inboxBubble(name, 'That video made my day.', false),
+        _inboxBubble('You', 'I still can’t believe it happened.', true),
+        const Spacer(),
+        Container(
+          height: 52,
+          padding: const EdgeInsets.only(left: 16, right: 6),
+          decoration: BoxDecoration(
+            color: dark ? kDarkPaper : kPaper,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Message $name',
+                  style: TextStyle(
+                    color: dark ? kCream : kCharcoal,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Container(
+                width: 56,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: kCoral,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'Send',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _inboxBubble(String from, String text, bool mine) => Align(
+    alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      constraints: const BoxConstraints(maxWidth: 260),
+      decoration: BoxDecoration(
+        color: mine ? kCoral : (dark ? kDarkPaper : kPaper),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: mine ? Colors.white : (dark ? kCream : kCharcoal),
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ),
+  );
+
   Future<void> _showProfileSheet() => showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _profilePanel(),
+    builder: (_) => StatefulBuilder(
+      builder: (context, sheetSetState) => _profilePanel(sheetSetState),
+    ),
   );
 
-  Widget _profilePanel() => Container(
+  Widget _profilePanel(StateSetter sheetSetState) => Container(
     height: 710,
     margin: const EdgeInsets.all(18),
     padding: const EdgeInsets.all(18),
@@ -1131,24 +1288,38 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
                 color: dark ? kDarkCream : kCream,
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Text(
-                    '#',
+                  const Text(
+                    '🇰🇪',
                     style: TextStyle(
                       color: kCoral,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Text(
-                    '12\nCOUNTRY',
-                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900),
+                    '12',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 10),
+                  Icon(
+                    Icons.public_rounded,
+                    color: dark ? kCream : kCharcoal,
+                    size: 13,
+                  ),
+                  const SizedBox(width: 5),
                   Text(
-                    '428\nGLOBAL',
-                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900),
+                    '428',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ],
               ),
@@ -1188,7 +1359,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
           ),
         ),
         const SizedBox(height: 12),
-        _themePicker(),
+        _themePicker(sheetSetState),
         const SizedBox(height: 8),
         _statCards(),
         const SizedBox(height: 8),
@@ -1203,7 +1374,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
     ),
   );
 
-  Widget _themePicker() => Container(
+  Widget _themePicker([StateSetter? sheetSetState]) => Container(
     width: 236,
     padding: const EdgeInsets.all(7),
     decoration: BoxDecoration(
@@ -1218,7 +1389,10 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
         final active = choice == themeChoice;
         return Expanded(
           child: GestureDetector(
-            onTap: () => setState(() => themeChoice = choice),
+            onTap: () {
+              setState(() => themeChoice = choice);
+              sheetSetState?.call(() {});
+            },
             child: Container(
               height: 34,
               alignment: Alignment.center,
@@ -1276,28 +1450,183 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
           ),
         ),
         const Spacer(),
-        _sharePill('Instagram'),
+        _sharePill(
+          'Instagram',
+          () => _showShareCard(title, value, 'Instagram', colors),
+        ),
         const SizedBox(width: 5),
-        _sharePill('WhatsApp'),
+        _sharePill(
+          'WhatsApp',
+          () => _showShareCard(title, value, 'WhatsApp', colors),
+        ),
       ],
     ),
   );
 
-  Widget _sharePill(String text) => Container(
-    width: 58,
-    height: 28,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: .92),
-      borderRadius: BorderRadius.circular(999),
-    ),
-    child: Text(
-      text,
-      style: const TextStyle(
-        color: kCharcoal,
-        fontSize: 8,
-        fontWeight: FontWeight.w900,
+  Widget _sharePill(String text, VoidCallback onTap) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 58,
+      height: 28,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .92),
+        borderRadius: BorderRadius.circular(999),
       ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: kCharcoal,
+          fontSize: 8,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    ),
+  );
+
+  Future<void> _showShareCard(
+    String title,
+    String value,
+    String channel,
+    List<Color> colors,
+  ) => showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _actionSheet(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _funCard(
+            title: title,
+            value: value,
+            label: 'Memory is alive',
+            colors: colors,
+            icon: channel == 'Instagram'
+                ? Icons.camera_alt_rounded
+                : Icons.chat_bubble_rounded,
+          ),
+          const SizedBox(height: 14),
+          _pill(
+            'Send to $channel',
+            () => Navigator.pop(context),
+            color: kCoral,
+            foreground: Colors.white,
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Future<void> _showInviteOptions() => showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _actionSheet(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _funCard(
+            title: 'Join my circle',
+            value: '12 / 30',
+            label: 'memory.app/invite/roy',
+            colors: const [kCoral, kAmber],
+            icon: Icons.favorite_rounded,
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _pill(
+                  'Instagram',
+                  () => Navigator.pop(context),
+                  compact: true,
+                  color: const Color(0xFFE1306C),
+                  foreground: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _pill(
+                  'WhatsApp',
+                  () => Navigator.pop(context),
+                  compact: true,
+                  color: const Color(0xFF25D366),
+                  foreground: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _pill(
+            'Copy invite link',
+            () {
+              Clipboard.setData(
+                const ClipboardData(text: 'https://memory.app/invite/roy'),
+              );
+              Navigator.pop(context);
+            },
+            color: dark ? kCream : kCharcoal,
+            foreground: dark ? kCharcoal : Colors.white,
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _actionSheet({required Widget child}) => Container(
+    margin: const EdgeInsets.all(18),
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: dark ? kDarkPaper : kPaper,
+      borderRadius: BorderRadius.circular(26),
+    ),
+    child: child,
+  );
+
+  Widget _funCard({
+    required String title,
+    required String value,
+    required String label,
+    required List<Color> colors,
+    required IconData icon,
+  }) => Container(
+    width: double.infinity,
+    height: 230,
+    padding: const EdgeInsets.all(22),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(colors: colors),
+      borderRadius: BorderRadius.circular(28),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.white, size: 34),
+        const Spacer(),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 38,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
     ),
   );
 
@@ -1337,9 +1666,9 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
     ),
     child: Row(
       children: [
-        const Text(
-          '12 / 30\nin your circle',
-          style: TextStyle(
+        Text(
+          '$circleCount / 30\nin your circle',
+          style: const TextStyle(
             color: kCoralDark,
             fontSize: 19,
             fontWeight: FontWeight.w900,
@@ -1350,7 +1679,7 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
           width: 116,
           child: _pill(
             'Add someone',
-            () {},
+            circleCount < 30 ? _showInviteOptions : () {},
             compact: true,
             color: kCoral,
             foreground: Colors.white,
@@ -1360,55 +1689,61 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
     ),
   );
 
-  Widget _chatRow(String name) => Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: dark ? kDarkPaper : kPaper,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Row(
-      children: [
-        CircleAvatar(
-          backgroundColor: kCoral,
-          child: Text(
-            name[0],
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
+  Widget _chatRow(String name) => GestureDetector(
+    onTap: () => setState(() {
+      activeChat = name;
+      if (newNotifications > 0) newNotifications--;
+    }),
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: dark ? kDarkPaper : kPaper,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: kCoral,
+            child: Text(
+              name[0],
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: TextStyle(
-                  color: dark ? kCream : kCharcoal,
-                  fontWeight: FontWeight.w900,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: dark ? kCream : kCharcoal,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-              ),
-              Text(
-                'Sent a memory',
-                style: _small(
-                  dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                Text(
+                  'Sent a memory',
+                  style: _small(
+                    dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const Text(
-          '8m',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w900,
-            color: kCoralDark,
+          const Text(
+            '8m',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: kCoralDark,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 
@@ -1428,7 +1763,12 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
           'Capture',
           wide: true,
         ),
-        _tab(AppTab.circle, Icons.circle_outlined, 'Circle', badge: '3'),
+        _tab(
+          AppTab.circle,
+          Icons.circle_outlined,
+          'Circle',
+          badge: newNotifications > 0 ? '$newNotifications' : null,
+        ),
       ],
     ),
   );
@@ -1517,45 +1857,6 @@ class _MemoryPrototypeState extends State<MemoryPrototype> {
       end: Alignment.bottomLeft,
     ),
   );
-
-  Widget _statusBar(Color color, {bool overlay = true}) {
-    final row = Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          '9:41',
-          style: TextStyle(
-            color: color,
-            fontSize: 13,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        Row(
-          children: [
-            Container(
-              width: 18,
-              height: 8,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: .75),
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 24,
-              height: 8,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-    if (!overlay) return row;
-    return Positioned(top: 16, left: 22, right: 22, child: row);
-  }
 
   Widget _roundIcon(IconData icon, VoidCallback onTap) => GestureDetector(
     onTap: onTap,
