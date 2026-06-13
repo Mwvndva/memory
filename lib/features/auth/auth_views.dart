@@ -674,7 +674,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               child: TextField(
                 controller: _phone,
                 keyboardType: TextInputType.phone,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: dark ? kCream : kCharcoal,
+                ),
                 decoration: InputDecoration(
                   hintText: '',
                   filled: true,
@@ -1190,9 +1194,18 @@ Widget _field(
           controller: controller,
           obscureText: obscure,
           keyboardType: keyboard,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            color: dark ? kCream : kCharcoal,
+          ),
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: TextStyle(
+              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.35),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
             filled: true,
             fillColor: dark ? kDarkCream : kCream,
             border: OutlineInputBorder(

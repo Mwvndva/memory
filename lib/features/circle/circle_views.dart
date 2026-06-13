@@ -464,9 +464,8 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             Row(
               children: [
                 Expanded(
-                  child: _pill(
-                    'Instagram',
-                    () async {
+                  child: GestureDetector(
+                    onTap: () async {
                       Navigator.pop(context);
                       await SharePlus.instance.share(
                         ShareParams(
@@ -474,17 +473,33 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         ),
                       );
                     },
-                    dark,
-                    compact: true,
-                    color: const Color(0xFFE1306C),
-                    foreground: Colors.white,
+                    child: Container(
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
+                        ),
+                        borderRadius: BorderRadius.circular(999),
+                        boxShadow: [
+                          BoxShadow(color: const Color(0xFFF058A0).withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+                          SizedBox(width: 6),
+                          Text('Instagram', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _pill(
-                    'WhatsApp',
-                    () async {
+                  child: GestureDetector(
+                    onTap: () async {
                       Navigator.pop(context);
                       await SharePlus.instance.share(
                         ShareParams(
@@ -492,10 +507,27 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         ),
                       );
                     },
-                    dark,
-                    compact: true,
-                    color: const Color(0xFF25D366),
-                    foreground: Colors.white,
+                    child: Container(
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+                        ),
+                        borderRadius: BorderRadius.circular(999),
+                        boxShadow: [
+                          BoxShadow(color: const Color(0xFF25D366).withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
+                          SizedBox(width: 6),
+                          Text('WhatsApp', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -523,6 +555,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
   }
 
   void _showShareCard(BuildContext context, String title, String value, String channel, List<Color> colors, bool dark) {
+    final isInstagram = channel == 'Instagram';
+    final channelGradient = isInstagram
+        ? const [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)]
+        : const [Color(0xFF25D366), Color(0xFF128C7E)];
+    final channelIcon = isInstagram ? Icons.camera_alt_rounded : Icons.chat_bubble_rounded;
+    final channelTagline = isInstagram ? 'Share to your story ✨' : 'Send to a chat 💬';
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -531,27 +570,61 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Rich share card preview
             _funCard(
               title: title,
               value: value,
               label: 'Memory is alive',
               colors: colors,
-              icon: channel == 'Instagram' ? Icons.camera_alt_rounded : Icons.chat_bubble_rounded,
+              icon: channelIcon,
             ),
             const SizedBox(height: 14),
-            _pill(
-              'Send to $channel',
-              () async {
+            // Platform-branded send button
+            GestureDetector(
+              onTap: () async {
                 Navigator.pop(context);
                 await SharePlus.instance.share(
                   ShareParams(
-                    text: 'My Memory stats for $title: $value. Memory is alive!',
+                    text: 'My Memory stats for $title: $value 🔥\n\nJoin Memory — keep your circle alive! memory.app',
                   ),
                 );
               },
-              dark,
-              color: kCoral,
-              foreground: Colors.white,
+              child: Container(
+                width: double.infinity,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: channelGradient),
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: [
+                    BoxShadow(
+                      color: channelGradient.first.withValues(alpha: 0.45),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(channelIcon, color: Colors.white, size: 18),
+                    const SizedBox(width: 8),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Send to $channel',
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, height: 1.1),
+                        ),
+                        Text(
+                          channelTagline,
+                          style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -1211,48 +1284,148 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     required String label,
     required List<Color> colors,
     required IconData icon,
-  }) =>
-      Container(
-        width: double.infinity,
-        height: 230,
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: colors),
-          borderRadius: BorderRadius.circular(28),
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 240,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: Colors.white, size: 34),
-            const Spacer(),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 38,
-                fontWeight: FontWeight.w900,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: colors.first.withValues(alpha: 0.4),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Decorative background circles for depth
+          Positioned(
+            right: -36,
+            top: -36,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.12),
               ),
             ),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
+          ),
+          Positioned(
+            right: 30,
+            bottom: -50,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.07),
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
+          ),
+          Positioned(
+            left: -20,
+            bottom: 20,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
-          ],
-        ),
-      );
+          ),
+          // Sparkle dots
+          const Positioned(right: 22, top: 55, child: Text('✦', style: TextStyle(color: Colors.white54, fontSize: 10))),
+          const Positioned(right: 55, top: 28, child: Text('✦', style: TextStyle(color: Colors.white38, fontSize: 6))),
+          const Positioned(left: 120, top: 18, child: Text('✦', style: TextStyle(color: Colors.white38, fontSize: 7))),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 18),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+                      ),
+                      child: const Text(
+                        '⚡ memory',
+                        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 44,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                    letterSpacing: -1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _addPersonCard(BuildContext context, int circleCount, bool dark) => Container(
         padding: const EdgeInsets.all(14),
