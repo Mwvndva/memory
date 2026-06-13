@@ -445,6 +445,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     final displayUsername = user.username.isNotEmpty ? user.username : 'user';
     final inviteLink = 'https://memory.app/invite/$displayUsername';
 
+    final avatarUrl = user.avatarUrl;
+    final avatarInitial = user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?';
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -457,8 +460,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               title: 'Join my circle',
               value: '${circleMembers.length} / 30',
               label: 'memory.app/invite/$displayUsername',
-              colors: const [kCoral, kAmber],
+              // Mixed pink + green gradient for invite
+              colors: const [Color(0xFFF058A0), Color(0xFF7B61FF), Color(0xFF25D366)],
               icon: Icons.favorite_rounded,
+              avatarUrl: avatarUrl,
+              avatarInitial: avatarInitial,
             ),
             const SizedBox(height: 14),
             Row(
@@ -562,6 +568,15 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     final channelIcon = isInstagram ? Icons.camera_alt_rounded : Icons.chat_bubble_rounded;
     final channelTagline = isInstagram ? 'Share to your story ✨' : 'Send to a chat 💬';
 
+    // Platform-specific card colors
+    final cardColors = isInstagram
+        ? const [Color(0xFFE1306C), Color(0xFFF77737), Color(0xFFFFDC80)]
+        : const [Color(0xFF25D366), Color(0xFF128C7E), Color(0xFF075E54)];
+
+    final user = ref.read(authProvider);
+    final avatarUrl = user.avatarUrl;
+    final avatarInitial = user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?';
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -570,13 +585,15 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Rich share card preview
+            // Rich share card preview with platform colors
             _funCard(
               title: title,
               value: value,
               label: 'Memory is alive',
-              colors: colors,
+              colors: cardColors,
               icon: channelIcon,
+              avatarUrl: avatarUrl,
+              avatarInitial: avatarInitial,
             ),
             const SizedBox(height: 14),
             // Platform-branded send button
@@ -1284,7 +1301,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     required String label,
     required List<Color> colors,
     required IconData icon,
+    String? avatarUrl,
+    String avatarInitial = '?',
   }) {
+    final resolvedAvatar = avatarUrl != null && avatarUrl.isNotEmpty
+        ? avatarUrl
+        : null;
+
     return Container(
       width: double.infinity,
       height: 240,
@@ -1364,16 +1387,33 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       child: Icon(icon, color: Colors.white, size: 18),
                     ),
                     const Spacer(),
+                    // User avatar (top-right)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      width: 42,
+                      height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 2),
+                        color: Colors.white.withValues(alpha: 0.25),
                       ),
-                      child: const Text(
-                        '⚡ memory',
-                        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                      child: ClipOval(
+                        child: resolvedAvatar != null
+                            ? Image.network(
+                                resolvedAvatar,
+                                fit: BoxFit.cover,
+                                errorBuilder: (ctx, err, st) => Center(
+                                  child: Text(
+                                    avatarInitial,
+                                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Text(
+                                  avatarInitial,
+                                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                                ),
+                              ),
                       ),
                     ),
                   ],
