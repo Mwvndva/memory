@@ -8,6 +8,12 @@ import '../core/api_config.dart';
 import '../core/secure_storage.dart';
 import '../models/message.dart';
 import 'circles_repository.dart';
+import '../core/router.dart';
+import 'package:go_router/go_router.dart';
+import 'auth_repository.dart';
+import 'package:flutter/material.dart';
+import '../features/feed/streak_milestones.dart';
+import '../core/theme.dart';
 
 // ─── Chat state ──────────────────────────────────────────────────────────────
 
@@ -131,6 +137,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
             if (event == 'new_message') {
               _handleIncoming(data, isMine: false);
+            } else if (event == 'new_reaction') {
+              _handleReactionNotification(data);
+            } else if (event == 'new_memory') {
+              _handleMemoryNotification(data);
+            } else if (event == 'new_circle_milestone') {
+              _handleCircleMilestone(data);
             } else if (event == 'message_sent') {
               // ACK — already shown optimistically; skip duplicate
             }
@@ -152,6 +164,83 @@ class ChatNotifier extends StateNotifier<ChatState> {
       isMine:    isMine,
     );
     _appendMessage(sender, msg);
+
+    if (!isMine) {
+      _showNewMessageNotification(sender, msg.text);
+    }
+  }
+
+  void _showNewMessageNotification(String sender, String text) {
+    final templates = [
+      '{name} sent you a message: "text"',
+      '{name} is tapping: "text"',
+      'New message from {name}! \'text\'',
+      '{name} says: "text"',
+      'Hey! {name} just pinged you: "text"',
+    ];
+    final randomIdx = DateTime.now().millisecondsSinceEpoch % templates.length;
+    final body = templates[randomIdx]
+        .replaceAll('{name}', sender)
+        .replaceAll('text', text);
+
+    showGlobalNotification(
+      title: 'New Message from $sender 💬',
+      body: body,
+      onTap: () {
+        rootNavigatorKey.currentState?.context.push('/chat/$sender');
+      },
+    );
+  }
+
+  void _handleReactionNotification(Map<String, dynamic> data) {
+    final reactorName = data['reactorName'] as String? ?? 'A friend';
+    final emoji = data['emoji'] as String? ?? '❤️';
+    final caption = data['memoryCaption'] as String? ?? 'your memory';
+
+    final templates = [
+      '{name} loved your memory! Reaction: emoji',
+      '{name} reacted emoji to your latest memory: "caption"',
+      'emoji from {name}! She just reacted to your post.',
+      '{name} found your memory "caption" reaction-worthy: emoji',
+      'Reaction alert! {name} left a emoji on your memory.',
+    ];
+
+    final randomIdx = DateTime.now().millisecondsSinceEpoch % templates.length;
+    final body = templates[randomIdx]
+        .replaceAll('{name}', reactorName)
+        .replaceAll('emoji', emoji)
+        .replaceAll('caption', caption);
+
+    showGlobalNotification(
+      title: 'New Reaction $emoji',
+      body: body,
+      onTap: () {
+        rootNavigatorKey.currentState?.context.go('/circle');
+      },
+    );
+  }
+
+  void _handleMemoryNotification(Map<String, dynamic> data) {
+    final creatorName = data['creatorName'] as String? ?? 'A friend';
+
+    final templates = [
+      '{name} just shared a new memory! Tap to see what they\'re up to.',
+      'New post alert! {name} just captured a new memory.',
+      '{name} has updated their circle! Check out their latest memory.',
+      '{name}\'s day looks interesting! See their new memory now.',
+      'Peek into {name}\'s world — a new memory was just posted!',
+    ];
+
+    final randomIdx = DateTime.now().millisecondsSinceEpoch % templates.length;
+    final body = templates[randomIdx].replaceAll('{name}', creatorName);
+
+    showGlobalNotification(
+      title: 'New Memory 📸',
+      body: body,
+      onTap: () {
+        rootNavigatorKey.currentState?.context.go('/feed');
+      },
+    );
   }
 
   // ─── Load conversation history from REST API ─────────────────────────────
@@ -275,6 +364,74 @@ class ChatNotifier extends StateNotifier<ChatState> {
       'Miss you guys!',
     ];
     return replies[DateTime.now().second % replies.length];
+  }
+
+  void _handleCircleMilestone(Map<String, dynamic> data) {
+    try {
+      final circleOwnerId = data['circleOwnerId'] as String? ?? '';
+      final circleOwnerUsername = data['circleOwnerUsername'] as String? ?? 'user';
+      final milestone = data['milestone'] as int? ?? 7;
+      final rawMembers = data['members'] as List? ?? [];
+
+      final prefs = _ref.read(sharedPreferencesProvider);
+      final user = _ref.read(authProvider);
+      final currentUsername = user.username.isNotEmpty ? user.username : 'user';
+      final key = 'user_${currentUsername}_seen_circle_${circleOwnerId}_$milestone';
+
+      if (prefs.getBool(key) ?? false) return;
+
+      // Mark as seen locally so it only triggers once
+      prefs.setBool(key, true);
+
+      final membersList = rawMembers.map((m) {
+        return CircleMemberWithMemories(
+          id: m['id'] as String? ?? '',
+          username: m['username'] as String? ?? '',
+          firstName: m['firstName'] as String? ?? '',
+          lastName: m['lastName'] as String?,
+          avatarUrl: m['avatarUrl'] as String?,
+          memoryCount: m['memoryCount'] as int? ?? 0,
+        );
+      }).toList();
+
+      // Trigger celebratory global notification
+      showGlobalNotification(
+        title: 'Circle Milestone! 👥🎉',
+        body: '@$circleOwnerUsername\'s circle reached a $milestone-user milestone! Tap to view the special card.',
+        onTap: () {
+          final context = rootNavigatorKey.currentContext;
+          if (context != null && context.mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (context) => CircleMilestoneCongratulationsDialog(
+                circleOwnerUsername: circleOwnerUsername,
+                milestone: milestone,
+                members: membersList,
+              ),
+            );
+          }
+        },
+      );
+
+      // If current user is the owner, also pop it up automatically!
+      if (circleOwnerUsername == user.username) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          final context = rootNavigatorKey.currentContext;
+          if (context != null && context.mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (context) => CircleMilestoneCongratulationsDialog(
+                circleOwnerUsername: circleOwnerUsername,
+                milestone: milestone,
+                members: membersList,
+              ),
+            );
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   @override

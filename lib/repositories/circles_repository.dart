@@ -1,7 +1,13 @@
+import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api_client.dart';
 import '../core/api_config.dart';
+import 'auth_repository.dart';
+import '../features/feed/streak_milestones.dart';
+import '../core/theme.dart';
+import '../core/router.dart';
 
 // ─── Circle Member model ─────────────────────────────────────────────────────
 
@@ -75,6 +81,13 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
       if (!state.any((m) => m.username.toLowerCase() == newMember.username.toLowerCase())) {
         state = [...state, newMember];
       }
+
+      // Check mockup circle milestone triggers
+      final count = state.length;
+      if (count == 7 || count == 30) {
+        _triggerMockCircleMilestone(count);
+      }
+
       return true;
     }
     try {
@@ -102,6 +115,74 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
     } catch (_) {
       return false;
     }
+  }
+
+  // ─── Simulation Trigger for Circle Milestones in Mock Mode ────────────────
+
+  void _triggerMockCircleMilestone(int milestone) {
+    final user = _ref.read(authProvider);
+    final currentUsername = user.username.isNotEmpty ? user.username : 'user';
+    final key = 'user_${currentUsername}_seen_circle_me_$milestone';
+
+    final prefs = _ref.read(sharedPreferencesProvider);
+    if (prefs.getBool(key) ?? false) return;
+    prefs.setBool(key, true);
+
+    final rand = Random();
+    final mockMembersWithMemories = <CircleMemberWithMemories>[
+      // Owner (me)
+      CircleMemberWithMemories(
+        id: user.username,
+        username: user.username.isNotEmpty ? user.username : 'user',
+        firstName: user.firstName.isNotEmpty ? user.firstName : 'User',
+        avatarUrl: user.avatarUrl,
+        memoryCount: rand.nextInt(15) + 5,
+      ),
+      // Friends
+      ...state.map((m) => CircleMemberWithMemories(
+        id: m.id,
+        username: m.username,
+        firstName: m.firstName,
+        lastName: m.lastName,
+        avatarUrl: m.avatarUrl,
+        memoryCount: rand.nextInt(15) + 1,
+      )),
+    ];
+
+    showGlobalNotification(
+      title: 'Circle Milestone! 👥🎉',
+      body: 'Your circle reached a $milestone-user milestone! Tap to view the special card.',
+      onTap: () {
+        final context = rootNavigatorKey.currentContext;
+        if (context != null && context.mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: true,
+            builder: (context) => CircleMilestoneCongratulationsDialog(
+              circleOwnerUsername: currentUsername,
+              milestone: milestone,
+              members: mockMembersWithMemories,
+            ),
+          );
+        }
+      },
+    );
+
+    // Also pop it up automatically
+    Future.delayed(const Duration(milliseconds: 500), () {
+      final context = rootNavigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (context) => CircleMilestoneCongratulationsDialog(
+            circleOwnerUsername: currentUsername,
+            milestone: milestone,
+            members: mockMembersWithMemories,
+          ),
+        );
+      }
+    });
   }
 }
 

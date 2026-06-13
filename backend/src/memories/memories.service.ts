@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppGateway } from '../gateway/app.gateway';
 
 @Injectable()
 export class MemoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gateway: AppGateway,
+  ) {}
 
   /**
    * Paginated feed of memories posted by users inside the caller's circle.
@@ -65,7 +69,7 @@ export class MemoriesService {
     creatorId: string,
     data: { caption: string; videoUrl: string; gradientColors: string[] },
   ) {
-    return this.prisma.memory.create({
+    const memory = await this.prisma.memory.create({
       data: { creatorId, ...data },
       include: {
         creator: {
@@ -73,5 +77,24 @@ export class MemoriesService {
         },
       },
     });
+
+    // Notify circle members who have accepted and have this creator in their circle
+    try {
+      const memberships = await this.prisma.circleMembership.findMany({
+        where: { memberId: creatorId, accepted: true },
+        select: { userId: true },
+      });
+      
+      const creatorName = memory.creator?.firstName || memory.creator?.username || 'A friend';
+      for (const m of memberships) {
+        this.gateway.sendToUser(m.userId, 'new_memory', {
+          creatorName,
+        });
+      }
+    } catch (err) {
+      // Safe fallback - don't crash memory creation if notifications fail
+    }
+
+    return memory;
   }
 }

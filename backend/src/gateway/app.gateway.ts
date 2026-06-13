@@ -201,7 +201,34 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this._send(socket, { event: 'reaction_update', data: update });
     });
 
+    // Notify the memory creator of the new reaction (if they are not the reactor)
+    if (payload.action !== 'remove') {
+      try {
+        const memory = await this.prisma.memory.findUnique({
+          where: { id: payload.memory_id },
+          select: { creatorId: true, caption: true },
+        });
+        if (memory && memory.creatorId !== client.userId) {
+          this.sendToUser(memory.creatorId, 'new_reaction', {
+            reactorName: client.username,
+            emoji: payload.emoji,
+            memoryCaption: memory.caption,
+          });
+        }
+      } catch (err) {
+        this.logger.error(`Failed to send reaction notification: ${err.message}`);
+      }
+    }
+
     return update;
+  }
+
+  /** Send an event to a specific user if they are online. */
+  sendToUser(userId: string, event: string, data: unknown) {
+    const socket = this.clients.get(userId);
+    if (socket) {
+      this._send(socket, { event, data });
+    }
   }
 
   // ─── Event: get_online_users ───────────────────────────────────────────────

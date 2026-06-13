@@ -5,10 +5,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppGateway } from '../gateway/app.gateway';
 
 @Injectable()
 export class CirclesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gateway: AppGateway,
+  ) {}
 
   // ─── Add member (directed friendship) ─────────────────────────────────────
 
@@ -110,10 +114,15 @@ export class CirclesService {
     });
     if (!membership) throw new NotFoundException('Request not found');
 
-    return this.prisma.circleMembership.update({
+    const updated = await this.prisma.circleMembership.update({
       where: { id: membership.id },
       data: { accepted: true },
     });
+
+    // Check and trigger milestone broadcast for the circle owner (senderId)
+    await this.checkAndBroadcastCircleMilestone(senderId);
+
+    return updated;
   }
 
   // ─── Decline a share memories request ───────────────────────────────────────
@@ -126,5 +135,83 @@ export class CirclesService {
 
     await this.prisma.circleMembership.delete({ where: { id: membership.id } });
     return { message: 'Request declined' };
+  }
+
+  // ─── Check and broadcast circle milestones ────────────────────────────────
+  
+  async checkAndBroadcastCircleMilestone(userId: string) {
+    try {
+      // Count accepted circle members for userId
+      const count = await this.prisma.circleMembership.count({
+        where: { userId, accepted: true }
+      });
+
+      if (count === 7 || count === 30) {
+        // Find the circle owner details
+        const owner = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, username: true, firstName: true, lastName: true, avatarUrl: true }
+        });
+        if (!owner) return;
+
+        // Find all circle members
+        const members = await this.prisma.user.findMany({
+          where: {
+            memberMemberships: {
+              some: { userId, accepted: true }
+            }
+          },
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            memories: {
+              select: { id: true }
+            }
+          }
+        });
+
+        // Query owner memories count
+        const ownerMemoriesCount = await this.prisma.memory.count({ where: { creatorId: userId } });
+
+        // Format members data (including memory counts)
+        const membersData = [
+          // Include owner
+          {
+            id: owner.id,
+            username: owner.username,
+            firstName: owner.firstName,
+            lastName: owner.lastName,
+            avatarUrl: owner.avatarUrl,
+            memoryCount: ownerMemoriesCount
+          },
+          // Include other circle members
+          ...members.map(m => ({
+            id: m.id,
+            username: m.username,
+            firstName: m.firstName,
+            lastName: m.lastName,
+            avatarUrl: m.avatarUrl,
+            memoryCount: m.memories.length
+          }))
+        ];
+
+        // Broadcast to all members of the circle (including the owner userId)
+        const allUserIds = [userId, ...members.map(m => m.id)];
+
+        for (const id of allUserIds) {
+          this.gateway.sendToUser(id, 'new_circle_milestone', {
+            circleOwnerId: userId,
+            circleOwnerUsername: owner.username,
+            milestone: count,
+            members: membersData
+          });
+        }
+      }
+    } catch (err) {
+      // Fail silently to prevent crashing friendship accept flow
+    }
   }
 }

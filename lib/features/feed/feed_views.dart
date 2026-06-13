@@ -10,6 +10,11 @@ import '../../models/memory_item.dart';
 import '../../repositories/chat_repository.dart';
 import '../../repositories/memory_repository.dart';
 import '../../core/api_config.dart';
+import '../../repositories/auth_repository.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../repositories/circles_repository.dart';
+import '../../models/user_profile.dart';
+import 'streak_milestones.dart';
 
 String _formatImageUrl(String url) {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
@@ -210,6 +215,16 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
   bool _feedReady = false; // gates gradient: prevents purple flash before first video init
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(authProvider.notifier).fetchProfile();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _feedVideoController?.dispose();
     super.dispose();
@@ -297,6 +312,166 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     }
   }
 
+  void _showInviteSheet(BuildContext context) {
+    final dark = ref.read(isDarkProvider);
+    final user = ref.read(authProvider);
+    final displayUsername = user.username.isNotEmpty ? user.username : 'user';
+    final inviteLink = 'https://memory.app/invite/$displayUsername';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: dark ? kDarkPaper : kPaper,
+              borderRadius: BorderRadius.circular(26),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Invite friends to share memories',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: dark ? kCream : kCharcoal,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await SharePlus.instance.share(
+                            ShareParams(
+                              text: 'Join my circle on Memory! $inviteLink',
+                            ),
+                          );
+                        },
+                        child: Container(
+                          height: 44,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
+                            ),
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFF058A0).withValues(alpha: 0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+                              SizedBox(width: 6),
+                              Text(
+                                'Instagram',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await SharePlus.instance.share(
+                            ShareParams(
+                              text: 'Join my circle on Memory! $inviteLink',
+                            ),
+                          );
+                        },
+                        child: Container(
+                          height: 44,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+                            ),
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF25D366).withValues(alpha: 0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
+                              SizedBox(width: 6),
+                              Text(
+                                'WhatsApp',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: inviteLink));
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Invite link copied!')),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: dark ? kCream : kCharcoal,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      'Copy invite link',
+                      style: TextStyle(
+                        color: dark ? kCharcoal : Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
@@ -304,13 +479,68 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     final archivedMemories = ref.watch(archivedMemoriesProvider);
     final top = MediaQuery.paddingOf(context).top;
 
+    ref.listen<UserProfile>(authProvider, (previous, next) {
+      if (next.isAuthenticated && context.mounted) {
+        checkMilestones(context, ref, next.streakDays);
+      }
+    });
+
     if (feedMemories.isEmpty) {
-      return Scaffold(
-        backgroundColor: dark ? kCharcoal : kCream,
-        body: const Center(
-          child: Text('No memories shared yet. Capture one!'),
-        ),
-      );
+      final circleMembers = ref.watch(circlesProvider);
+
+      if (circleMembers.isEmpty) {
+        // Show '+' invite layout only if the user has no friends in their circle
+        return Scaffold(
+          backgroundColor: dark ? kCharcoal : kCream,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () => _showInviteSheet(context),
+                  child: Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      color: kCoral,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: kCoral.withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.add_rounded,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'invite friends to share memories',
+                  style: TextStyle(
+                    color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        // Show standard placeholder if they have friends but no active memories shared in the last 24h
+        return Scaffold(
+          backgroundColor: dark ? kCharcoal : kCream,
+          body: const Center(
+            child: Text('No memories shared yet. Capture one!'),
+          ),
+        );
+      }
     }
 
     // Determine current active memory

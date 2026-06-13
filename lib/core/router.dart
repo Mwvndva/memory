@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -113,3 +114,117 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+void showGlobalNotification({
+  required String title,
+  required String body,
+  required VoidCallback onTap,
+}) {
+  final overlayState = rootNavigatorKey.currentState?.overlay;
+  if (overlayState == null) return;
+
+  late OverlayEntry overlayEntry;
+  overlayEntry = OverlayEntry(
+    builder: (context) {
+      final dark = Theme.of(context).brightness == Brightness.dark;
+      return Positioned(
+        top: MediaQuery.paddingOf(context).top + 12,
+        left: 16,
+        right: 16,
+        child: Material(
+          color: Colors.transparent,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutBack,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(0, -60 * (1 - value)),
+                child: Opacity(
+                  opacity: value,
+                  child: child,
+                ),
+              );
+            },
+            child: GestureDetector(
+              onTap: () {
+                overlayEntry.remove();
+                onTap();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: dark ? const Color(0xFF1E1915) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: const Color(0xFFFF6B57).withValues(alpha: 0.15),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFF6B57),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.notifications_active_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: dark ? const Color(0xFFFFF7F0) : const Color(0xFF1E1915),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            body,
+                            style: TextStyle(
+                              color: dark ? const Color(0xFFFFF7F0).withValues(alpha: 0.7) : const Color(0xFF1E1915).withValues(alpha: 0.7),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlayState.insert(overlayEntry);
+
+  // Automatically dismiss after 4 seconds
+  Timer(const Duration(seconds: 4), () {
+    if (overlayEntry.mounted) {
+      overlayEntry.remove();
+    }
+  });
+}

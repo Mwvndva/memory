@@ -9,5 +9,6 @@ import { AuthModule } from '../auth/auth.module';
     MessagesModule,  // provides MessagesService for DB persistence
   ],
   providers: [AppGateway],
+  exports: [AppGateway],
 })
 export class GatewayModule {}

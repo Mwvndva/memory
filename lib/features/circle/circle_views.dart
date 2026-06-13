@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
+import '../feed/streak_milestones.dart';
+import '../../models/user_profile.dart';
 import '../../core/api_config.dart';
 import '../../core/theme.dart';
 import '../../repositories/auth_repository.dart';
@@ -963,6 +965,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     final dark = ref.watch(isDarkProvider);
     final user = ref.watch(authProvider);
     final circleMembers = ref.watch(circlesProvider);
+
+    ref.listen<UserProfile>(authProvider, (previous, next) {
+      if (next.isAuthenticated && context.mounted) {
+        checkMilestones(context, ref, next.streakDays);
+      }
+    });
 
     final displayFirstName = user.firstName.isNotEmpty ? user.firstName : '';
     final displayLastName = user.lastName.isNotEmpty ? user.lastName : '';
