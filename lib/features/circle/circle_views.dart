@@ -1024,12 +1024,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   const SizedBox(height: 24),
                   // Danger Zone Logout Button with red-bordered styling
                   GestureDetector(
-                    onTap: () async {
-                      await ref.read(authProvider.notifier).logout();
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        context.go('/login');
-                      }
+                    onTap: () {
+                      Navigator.pop(context);
+                      Future.microtask(() {
+                        ref.read(authProvider.notifier).logout();
+                      });
                     },
                     child: Container(
                       width: double.infinity,
