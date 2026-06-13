@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MemoriesService } from './memories.service';
 import { StorageService } from '../storage/storage.service';
 import { CreateMemoryDto } from './dto/create-memory.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 // ─── Colour palette seeded from user ID (deterministic, no extra DB field) ───
 
@@ -82,6 +83,7 @@ export class MemoriesController {
   constructor(
     private readonly memoriesService: MemoriesService,
     private readonly storageService: StorageService,
+    private readonly prisma: PrismaService,
   ) {}
 
   // ─── GET /memories/feed?page=1&limit=20 ──────────────────────────────────
@@ -107,9 +109,26 @@ export class MemoriesController {
   // ─── GET /memories/:id ───────────────────────────────────────────────────
 
   @Get(':id')
-  async getMemory(@Param('id') id: string) {
+  async getMemory(@Req() req: any, @Param('id') id: string) {
     const m = await this.memoriesService.getById(id);
-    return m ? toMemoryItem(m) : null;
+    if (!m) return null;
+
+    // Users should only see memories from users in their circle (or themselves)
+    if (m.creatorId !== req.user.id) {
+      const isMember = await this.prisma.circleMembership.findUnique({
+        where: {
+          unique_user_member: {
+            userId: req.user.id,
+            memberId: m.creatorId,
+          },
+        },
+      });
+      if (!isMember || !isMember.accepted) {
+        return null;
+      }
+    }
+
+    return toMemoryItem(m);
   }
 
   // ─── POST /memories/upload (multipart video + metadata) ──────────────────

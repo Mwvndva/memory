@@ -257,66 +257,130 @@ class CircleChatListView extends ConsumerWidget {
     final name = member.firstName.isNotEmpty ? member.firstName : member.username;
     // Use username (not display name) as the key so WebSocket routing works
     final chatKey = member.username;
-    return GestureDetector(
-      onTap: () {
-        ref.read(chatProvider.notifier).decrementNotifications();
-        context.push('/chat/$chatKey');
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: dark ? kDarkPaper : kPaper,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: kCoral,
-              backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-                  ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
-                  : null,
-              child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
-                  ? Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: dark ? kDarkPaper : kPaper,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                ref.read(chatProvider.notifier).decrementNotifications();
+                context.push('/chat/$chatKey');
+              },
+              child: Row(
                 children: [
-                  Text(
-                    name,
-                    style: TextStyle(
-                      color: dark ? kCream : kCharcoal,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  CircleAvatar(
+                    backgroundColor: kCoral,
+                    backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
+                        ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
+                        : null,
+                    child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
+                        ? Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          )
+                        : null,
                   ),
-                  Text(
-                    'Sent a memory',
-                    style: _small(
-                      dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            color: dark ? kCream : kCharcoal,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          'Sent a memory',
+                          style: _small(
+                            dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const Text(
-              '8m',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                color: kCoralDark,
+          ),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: dark ? kDarkPaper : kPaper,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  title: Text(
+                    'Remove from Circle',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  content: Text(
+                    'Are you sure you want to remove $name from your circle? You will no longer share memories or chat with each other.',
+                    style: TextStyle(
+                      color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                      fontSize: 13,
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text(
+                        'Remove',
+                        style: TextStyle(
+                          color: kCoral,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                await ref.read(circlesProvider.notifier).removeMember(member.id);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'Remove',
+                style: TextStyle(
+                  color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -679,7 +679,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     }
 
     return SizedBox(
-      height: 132,
+      height: 210,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -733,7 +733,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
           const SizedBox(width: 8),
           SizedBox(
             width: 44,
-            height: 132,
+            height: 210,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

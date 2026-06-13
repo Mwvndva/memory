@@ -129,6 +129,20 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       throw new WsException(`Receiver user "${payload.receiver}" not found`);
     }
 
+    // Verify sender is in receiver's circle (and accepted)
+    const isMember = await this.prisma.circleMembership.findUnique({
+      where: {
+        unique_user_member: {
+          userId: receiverId,
+          memberId: client.userId,
+        },
+      },
+    });
+
+    if (!isMember || !isMember.accepted) {
+      throw new WsException(`You are not in @${payload.receiver}'s circle`);
+    }
+
     // Persist to PostgreSQL
     const message = await this.messagesService.create({
       senderId: client.userId,
