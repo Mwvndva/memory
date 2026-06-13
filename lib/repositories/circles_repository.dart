@@ -10,12 +10,14 @@ class CircleMember {
     required this.id,
     required this.username,
     required this.firstName,
+    this.lastName,
     this.avatarUrl,
   });
 
   final String id;
   final String username;
   final String firstName;
+  final String? lastName;
   final String? avatarUrl;
 
   factory CircleMember.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,8 @@ class CircleMember {
       username:  json['username']   as String? ?? '',
       firstName: json['first_name'] as String?
                   ?? json['firstName'] as String? ?? '',
+      lastName:  json['last_name'] as String?
+                  ?? json['lastName'] as String?,
       avatarUrl: json['avatar_url'] as String?
                   ?? json['avatarUrl'] as String?,
     );
@@ -104,4 +108,78 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
 final circlesProvider =
     StateNotifierProvider<CirclesNotifier, List<CircleMember>>((ref) {
   return CirclesNotifier(ref);
+});
+
+// ─── Pending Requests notifier ────────────────────────────────────────────────
+
+class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
+  PendingRequestsNotifier(this._ref) : super(const []) {
+    if (kUseMockBackend) {
+      state = const [
+        CircleMember(
+          id: 'mock_req_kofi',
+          username: 'kofishares',
+          firstName: 'Kofi',
+        ),
+      ];
+    } else {
+      fetchPendingRequests();
+    }
+  }
+
+  final Ref _ref;
+
+  Future<void> fetchPendingRequests() async {
+    try {
+      final dio = _ref.read(apiClientProvider);
+      final response = await dio.get('/circles/requests/pending');
+      final rawList = response.data as List? ?? [];
+      state = rawList.map((item) {
+        final userJson = item['user'] as Map<String, dynamic>? ?? {};
+        return CircleMember.fromJson(userJson);
+      }).toList();
+    } catch (_) {}
+  }
+
+  Future<bool> acceptRequest(String senderId) async {
+    if (kUseMockBackend) {
+      final index = state.indexWhere((m) => m.id == senderId);
+      if (index != -1) {
+        final acceptedUser = state[index];
+        state = state.where((m) => m.id != senderId).toList();
+        final circlesNotifier = _ref.read(circlesProvider.notifier);
+        circlesNotifier.state = [...circlesNotifier.state, acceptedUser];
+      }
+      return true;
+    }
+    try {
+      final dio = _ref.read(apiClientProvider);
+      await dio.post('/circles/requests/accept', data: {'senderId': senderId});
+      await fetchPendingRequests();
+      await _ref.read(circlesProvider.notifier).fetchCircle();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> declineRequest(String senderId) async {
+    if (kUseMockBackend) {
+      state = state.where((m) => m.id != senderId).toList();
+      return true;
+    }
+    try {
+      final dio = _ref.read(apiClientProvider);
+      await dio.post('/circles/requests/decline', data: {'senderId': senderId});
+      await fetchPendingRequests();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
+final pendingRequestsProvider =
+    StateNotifierProvider<PendingRequestsNotifier, List<CircleMember>>((ref) {
+  return PendingRequestsNotifier(ref);
 });

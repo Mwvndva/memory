@@ -14,7 +14,7 @@ export class MemoriesService {
 
     // Fetch the IDs of all circle members the current user follows
     const memberships = await this.prisma.circleMembership.findMany({
-      where: { userId },
+      where: { userId, accepted: true },
       select: { memberId: true },
     });
 

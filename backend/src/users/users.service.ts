@@ -66,11 +66,40 @@ export class UsersService {
   }
 
   // ─── Search by phone numbers (contact sync) ────────────────────────────────
-  async findByPhones(phones: string[]): Promise<{ id: string; username: string; phone: string }[]> {
-    return this.prisma.user.findMany({
-      where: { phone: { in: phones } },
-      select: { id: true, username: true, phone: true },
+  async findByPhones(phones: string[]): Promise<{ id: string; username: string; firstName: string; lastName: string; phone: string; avatarUrl: string | null }[]> {
+    // 1. Sanitize input phone numbers (digits only)
+    const cleanInputs = phones
+      .map((p) => p.replace(/\D/g, ''))
+      .filter((p) => p.length >= 7); // Ignore very short numbers
+
+    if (cleanInputs.length === 0) return [];
+
+    // 2. Fetch all users from database
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        avatarUrl: true,
+      },
     });
+
+    // 3. Match using suffix comparison (e.g., comparing last 9 digits or full match if shorter)
+    const matched = users.filter((u) => {
+      const cleanDbPhone = u.phone.replace(/\D/g, '');
+      if (cleanDbPhone.length < 7) return false;
+
+      return cleanInputs.some((input) => {
+        const minLen = Math.min(cleanDbPhone.length, input.length, 9);
+        const suffixDb = cleanDbPhone.substring(cleanDbPhone.length - minLen);
+        const suffixInput = input.substring(input.length - minLen);
+        return suffixDb === suffixInput;
+      });
+    });
+
+    return matched;
   }
 
   // ─── Streak, Rank, and Pulse Stats Calculations ────────────────────────────

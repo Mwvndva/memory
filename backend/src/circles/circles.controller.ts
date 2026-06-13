@@ -53,4 +53,31 @@ export class CirclesController {
   removeMember(@Req() req: any, @Param('memberId') memberId: string) {
     return this.circlesService.removeMember(req.user.id, memberId);
   }
+
+  /**
+   * GET /circles/requests/pending
+   * Authenticated — lists pending requests sent to the caller.
+   */
+  @Get('requests/pending')
+  getPendingRequests(@Req() req: any) {
+    return this.circlesService.getPendingRequests(req.user.id);
+  }
+
+  /**
+   * POST /circles/requests/accept
+   * Authenticated — accepts a share memories request.
+   */
+  @Post('requests/accept')
+  acceptRequest(@Req() req: any, @Body() body: { senderId: string }) {
+    return this.circlesService.acceptRequest(req.user.id, body.senderId);
+  }
+
+  /**
+   * POST /circles/requests/decline
+   * Authenticated — declines a share memories request.
+   */
+  @Post('requests/decline')
+  declineRequest(@Req() req: any, @Body() body: { senderId: string }) {
+    return this.circlesService.declineRequest(req.user.id, body.senderId);
+  }
 }

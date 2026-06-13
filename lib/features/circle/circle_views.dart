@@ -91,27 +91,164 @@ class CircleChatListView extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
-                if (circleMembers.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 80),
-                    child: Center(
-                      child: Text(
-                        'No members in your circle yet.\nTap your profile to add someone!',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      if (ref.watch(pendingRequestsProvider).isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.only(left: 8, bottom: 8, top: 12),
+                          child: Text(
+                            'SHARE REQUESTS',
+                            style: TextStyle(
+                              color: kCoralDark,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  )
-                else
-                  ...circleMembers.map((member) => _chatRow(context, member, dark, ref)),
+                        ...ref.watch(pendingRequestsProvider).map((req) => _requestRow(context, req, dark, ref)),
+                        const SizedBox(height: 18),
+                      ],
+                      if (circleMembers.isEmpty && ref.watch(pendingRequestsProvider).isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 80),
+                          child: Center(
+                            child: Text(
+                              'No members in your circle yet.\nTap your profile to add someone!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        )
+                      else ...[
+                        if (circleMembers.isNotEmpty)
+                          ...circleMembers.map((member) => _chatRow(context, member, dark, ref)),
+                      ],
+                    ],
+                  ),
+                ),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _requestRow(BuildContext context, CircleMember req, bool dark, WidgetRef ref) {
+    final name = req.firstName.isNotEmpty ? req.firstName : req.username;
+    final fg = dark ? kCream : kCharcoal;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: dark ? kDarkPaper : kPaper,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: kCoral.withValues(alpha: 0.15),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: kCoral,
+            backgroundImage: (req.avatarUrl != null && req.avatarUrl!.isNotEmpty)
+                ? NetworkImage(_formatImageUrl(req.avatarUrl!)) as ImageProvider
+                : null,
+            child: (req.avatarUrl == null || req.avatarUrl!.isEmpty)
+                ? Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  '@${req.username}',
+                  style: TextStyle(
+                    color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: () => ref.read(pendingRequestsProvider.notifier).acceptRequest(req.id),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [kCoral, kAmber],
+                    ),
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: kCoral.withValues(alpha: 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'Accept',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () => ref.read(pendingRequestsProvider.notifier).declineRequest(req.id),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    'Ignore',
+                    style: TextStyle(
+                      color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

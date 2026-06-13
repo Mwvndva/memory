@@ -56,7 +56,7 @@ export class CirclesService {
 
   async getCircle(userId: string) {
     const memberships = await this.prisma.circleMembership.findMany({
-      where: { userId },
+      where: { userId, accepted: true },
       orderBy: { createdAt: 'desc' },
       include: {
         member: {
@@ -73,7 +73,7 @@ export class CirclesService {
 
   async getFollowers(userId: string) {
     const memberships = await this.prisma.circleMembership.findMany({
-      where: { memberId: userId },
+      where: { memberId: userId, accepted: true },
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
@@ -84,5 +84,47 @@ export class CirclesService {
       },
     });
     return memberships.map((m) => m.user);
+  }
+
+  // ─── List pending requests sent to the caller ──────────────────────────────
+
+  async getPendingRequests(userId: string) {
+    return this.prisma.circleMembership.findMany({
+      where: { memberId: userId, accepted: false },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true, username: true, firstName: true, lastName: true, avatarUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  // ─── Accept a share memories request ───────────────────────────────────────
+
+  async acceptRequest(memberId: string, senderId: string) {
+    const membership = await this.prisma.circleMembership.findFirst({
+      where: { userId: senderId, memberId, accepted: false },
+    });
+    if (!membership) throw new NotFoundException('Request not found');
+
+    return this.prisma.circleMembership.update({
+      where: { id: membership.id },
+      data: { accepted: true },
+    });
+  }
+
+  // ─── Decline a share memories request ───────────────────────────────────────
+
+  async declineRequest(memberId: string, senderId: string) {
+    const membership = await this.prisma.circleMembership.findFirst({
+      where: { userId: senderId, memberId, accepted: false },
+    });
+    if (!membership) throw new NotFoundException('Request not found');
+
+    await this.prisma.circleMembership.delete({ where: { id: membership.id } });
+    return { message: 'Request declined' };
   }
 }

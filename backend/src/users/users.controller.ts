@@ -89,4 +89,15 @@ export class UsersController {
   updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateProfile(req.user.id, dto);
   }
+
+  /**
+   * POST /users/sync-contacts
+   * Authenticated — syncs contact list to find matching users on Memory.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('sync-contacts')
+  syncContacts(@Body() body: { phones: string[] }) {
+    const phones = body?.phones ?? [];
+    return this.usersService.findByPhones(phones);
+  }
 }

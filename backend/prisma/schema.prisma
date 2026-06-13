@@ -43,6 +43,7 @@ model CircleMembership {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
   memberId  String   @map("member_id")
+  accepted  Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations

@@ -9,8 +9,19 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme.dart';
 import '../../core/api_config.dart';
+import '../../core/api_client.dart';
 import '../../core/countries.dart';
 import '../../repositories/auth_repository.dart';
+import '../../repositories/circles_repository.dart';
+
+String _formatImageUrl(String url) {
+  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+    final uri = Uri.parse(url);
+    final baseUri = Uri.parse(kBaseUrl);
+    return url.replaceFirst(uri.authority, baseUri.authority);
+  }
+  return url;
+}
 
 class LoadingView extends ConsumerStatefulWidget {
   const LoadingView({super.key});
@@ -823,7 +834,7 @@ class ContactsSetupView extends ConsumerStatefulWidget {
 
 class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
   final Set<String> _addedToCircle = {};
-  List<Contact> _contacts = [];
+  List<CircleMember> _matchedUsers = [];
   bool _isLoading = true;
   bool _permissionGranted = false;
 
@@ -841,11 +852,49 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         final contacts = await FlutterContacts.getAll(
           properties: {ContactProperty.phone, ContactProperty.email},
         );
+        
+        List<CircleMember> matched = [];
+        
+        if (kUseMockBackend) {
+          matched = [
+            const CircleMember(
+              id: 'mock_amara',
+              username: 'amara',
+              firstName: 'Amara',
+            ),
+            const CircleMember(
+              id: 'mock_mum',
+              username: 'mumsmemories',
+              firstName: 'Mum',
+            ),
+          ];
+        } else {
+          final phoneNumbers = contacts
+              .expand((c) => c.phones.map((p) => p.number))
+              .where((phoneNum) => phoneNum.isNotEmpty)
+              .toList();
+              
+          if (phoneNumbers.isNotEmpty) {
+            final dio = ref.read(apiClientProvider);
+            final response = await dio.post('/users/sync-contacts', data: {'phones': phoneNumbers});
+            final rawList = response.data as List? ?? [];
+            matched = rawList
+                .map((item) => CircleMember.fromJson(item as Map<String, dynamic>))
+                .toList();
+          }
+        }
+
         setState(() {
-          _contacts = contacts;
+          _matchedUsers = matched;
           _permissionGranted = true;
           _isLoading = false;
         });
+
+        if (matched.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showInviteSheet(context);
+          });
+        }
       } else {
         setState(() {
           _permissionGranted = false;
@@ -858,6 +907,185 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showInviteSheet(BuildContext context) {
+    final dark = ref.read(isDarkProvider);
+    final user = ref.read(authProvider);
+    final displayUsername = user.username.isNotEmpty ? user.username : 'user';
+    final inviteLink = 'https://memory.app/invite/$displayUsername';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: dark ? kDarkPaper : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 24,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: 18),
+                decoration: BoxDecoration(
+                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const Text(
+                'No contacts on Memory yet',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Invite your friends to keep your circle alive! ⚡',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await SharePlus.instance.share(
+                          ShareParams(
+                            text: 'Join my circle on Memory! $inviteLink',
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFF058A0).withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
+                            SizedBox(width: 8),
+                            Text(
+                              'Instagram',
+                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await SharePlus.instance.share(
+                          ShareParams(
+                            text: 'Join my circle on Memory! $inviteLink',
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF25D366).withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 16),
+                            SizedBox(width: 8),
+                            Text(
+                              'WhatsApp',
+                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: inviteLink));
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Invite link copied!')),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.copy_rounded, color: dark ? kCream : kCharcoal, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Copy invite link',
+                        style: TextStyle(
+                          color: dark ? kCream : kCharcoal,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _toggleAdded(String user) {
@@ -878,34 +1106,12 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
 
     final List<Widget> listItems = [];
 
-    // Prepend mock suggestions representing users already on Memory
-    final mockSuggestions = kUseMockBackend
-        ? [
-            ('A', 'Amara', '@amara', kCoral),
-            ('M', 'Mum', '@mumsmemories', kMint),
-            ('L', 'Leo', '@leowalks', kSky),
-          ]
-        : <(String, String, String, Color)>[];
-
-    for (final c in mockSuggestions) {
-      listItems.add(_contactRow(
-        initial: c.$1,
-        name: c.$2,
-        subtitle: c.$3,
-        color: c.$4,
-        fg: fg,
-        dark: dark,
-        isMock: true,
-        userKey: c.$3,
-      ));
-    }
-
-    if (_permissionGranted && _contacts.isNotEmpty) {
+    if (_permissionGranted && _matchedUsers.isNotEmpty) {
       listItems.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
           child: Text(
-            'Contacts from your phone',
+            'Contacts already on Memory',
             style: TextStyle(
               color: kCoralDark,
               fontSize: 12,
@@ -915,26 +1121,38 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         ),
       );
 
-      final displayContacts = _contacts.take(4).toList();
-      for (final contact in displayContacts) {
-        final displayName = contact.displayName ?? '';
-        final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
-        final name = displayName.isNotEmpty ? displayName : 'Unknown';
-        final subtitle = contact.phones.isNotEmpty 
-            ? contact.phones.first.number 
-            : (contact.emails.isNotEmpty ? contact.emails.first.address : 'No contact info');
+      for (final matchedUser in _matchedUsers) {
+        final name = '${matchedUser.firstName} ${matchedUser.lastName}'.trim();
+        final displayName = name.isNotEmpty ? name : matchedUser.username;
+        final initial = matchedUser.firstName.isNotEmpty ? matchedUser.firstName[0].toUpperCase() : '?';
         
         listItems.add(_contactRow(
           initial: initial,
-          name: name,
-          subtitle: subtitle,
+          name: displayName,
+          subtitle: '@${matchedUser.username}',
           color: kCoral.withValues(alpha: 0.6),
           fg: fg,
           dark: dark,
-          isMock: false,
-          userKey: name,
+          isMock: kUseMockBackend,
+          userKey: matchedUser.id,
+          avatarUrl: matchedUser.avatarUrl,
         ));
       }
+    } else if (_permissionGranted && _matchedUsers.isEmpty && !_isLoading) {
+      listItems.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+          child: Text(
+            'None of your contacts are on Memory yet. Invite them below!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: fg.withValues(alpha: .5),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
     } else if (_isLoading) {
       listItems.add(
         const Padding(
@@ -998,6 +1216,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     required bool dark,
     required bool isMock,
     required String userKey,
+    String? avatarUrl,
   }) {
     final isAdded = _addedToCircle.contains(userKey);
     return Container(
@@ -1011,13 +1230,18 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         children: [
           CircleAvatar(
             backgroundColor: color,
-            child: Text(
-              initial,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
+            backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                ? NetworkImage(_formatImageUrl(avatarUrl)) as ImageProvider
+                : null,
+            child: (avatarUrl == null || avatarUrl.isEmpty)
+                ? Text(
+                    initial,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1036,25 +1260,21 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
             width: 110,
             height: 34,
             child: _pill(
-              isMock
-                  ? (isAdded ? 'Added' : 'Add to circle')
-                  : 'Invite',
+              isAdded ? 'Requested' : 'Add to circle',
               () async {
+                if (isAdded) return;
                 if (isMock) {
                   _toggleAdded(userKey);
                 } else {
-                  await SharePlus.instance.share(
-                    ShareParams(
-                      text: 'Hey $name, join my circle on Memory! https://memory.app/invite/roy',
-                    ),
-                  );
+                  final success = await ref.read(circlesProvider.notifier).addMember(userKey);
+                  if (success) {
+                    _toggleAdded(userKey);
+                  }
                 }
               },
               dark,
               compact: true,
-              color: isMock
-                  ? (isAdded ? Colors.grey.withValues(alpha: 0.5) : kCoral)
-                  : kCoral,
+              color: isAdded ? Colors.grey.withValues(alpha: 0.5) : kCoral,
               foreground: Colors.white,
             ),
           ),
