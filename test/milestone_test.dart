@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memory_app/features/feed/streak_milestones.dart';
+import 'package:memory_app/core/widget_manager.dart';
 
 void main() {
   group('Streak Milestones and Card Design Tests', () {
@@ -145,15 +147,32 @@ void main() {
       // Verify dialog is gone
       expect(find.byType(CircleMilestoneCongratulationsDialog), findsNothing);
     });
-   group('Circle Milestones Formatting and Math Tests', () {
-    test('Avatar size scaling limits remain within expected boundary sizes', () {
-      // Test base sizing calculations logic for different N values
-      for (int n = 1; n <= 100; n++) {
-        final baseSize = (120.0 / (n == 0 ? 1 : n)).clamp(18.0, 56.0);
-        expect(baseSize, greaterThanOrEqualTo(18.0));
-        expect(baseSize, lessThanOrEqualTo(56.0));
-      }
+    group('Circle Milestones Formatting and Math Tests', () {
+      test('Avatar size scaling limits remain within expected boundary sizes', () {
+        // Test base sizing calculations logic for different N values
+        for (int n = 1; n <= 100; n++) {
+          final baseSize = (120.0 / (n == 0 ? 1 : n)).clamp(18.0, 56.0);
+          expect(baseSize, greaterThanOrEqualTo(18.0));
+          expect(baseSize, lessThanOrEqualTo(56.0));
+        }
+      });
+    });
+
+    group('WidgetManager Integration Tests', () {
+      test('WidgetManager handles empty memories list sync cleanly with mocked platform channel', () async {
+        TestWidgetsFlutterBinding.ensureInitialized();
+        // Mock method channel to catch native calls from home_widget
+        const channel = MethodChannel('home_widget');
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (methodCall) async {
+          return true;
+        });
+
+        // Run sync with empty memories list
+        await WidgetManager.syncLatestMemory([]);
+
+        // Clean up mock handler
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+      });
     });
   });
-});
 }

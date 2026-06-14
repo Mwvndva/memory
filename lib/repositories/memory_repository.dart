@@ -6,6 +6,7 @@ import '../core/api_client.dart';
 import '../core/api_config.dart';
 import '../core/theme.dart';
 import '../models/memory_item.dart';
+import '../core/widget_manager.dart';
 import 'auth_repository.dart';
 
 Color parseHexColor(String hexStr) {
@@ -24,6 +25,12 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
   MemoryNotifier(this._ref) : super(kUseMockBackend ? _defaultMemories : const []) {
     if (!kUseMockBackend) {
       fetchFeed();
+    } else {
+      // Sync mock memories on startup in mock mode
+      Future.microtask(() {
+        final feedItems = _defaultMemories.where((m) => m.ageHours < 24).toList();
+        WidgetManager.syncLatestMemory(feedItems);
+      });
     }
   }
 
@@ -103,6 +110,8 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       }).toList();
 
       state = list;
+      final feedItems = list.where((m) => m.ageHours < 24).toList();
+      WidgetManager.syncLatestMemory(feedItems);
     } catch (_) {
       // Keep existing state (fallback or empty) on error
     }
@@ -126,6 +135,8 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       );
 
       state = [newItem, ...state];
+      final feedItems = state.where((m) => m.ageHours < 24).toList();
+      WidgetManager.syncLatestMemory(feedItems);
       // Increment local streakDays to easily test milestones in mock mode
       final currentStreak = _ref.read(authProvider).streakDays;
       _ref.read(authProvider.notifier).state = _ref.read(authProvider).copyWith(
