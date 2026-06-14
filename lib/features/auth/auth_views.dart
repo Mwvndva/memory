@@ -431,6 +431,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
         return Container(
@@ -917,6 +918,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
         return Container(

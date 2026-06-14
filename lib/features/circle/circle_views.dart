@@ -653,6 +653,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _actionSheet(
         dark,
@@ -782,6 +783,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _actionSheet(
         dark,
@@ -1758,6 +1760,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
         return Container(

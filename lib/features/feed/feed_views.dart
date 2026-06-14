@@ -320,6 +320,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Padding(
