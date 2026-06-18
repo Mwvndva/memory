@@ -392,7 +392,7 @@ class CircleChatListView extends ConsumerWidget {
         gradient: LinearGradient(
           colors: dark
               ? const [kDarkCream, kCharcoal]
-              : const [Color(0xFFFFF4E4), Color(0xFFEFFFF8)],
+              : const [kCream, kPaper],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),
@@ -619,7 +619,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
         gradient: LinearGradient(
           colors: dark
               ? const [kDarkCream, kCharcoal]
-              : const [Color(0xFFFFF4E4), Color(0xFFEFFFF8)],
+              : const [kCream, kPaper],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),

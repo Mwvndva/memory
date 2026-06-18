@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const kCream = Color(0xFFFFF8EF);
-const kPaper = Color(0xFFFFFFFF);
+const kCream = Color(0xFFFFF8BE);
+const kPaper = Color(0xFFFFFEEC);
 const kCoral = Color(0xFFFF6B57);
 const kCoralDark = Color(0xFFE84F3B);
 const kAmber = Color(0xFFFFC857);

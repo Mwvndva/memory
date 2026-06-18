@@ -55,7 +55,7 @@ class MemoryApp extends ConsumerWidget {
         final viewport = MediaQuery.sizeOf(context);
         final useDeviceViewport = viewport.width < 430;
         final dark = ref.watch(isDarkProvider);
-        final bg = dark ? const Color(0xFF11100F) : const Color(0xFFFFF4E4);
+        final bg = dark ? const Color(0xFF11100F) : kCream;
 
         return Scaffold(
           backgroundColor: bg,

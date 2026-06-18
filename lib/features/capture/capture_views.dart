@@ -516,7 +516,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
         gradient: LinearGradient(
           colors: dark
               ? const [kDarkCream, kCharcoal]
-              : const [Color(0xFFFFF4E4), Color(0xFFEFFFF8)],
+              : const [kCream, kPaper],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),

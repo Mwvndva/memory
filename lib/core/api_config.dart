@@ -1,8 +1,24 @@
-// Backend base URLs — update these when deploying to production.
-// For Android emulators use 10.0.2.2 instead of localhost.
-// For physical devices, use your machine's local IP (e.g. 192.168.x.x).
-const String kBaseUrl = 'http://80.190.82.31:3000';
-const String kWebSocketUrl = 'ws://80.190.82.31:3000/ws';
+/// Central configuration for API endpoints and feature flags.
+///
+/// For local Android emulator development, use 10.0.2.2 which maps to the
+/// host machine's localhost. For a physical device or production, update
+/// [kBaseUrl] to your server's public address.
+// ---------------------------------------------------------------------------
+// Endpoint configuration
+// ---------------------------------------------------------------------------
 
-// Set to false to connect to the real running NestJS backend.
+/// Base HTTP URL of the NestJS backend.
+/// Android emulator maps 10.0.2.2 → host localhost.
+const String kBaseUrl = 'http://10.0.2.2:3000';
+
+/// WebSocket endpoint (ws://) used by the chat/notification layer.
+const String kWebSocketUrl = 'ws://10.0.2.2:3000/chat';
+
+// ---------------------------------------------------------------------------
+// Feature flags
+// ---------------------------------------------------------------------------
+
+/// When [true], all repositories fall back to locally generated mock data
+/// instead of making real network requests. Useful for UI development and
+/// automated tests that run without a live backend.
 const bool kUseMockBackend = false;

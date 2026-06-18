@@ -52,7 +52,7 @@ class _LoadingViewState extends ConsumerState<LoadingView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final bg = dark ? kCharcoal : Colors.white;
+    final bg = dark ? kCharcoal : kCream;
     return Scaffold(
       backgroundColor: bg,
       body: Center(
@@ -105,7 +105,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final bg = dark ? kCharcoal : Colors.white;
+    final bg = dark ? kCharcoal : kCream;
     final fg = dark ? kCream : kCharcoal;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
@@ -267,7 +267,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final bg = dark ? kCharcoal : Colors.white;
+    final bg = dark ? kCharcoal : kCream;
     final fg = dark ? kCream : kCharcoal;
 
     return Scaffold(
@@ -736,7 +736,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final bg = dark ? kCharcoal : Colors.white;
+    final bg = dark ? kCharcoal : kCream;
     final fg = dark ? kCream : kCharcoal;
     final user = ref.watch(authProvider);
 
@@ -924,7 +924,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         return Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            color: dark ? kDarkPaper : Colors.white,
+            color: dark ? kDarkPaper : kPaper,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
             boxShadow: [
               BoxShadow(
@@ -1103,7 +1103,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final bg = dark ? kCharcoal : Colors.white;
+    final bg = dark ? kCharcoal : kCream;
     final fg = dark ? kCream : kCharcoal;
 
     final List<Widget> listItems = [];
