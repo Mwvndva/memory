@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -68,7 +69,7 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
 
   // ─── Add a member by their user ID ──────────────────────────────────────
 
-  Future<bool> addMember(String memberId) async {
+  Future<Map<String, dynamic>> addMember(String memberId) async {
     if (kUseMockBackend) {
       final cleanId = memberId.trim().toLowerCase();
       // Generate a mock member details based on the ID/username searched
@@ -88,15 +89,35 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
         _triggerMockCircleMilestone(count);
       }
 
-      return true;
+      return {'ok': true, 'message': 'Added (mock)'};
     }
     try {
       final dio = _ref.read(apiClientProvider);
-      await dio.post('/circles/members', data: {'memberId': memberId});
+      final response = await dio.post('/circles/members', data: {'memberId': memberId});
       await fetchCircle(); // Refresh list
-      return true;
-    } catch (_) {
-      return false;
+      final data = response.data;
+      return {
+        'ok': true,
+        'message': data is Map && data['message'] != null ? data['message'] : 'Request sent',
+        'status': response.statusCode,
+      };
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      String msg = 'Failed to send request.';
+      if (status == 409) {
+        try {
+          final d = e.response?.data;
+          if (d is Map && d['message'] != null) msg = d['message'].toString();
+        } catch (_) {}
+      } else if (e.response != null && e.response?.data != null) {
+        final d = e.response!.data;
+        if (d is Map && d['message'] != null) msg = d['message'].toString();
+      } else {
+        msg = e.message ?? msg;
+      }
+      return {'ok': false, 'message': msg, 'status': status};
+    } catch (e) {
+      return {'ok': false, 'message': e.toString()};
     }
   }
 

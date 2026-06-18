@@ -13,6 +13,7 @@ import '../../core/api_client.dart';
 import '../../core/countries.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/circles_repository.dart';
+import '../../core/error_handler.dart';
 
 String _formatImageUrl(String url) {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
@@ -1304,16 +1305,21 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           SizedBox(
             width: 110,
             height: 34,
-            child: _pill(
+              child: _pill(
               isAdded ? 'Requested' : 'Add to circle',
               () async {
                 if (isAdded) return;
                 if (isMock) {
                   _toggleAdded(userKey);
                 } else {
-                  final success = await ref.read(circlesProvider.notifier).addMember(userKey);
-                  if (success) {
+                  final Map<String, dynamic> result = await ref.read(circlesProvider.notifier).addMember(userKey);
+                  final ok = result['ok'] == true;
+                  final msg = result['message']?.toString() ?? '';
+                  if (ok) {
                     _toggleAdded(userKey);
+                    if (mounted) showAppMessage(context, msg.isNotEmpty ? msg : 'Request sent');
+                  } else {
+                    if (mounted) showAppError(context, msg.isNotEmpty ? msg : 'Failed to send request');
                   }
                 }
               },
