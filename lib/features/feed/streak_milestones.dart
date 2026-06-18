@@ -393,7 +393,7 @@ class MilestoneCardWidget extends StatelessWidget {
                         ),
                         child: CircleAvatar(
                           radius: 50,
-                          backgroundColor: dark ? kYellow : kBlack,
+                          backgroundColor: ref.watch(isDarkProvider) ? kYellow : kBlack,
                           backgroundImage: avatarProvider,
                           child: avatarProvider == null
                               ? Text(
@@ -897,7 +897,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
               ),
               child: CircleAvatar(
                 radius: size / 2,
-                backgroundColor: index == 0 ? (dark ? kYellow : kBlack) : kLavender,
+                backgroundColor: index == 0 ? (ref.watch(isDarkProvider) ? kYellow : kBlack) : kLavender,
                 backgroundImage: avatarProvider,
                 child: avatarProvider == null
                     ? Text(

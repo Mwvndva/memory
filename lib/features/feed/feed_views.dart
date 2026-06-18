@@ -588,7 +588,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                     Container(
                       color: Colors.black,
                       child: const Center(
-                        child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
+                        child: CircularProgressIndicator(color: ref.watch(isDarkProvider) ? kYellow : kBlack),
                       ),
                     ),
                   if (_feedVideoController != null && _feedVideoController!.value.isInitialized)

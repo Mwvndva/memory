@@ -1156,7 +1156,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
           child: Center(
-            child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
+            child: CircularProgressIndicator(color: ref.watch(isDarkProvider) ? kYellow : kBlack),
           ),
         ),
       );
@@ -1285,7 +1285,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [dark ? kYellow : kBlack, kAmber]),
+        gradient: LinearGradient(colors: [ref.read(isDarkProvider) ? kYellow : kBlack, kAmber]),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(

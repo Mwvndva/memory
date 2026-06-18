@@ -8,6 +8,7 @@ import '../features/feed/feed_views.dart';
 import '../features/capture/capture_views.dart';
 import '../features/circle/circle_views.dart';
 import '../repositories/auth_repository.dart';
+import 'theme.dart';
 
 // Key to hold state across routes
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();

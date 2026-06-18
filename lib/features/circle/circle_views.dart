@@ -104,7 +104,7 @@ class CircleChatListView extends ConsumerWidget {
                           child: Text(
                             'SHARE REQUESTS',
                             style: TextStyle(
-                              color: dark ? kYellow : kBlack,
+                              color: ref.watch(isDarkProvider) ? kYellow : kBlack,
                               fontSize: 11,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1.1,
@@ -208,7 +208,7 @@ class CircleChatListView extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [dark ? kYellow : kBlack, kAmber],
+                      colors: [ref.watch(isDarkProvider) ? kYellow : kBlack, kAmber],
                     ),
                     borderRadius: BorderRadius.circular(999),
                     boxShadow: [
@@ -354,7 +354,7 @@ class CircleChatListView extends ConsumerWidget {
                       child: const Text(
                         'Remove',
                         style: TextStyle(
-                          color: dark ? kYellow : kBlack,
+                          color: ref.watch(isDarkProvider) ? kYellow : kBlack,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -503,7 +503,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             if (_loadingHistory)
               const Padding(
                 padding: EdgeInsets.only(top: 24),
-                child: Center(child: CircularProgressIndicator(color: dark ? kYellow : kBlack)),
+                child: Center(child: CircularProgressIndicator(color: ref.watch(isDarkProvider) ? kYellow : kBlack)),
               )
             else
               Expanded(
@@ -1119,7 +1119,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: LinearGradient(
-                                    colors: [dark ? kYellow : kBlack, kAmber],
+                                    colors: [ref.watch(isDarkProvider) ? kYellow : kBlack, kAmber],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
@@ -1136,7 +1136,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                       ? Text(
                                           displayFirstName.isNotEmpty ? displayFirstName[0].toUpperCase() : '?',
                                           style: const TextStyle(
-                                            color: dark ? kYellow : kBlack,
+                                            color: ref.watch(isDarkProvider) ? kYellow : kBlack,
                                             fontSize: 28,
                                             fontWeight: FontWeight.w900,
                                           ),
