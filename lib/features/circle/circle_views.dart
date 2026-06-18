@@ -774,7 +774,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
 
     // Platform-specific card colors
     final cardColors = isInstagram
-        ? const [Color(0xFFE1306C), Color(0xFFF77737), Color(0xFFFFDC80)]
+  ? const [Color(0xFFE1306C), Color(0xFFF77737), Color(0xFFFADA5E)]
         : const [Color(0xFF25D366), Color(0xFF128C7E), Color(0xFF075E54)];
 
     final user = ref.read(authProvider);

@@ -90,7 +90,7 @@ class CardDesignData {
       const Color(0xFF00F5FF), // Electric cyan
       const Color(0xFF39FF14), // Neon lime
       const Color(0xFFFF5E00), // Vivid orange
-      const Color(0xFFFFD700), // Gold yellow
+  const Color(0xFFFADA5E), // Gold yellow (updated)
       const Color(0xFFFF3366), // Coral red
       const Color(0xFF6C5DD3), // Retro lavender
     ];

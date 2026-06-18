@@ -52,7 +52,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       time: 'Yesterday',
       caption: 'Found your old school song',
       avatar: kMint,
-      colors: [kMint, kSky, Color(0xFFFFF0B8)],
+  colors: [kMint, kSky, Color(0xFFFADA5E)],
       ageHours: 26,
     ),
     const MemoryItem(
@@ -61,7 +61,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       time: 'Friday',
       caption: 'Rainy walk after class',
       avatar: kSky,
-      colors: [kSky, kLavender, Color(0xFFFFB23E)],
+  colors: [kSky, kLavender, Color(0xFFFADA5E)],
       ageHours: 72,
     ),
     const MemoryItem(
