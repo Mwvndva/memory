@@ -16,9 +16,9 @@ Color parseHexColor(String hexStr) {
   } else if (clean.length == 8) {
     clean = 'FF${clean.substring(clean.length - 6)}';
   } else {
-    return const Color(0xFFFFEA00);
+    return const Color(0xFFFFFF00);
   }
-  return Color(int.tryParse(clean, radix: 16) ?? 0xFFFFEA00);
+  return Color(int.tryParse(clean, radix: 16) ?? 0xFFFFFF00);
 }
 
 class MemoryNotifier extends StateNotifier<List<MemoryItem>> {

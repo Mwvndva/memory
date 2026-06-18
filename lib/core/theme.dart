@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const kYellow = Color(0xFFFFEA00);
+const kYellow = Color(0xFFFFFF00);
 const kBlack = Color(0xFF000000);
 const kCharcoal = kBlack;
 const kDarkCream = kBlack;
