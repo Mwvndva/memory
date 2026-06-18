@@ -98,7 +98,7 @@ class AuthNotifier extends StateNotifier<UserProfile> {
     return {'message': 'Passwords match.', 'ok': true};
   }
 
-  Future<void> createAccount({
+  Future<Map<String, dynamic>> createAccount({
     required String firstName,
     required String lastName,
     required String username,
@@ -117,6 +117,7 @@ class AuthNotifier extends StateNotifier<UserProfile> {
         phone: phone,
         isAuthenticated: false,
       );
+      return {'ok': true, 'message': 'Registered (mock)'};
     } else {
       try {
         final dio = _ref.read(apiClientProvider);
@@ -145,8 +146,36 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           phone:     userJson['phone']      ?? phone,
           isAuthenticated: false, // still needs avatar step
         );
+        return {'ok': true, 'message': response.data['message'] ?? 'Registered'};
+      } on DioException catch (e) {
+        // Parse common backend error responses and return friendly messages.
+        final status = e.response?.statusCode;
+        String msg = 'Registration failed.';
+        if (status == 409) {
+          // Conflict (e.g., username or email already exists)
+          try {
+            final data = e.response?.data;
+            if (data is Map && data['message'] != null) {
+              msg = data['message'].toString();
+            } else if (data is String && data.isNotEmpty) {
+              msg = data;
+            } else {
+              msg = 'Username or email already exists.';
+            }
+          } catch (_) {
+            msg = 'Username or email already exists.';
+          }
+        } else if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
+          msg = 'Network timeout. Please try again.';
+        } else if (e.response != null && e.response?.data != null) {
+          final data = e.response!.data;
+          if (data is Map && data['message'] != null) msg = data['message'].toString();
+        } else {
+          msg = e.message ?? 'An unexpected error occurred.';
+        }
+        return {'ok': false, 'message': msg, 'status': status};
       } catch (e) {
-        rethrow;
+        return {'ok': false, 'message': e.toString()};
       }
     }
   }

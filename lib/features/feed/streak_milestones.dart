@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../core/error_handler.dart';
 
 import '../../core/theme.dart';
 import '../../core/router.dart';
@@ -520,9 +521,7 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
     } catch (e) {
       debugPrint('Error sharing milestone card: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not generate shareable card: $e')),
-        );
+        showAppError(context, 'Could not generate shareable card: ${e.toString()}');
       }
     } finally {
       if (mounted) {

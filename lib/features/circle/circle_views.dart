@@ -8,6 +8,7 @@ import '../feed/streak_milestones.dart';
 import '../../models/user_profile.dart';
 import '../../core/api_config.dart';
 import '../../core/theme.dart';
+import '../../core/error_handler.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/chat_repository.dart';
 import '../../repositories/circles_repository.dart';
@@ -750,9 +751,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   ClipboardData(text: inviteLink),
                 );
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Invite link copied!')),
-                );
+                showAppMessage(context, 'Invite link copied!');
               },
               dark,
               color: dark ? kCream : kCharcoal,

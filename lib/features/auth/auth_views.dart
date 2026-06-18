@@ -268,9 +268,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     }
 
     setState(() => _createLoading = true);
-    var success = false;
+    Map<String, dynamic> result = {'ok': false, 'message': 'Registration failed'};
     try {
-      await ref.read(authProvider.notifier).createAccount(
+      result = await ref.read(authProvider.notifier).createAccount(
             firstName: _firstName.text.trim(),
             lastName: _lastName.text.trim(),
             username: _username.text.trim(),
@@ -279,24 +279,23 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
             password: _password.text,
             acceptedTerms: acceptedTerms,
           );
-      success = true;
-    } catch (e) {
-      // Ensure the user sees feedback and the loading state is cleared.
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Registration failed: ${e.toString()}'),
-            backgroundColor: kBlack,
-          ),
-        );
-      }
     } finally {
       if (mounted) setState(() => _createLoading = false);
     }
 
-    if (success) {
+    if (result['ok'] == true) {
       if (!mounted) return;
       context.go('/avatar');
+    } else {
+      if (mounted) {
+        final msg = result['message']?.toString() ?? 'Registration failed.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: kBlack,
+          ),
+        );
+      }
     }
   }
 
