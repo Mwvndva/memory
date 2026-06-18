@@ -65,15 +65,37 @@ class AuthNotifier extends StateNotifier<UserProfile> {
   }
 
   Map<String, dynamic> checkPassword(String pass, String confirm) {
+    // Adopt a stricter policy similar to major platforms:
+    // - at least 8 characters
+    // - at least one uppercase letter
+    // - at least one lowercase letter
+    // - at least one digit
+    // - at least one special character
     if (pass.length < 8) {
       return {'message': 'Use at least 8 characters.', 'ok': false};
-    } else if (!RegExp('[A-Z]').hasMatch(pass) || !RegExp('[a-z]').hasMatch(pass)) {
-      return {'message': 'Use uppercase and lowercase letters.', 'ok': false};
-    } else if (pass != confirm) {
-      return {'message': 'Passwords do not match.', 'ok': false};
-    } else {
-      return {'message': 'Passwords match.', 'ok': true};
     }
+
+    if (!RegExp(r'[A-Z]').hasMatch(pass)) {
+      return {'message': 'Use at least one uppercase letter.', 'ok': false};
+    }
+
+    if (!RegExp(r'[a-z]').hasMatch(pass)) {
+      return {'message': 'Use at least one lowercase letter.', 'ok': false};
+    }
+
+    if (!RegExp(r'\d').hasMatch(pass)) {
+      return {'message': 'Use at least one number.', 'ok': false};
+    }
+
+    if (!RegExp(r'[!@#\$%\^&*(),.?":{}|<>~`_\-\\/\[\];\+=]').hasMatch(pass)) {
+      return {'message': 'Use at least one special character.', 'ok': false};
+    }
+
+    if (pass != confirm) {
+      return {'message': 'Passwords do not match.', 'ok': false};
+    }
+
+    return {'message': 'Passwords match.', 'ok': true};
   }
 
   Future<void> createAccount({

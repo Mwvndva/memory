@@ -78,6 +78,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
   final _loginId = TextEditingController();
   final _loginPassword = TextEditingController();
   String _errorMessage = '';
+  bool _loginLoading = false;
+  bool _loginObscure = true;
 
   @override
   void dispose() {
@@ -87,10 +89,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   Future<void> _onLogin() async {
+    setState(() => _loginLoading = true);
     final success = await ref.read(authProvider.notifier).login(
           _loginId.text,
           _loginPassword.text,
         );
+    setState(() => _loginLoading = false);
 
     if (!mounted) return;
     if (success) {
@@ -140,7 +144,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 const SizedBox(height: 28),
                 _field('Email or username', _loginId, '', dark),
                 const SizedBox(height: 12),
-                _field('Password', _loginPassword, '', dark, obscure: true),
+                _field('Password', _loginPassword, '', dark, obscure: _loginObscure, onToggleObscure: () => setState(() => _loginObscure = !_loginObscure)),
                 if (_errorMessage.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   Text(
@@ -149,12 +153,22 @@ class _LoginViewState extends ConsumerState<LoginView> {
                   ),
                 ],
                 const SizedBox(height: 12),
-                _pill('Continue', _onLogin, dark),
-                const SizedBox(height: 28),
+                _pill(
+                  'Continue',
+                  _onLogin,
+                  dark,
+                  color: _loginLoading ? kBlack.withValues(alpha: 0.9) : (dark ? kYellow : kBlack),
+                  foreground: Colors.white,
+                ),
+                if (_loginLoading) const SizedBox(height: 8),
+                if (_loginLoading) Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: dark ? kBlack : kYellow, strokeWidth: 2.2))),
+                const SizedBox(height: 18),
                 _pill(
                   'Create account',
                   () => context.push('/create'),
                   dark,
+                  color: dark ? kBlack : kCream,
+                  foreground: dark ? kCream : kCharcoal,
                 ),
               ],
             ),
@@ -185,6 +199,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   bool usernameOk = false;
   String passwordStatus = 'Use at least 8 characters.';
   bool passwordOk = false;
+  bool _createLoading = false;
+  bool _passwordObscure = true;
+  bool _confirmObscure = true;
   late CountryInfo selectedCountry;
   bool acceptedTerms = false;
 
@@ -248,6 +265,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       return;
     }
 
+    setState(() => _createLoading = true);
     await ref.read(authProvider.notifier).createAccount(
           firstName: _firstName.text.trim(),
           lastName: _lastName.text.trim(),
@@ -257,7 +275,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           password: _password.text,
           acceptedTerms: acceptedTerms,
         );
-
+    setState(() => _createLoading = false);
     if (!mounted) return;
     context.go('/avatar');
   }
@@ -320,14 +338,16 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     Row(
                       children: [
                         Expanded(
-                          child: _field('Password', _password, '', dark, obscure: true),
+                          child: _field('Password', _password, '', dark, obscure: _passwordObscure, onToggleObscure: () => setState(() => _passwordObscure = !_passwordObscure)),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: _field('Confirm password', _confirmPassword, '', dark, obscure: true),
+                          child: _field('Confirm password', _confirmPassword, '', dark, obscure: _confirmObscure, onToggleObscure: () => setState(() => _confirmObscure = !_confirmObscure)),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 6),
+                    _passwordRequirements(_password.text, _confirmPassword.text),
                     const SizedBox(height: 6),
                     _status(passwordStatus, passwordOk),
                     const SizedBox(height: 14),
@@ -398,7 +418,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       'Create account',
                       _onSubmit,
                       dark,
+                      color: _createLoading ? kBlack.withValues(alpha: 0.9) : (dark ? kYellow : kBlack),
+                      foreground: Colors.white,
                     ),
+                    if (_createLoading) const SizedBox(height: 8),
+                    if (_createLoading) const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.2))),
                   ],
                 ),
               ),
@@ -682,10 +706,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               child: TextField(
                 controller: _phone,
                 keyboardType: TextInputType.phone,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w900,
-                  color: dark ? kCream : kCharcoal,
+                  color: dark ? kCream : kBlack,
                 ),
                 decoration: InputDecoration(
                   hintText: '',
@@ -1395,6 +1420,7 @@ Widget _field(
   bool dark, {
   bool obscure = false,
   TextInputType? keyboard,
+  VoidCallback? onToggleObscure,
 }) =>
     Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1412,6 +1438,7 @@ Widget _field(
           controller: controller,
           obscureText: obscure,
           keyboardType: keyboard,
+          inputFormatters: keyboard == TextInputType.phone ? [FilteringTextInputFormatter.digitsOnly] : null,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w900,
@@ -1434,10 +1461,58 @@ Widget _field(
               horizontal: 13,
               vertical: 14,
             ),
+            suffixIcon: onToggleObscure == null
+                ? null
+                : GestureDetector(
+                    onTap: onToggleObscure,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Icon(
+                        obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        size: 20,
+                        color: (dark ? kBlack : Colors.white).withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
           ),
         ),
       ],
     );
+
+Widget _passwordRequirements(String pass, String confirm) {
+  final lengthOk = pass.length >= 8;
+  final upper = RegExp(r'[A-Z]').hasMatch(pass);
+  final lower = RegExp(r'[a-z]').hasMatch(pass);
+  final digit = RegExp(r'\d').hasMatch(pass);
+  final special = RegExp(r'[!@#\$%\^&*(),.?":{}|<>~`_\-\\/\[\];\+=]').hasMatch(pass);
+
+  Widget row(bool ok, String text) => Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(
+          children: [
+            Icon(ok ? Icons.check_circle_rounded : Icons.radio_button_unchecked, size: 14, color: ok ? const Color(0xFF20A978) : kBlack),
+            const SizedBox(width: 8),
+            Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kBlack)),
+          ],
+        ),
+      );
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      row(lengthOk, 'At least 8 characters'),
+      row(upper, 'Contains an uppercase letter'),
+      row(lower, 'Contains a lowercase letter'),
+      row(digit, 'Contains a number'),
+      row(special, 'Contains a special character'),
+      if (pass.isNotEmpty || confirm.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(pass == confirm ? 'Passwords match' : 'Passwords do not match', style: TextStyle(color: pass == confirm ? const Color(0xFF20A978) : kBlack, fontWeight: FontWeight.w800, fontSize: 12)),
+        ),
+    ],
+  );
+}
 
 Widget _pill(
   String text,
