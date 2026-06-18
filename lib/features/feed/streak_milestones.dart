@@ -298,7 +298,7 @@ class MilestoneCardPainter extends CustomPainter {
   }
 }
 
-class MilestoneCardWidget extends StatelessWidget {
+class MilestoneCardWidget extends ConsumerWidget {
   final UserProfile user;
   final int milestone;
   final CardDesignData designData;
@@ -313,7 +313,7 @@ class MilestoneCardWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final avatarProvider = user.avatarBytes != null
         ? MemoryImage(user.avatarBytes!) as ImageProvider
         : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
@@ -794,7 +794,7 @@ const _circle30Messages = [
   "30 users strong! Your circle is thriving and full of moments waiting to be captured. 📸🔥",
 ];
 
-class CircleMilestoneCardWidget extends StatelessWidget {
+class CircleMilestoneCardWidget extends ConsumerWidget {
   final String circleOwnerUsername;
   final int milestone;
   final List<CircleMemberWithMemories> members;
@@ -810,7 +810,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
     required this.message,
   });
 
-  Widget _buildAvatarCluster() {
+  Widget _buildAvatarCluster(WidgetRef ref) {
     final N = members.length;
     if (N == 0) return const SizedBox();
 
@@ -918,7 +918,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: 310,
       height: 420,
@@ -968,7 +968,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                   ),
 
                   // Fermat's Spiral avatar packing layout
-                  _buildAvatarCluster(),
+                  _buildAvatarCluster(ref),
 
                   // Bottom Translucent Congratulatory bubble
                   Container(

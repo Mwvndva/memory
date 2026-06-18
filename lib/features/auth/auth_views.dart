@@ -1153,10 +1153,10 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
       );
     } else if (_isLoading) {
       listItems.add(
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
           child: Center(
-            child: CircularProgressIndicator(color: ref.watch(isDarkProvider) ? kYellow : kBlack),
+            child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
           ),
         ),
       );
@@ -1285,7 +1285,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [ref.read(isDarkProvider) ? kYellow : kBlack, kAmber]),
+        gradient: LinearGradient(colors: [ref.watch(isDarkProvider) ? kYellow : kBlack, kAmber]),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(

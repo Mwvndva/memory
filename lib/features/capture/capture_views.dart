@@ -363,7 +363,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                         color: Colors.black,
                         child: Center(
                           child: _recordedVideoPath != null
-                              ? CircularProgressIndicator(color: ref.watch(isDarkProvider) ? kYellow : kBlack)
+                              ? CircularProgressIndicator(color: dark ? kYellow : kBlack)
                               : const Text(
                                   'Mock Video Preview\n(Looping Simulation)',
                                   textAlign: TextAlign.center,
@@ -422,7 +422,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                           width: 36,
                           height: 36,
                           child: CircularProgressIndicator(
-                            color: ref.watch(isDarkProvider) ? kYellow : kBlack,
+                            color: dark ? kYellow : kBlack,
                             strokeWidth: 3,
                           ),
                         ),
