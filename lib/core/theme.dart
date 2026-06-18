@@ -10,9 +10,9 @@ const kAmber = Color(0xFFFFC857);
 const kMint = Color(0xFF5ED6B3);
 const kSky = Color(0xFF63B3FF);
 const kLavender = Color(0xFFBBA7FF);
-const kCharcoal = Color(0xFF292421);
-const kDarkPaper = Color(0xFF25211F);
-const kDarkCream = Color(0xFF191716);
+const kCharcoal = Color(0xFF000000);
+const kDarkPaper = Color(0xFF121212);
+const kDarkCream = Color(0xFF000000);
 
 enum ThemeChoice { system, dark, light }
 
