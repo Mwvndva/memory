@@ -1197,12 +1197,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Theme Selector Grouped
-                  _themePicker(ref, dark),
-                  const SizedBox(height: 12),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                   // Stats Cards
                   _statCards(context, dark),
                   const SizedBox(height: 12),
@@ -1293,66 +1290,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     );
   }
 
-  Widget _themePicker(WidgetRef ref, bool dark) {
-    final themeChoice = ref.watch(themeChoiceProvider);
-
-    return _sectionCard(
-      'PREFERENCES',
-      [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Text(
-                'Theme',
-                style: TextStyle(
-                  color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: dark ? const Color(0xFF191716) : const Color(0xFFFFF8EF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: ThemeChoice.values.map((choice) {
-                    final active = choice == themeChoice;
-                    final icon = choice == ThemeChoice.system
-                        ? Icons.brightness_auto_rounded
-                        : choice == ThemeChoice.dark
-                            ? Icons.dark_mode_rounded
-                            : Icons.light_mode_rounded;
-                    return GestureDetector(
-                      onTap: () {
-                        ref.read(themeChoiceProvider.notifier).setTheme(choice);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: active ? (dark ? kYellow : kBlack) : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          icon,
-                          size: 16,
-                          color: active ? Colors.white : (dark ? kCream : kCharcoal),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-      dark,
-    );
-  }
+  
 
   Widget _statCards(BuildContext context, bool dark) {
     final user = ref.watch(authProvider);
