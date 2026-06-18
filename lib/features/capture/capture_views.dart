@@ -27,7 +27,7 @@ class CameraCaptureView extends ConsumerStatefulWidget {
   ConsumerState<CameraCaptureView> createState() => _CameraCaptureViewState();
 }
 
-class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
+class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with WidgetsBindingObserver {
   final _captureCaption = TextEditingController();
   bool _hasRecording = false;
   bool _captureCaptionOpen = false;
@@ -42,14 +42,25 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
   bool _isRecording = false;
   String? _recordedVideoPath;
   int _selectedCameraIndex = 0;
+  bool _isInitializing = false;
+  int _lastInitMs = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initCamera();
   }
 
   Future<void> _initCamera() async {
+    // Prevent concurrent initializations and rapid re-inits
+    if (_isInitializing) return;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastInitMs < 300) return; // debounce quick calls
+    _lastInitMs = now;
+
+    _isInitializing = true;
+    debugPrint('[Camera] init start at ${DateTime.now().toIso8601String()}');
     try {
       if (_globalCameras == null || _globalCameras!.isEmpty) {
         _globalCameras = await availableCameras();
@@ -59,6 +70,17 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
       if (_cameras.isNotEmpty) {
         if (_selectedCameraIndex >= _cameras.length) {
           _selectedCameraIndex = 0;
+        }
+
+        // If an existing controller exists, ensure it's disposed first
+        if (_cameraController != null) {
+          final old = _cameraController!;
+          _cameraController = null;
+          try {
+            await old.dispose();
+          } catch (e) {
+            debugPrint('[Camera] error disposing old controller: $e');
+          }
         }
 
         final controller = CameraController(
@@ -76,7 +98,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
         }
       }
     } catch (e) {
-      debugPrint('Error initializing camera: $e');
+      debugPrint('[Camera] Error initializing camera: $e');
+    } finally {
+      _isInitializing = false;
+      debugPrint('[Camera] init end at ${DateTime.now().toIso8601String()}');
     }
   }
 
@@ -93,34 +118,69 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
     if (_cameraController != null) {
       final oldController = _cameraController!;
       _cameraController = null;
-      await oldController.dispose();
+      try {
+        await oldController.dispose();
+      } catch (e) {
+        debugPrint('[Camera] error disposing old controller during switch: $e');
+      }
     }
 
-    try {
-      final controller = CameraController(
-        _cameras[_selectedCameraIndex],
-        ResolutionPreset.medium,
-        enableAudio: true,
-      );
-      _cameraController = controller;
-      await controller.initialize();
+    // Small delay to let the underlying driver finish teardown (helps some devices)
+    await Future.delayed(const Duration(milliseconds: 200));
 
-      if (mounted && _cameraController == controller) {
-        setState(() {
-          _isCameraInitialized = true;
-        });
-      }
+    try {
+      await _initCamera();
     } catch (e) {
-      debugPrint('Error switching camera: $e');
+      debugPrint('[Camera] Error switching camera: $e');
+    }
+  }
+
+  Future<void> _disposeCameraController() async {
+    if (_cameraController == null) return;
+    final c = _cameraController!;
+    _cameraController = null;
+    setState(() {
+      _isCameraInitialized = false;
+    });
+    try {
+      await c.dispose();
+      debugPrint('[Camera] disposed controller at ${DateTime.now().toIso8601String()}');
+    } catch (e) {
+      debugPrint('[Camera] error disposing controller: $e');
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _captureCaption.dispose();
-    _cameraController?.dispose();
-    _videoPlayerController?.dispose();
+    // best-effort dispose; we don't await here because dispose() cannot be async
+    try {
+      _cameraController?.dispose();
+    } catch (_) {}
+    try {
+      _videoPlayerController?.dispose();
+    } catch (_) {}
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Release the camera on pause/inactive to avoid holding surfaces when backgrounded
+    // and re-init on resume.
+    debugPrint('[Camera] lifecycle state: $state');
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      // dispose camera to free hardware quickly
+      _disposeCameraController();
+    } else if (state == AppLifecycleState.resumed) {
+      // Re-init camera if needed
+      if ((_cameraController == null || !_isCameraInitialized) && !_isInitializing) {
+        // Small delay to avoid racing with system resume
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted) _initCamera();
+        });
+      }
+    }
   }
 
   Future<void> _toggleRecording() async {
