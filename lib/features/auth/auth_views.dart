@@ -249,6 +249,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   }
 
   Future<void> _onSubmit() async {
+    // Prevent duplicate submissions
+    if (_createLoading) return;
+
     await _validateUsername();
     _validatePassword();
     if (!usernameOk || !passwordOk) return;
@@ -265,18 +268,36 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     }
 
     setState(() => _createLoading = true);
-    await ref.read(authProvider.notifier).createAccount(
-          firstName: _firstName.text.trim(),
-          lastName: _lastName.text.trim(),
-          username: _username.text.trim(),
-          email: _email.text.trim().toLowerCase(),
-          phone: '${selectedCountry.flag} ${_phone.text.trim()}',
-          password: _password.text,
-          acceptedTerms: acceptedTerms,
+    var success = false;
+    try {
+      await ref.read(authProvider.notifier).createAccount(
+            firstName: _firstName.text.trim(),
+            lastName: _lastName.text.trim(),
+            username: _username.text.trim(),
+            email: _email.text.trim().toLowerCase(),
+            phone: '${selectedCountry.flag} ${_phone.text.trim()}',
+            password: _password.text,
+            acceptedTerms: acceptedTerms,
+          );
+      success = true;
+    } catch (e) {
+      // Ensure the user sees feedback and the loading state is cleared.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Registration failed: ${e.toString()}'),
+            backgroundColor: kBlack,
+          ),
         );
-    setState(() => _createLoading = false);
-    if (!mounted) return;
-    context.go('/avatar');
+      }
+    } finally {
+      if (mounted) setState(() => _createLoading = false);
+    }
+
+    if (success) {
+      if (!mounted) return;
+      context.go('/avatar');
+    }
   }
 
   @override
