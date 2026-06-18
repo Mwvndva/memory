@@ -156,11 +156,11 @@ class MainAppScaffold extends ConsumerWidget {
                 top: -3,
                 child: CircleAvatar(
                   radius: 9,
-                backgroundColor: active ? (dark ? kBlack : kYellow) : (dark ? kYellow : kBlack),
+                  backgroundColor: Colors.red,
                   child: Text(
                     badge,
-                    style: TextStyle(
-                      color: active ? (dark ? kYellow : kBlack) : (dark ? kBlack : kYellow),
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 9,
                       fontWeight: FontWeight.w900,
                     ),

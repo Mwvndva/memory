@@ -474,31 +474,68 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
       body: Container(
         padding: EdgeInsets.fromLTRB(
           22,
-          64,
+          0,
           22,
           16 + MediaQuery.paddingOf(context).bottom,
         ),
         decoration: _softBackground(dark),
         child: Column(
           children: [
-            Row(
-              children: [
-                _smallClose(() => context.pop(), dark),
-                const SizedBox(width: 12),
-                CircleAvatar(
-                  backgroundColor: dark ? kYellow : kBlack,
-                  child: Text(widget.contactName[0]),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  widget.contactName,
-                  style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
+            // Black header with Back, avatar and username
+            Container(
+              width: double.infinity,
+              color: kBlack,
+              padding: EdgeInsets.fromLTRB(12, 24, 12, 12),
+              child: Row(
+                children: [
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    ),
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                    label: const Text('Back', style: TextStyle(fontWeight: FontWeight.w800)),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  // avatar lookup from circles provider
+                  Builder(builder: (ctx) {
+                    final members = ref.watch(circlesProvider);
+                    final match = members.firstWhere(
+                      (m) => m.username == widget.contactName,
+                      orElse: () => CircleMember(
+                        id: widget.contactName,
+                        username: widget.contactName,
+                        firstName: widget.contactName,
+                      ),
+                    );
+                    return CircleAvatar(
+                      radius: 18,
+                      backgroundColor: kYellow,
+                      backgroundImage: (match.avatarUrl != null && match.avatarUrl!.isNotEmpty)
+                          ? NetworkImage(_formatImageUrl(match.avatarUrl!)) as ImageProvider
+                          : null,
+                      child: (match.avatarUrl == null || match.avatarUrl!.isEmpty)
+                          ? Text(
+                              match.firstName.isNotEmpty ? match.firstName[0].toUpperCase() : widget.contactName[0].toUpperCase(),
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+                            )
+                          : null,
+                    );
+                  }),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.contactName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
             if (_loadingHistory)
@@ -508,7 +545,22 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
               )
             else
               Expanded(
-                child: ListView.builder(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Background logo centered at 30% opacity, half the inbox
+                    Center(
+                      child: Opacity(
+                        opacity: 0.3,
+                        child: Image.asset(
+                          'assets/images/memory-logo.png',
+                          width: MediaQuery.of(context).size.width * 0.5,
+                          height: MediaQuery.of(context).size.width * 0.5,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                    ListView.builder(
                   controller: _scrollController,
                   itemCount: messages.length,
                   padding: EdgeInsets.zero,
@@ -516,6 +568,8 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                     final msg = messages[i];
                     return _inboxBubble(msg.sender, msg.text, msg.isMine, dark);
                   },
+                    ),
+                  ],
                 ),
               ),
             const SizedBox(height: 10),
@@ -523,7 +577,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
               height: 52,
               padding: const EdgeInsets.only(left: 16, right: 6),
               decoration: BoxDecoration(
-                color: dark ? kBlack : kYellow,
+                color: dark ? kBlack : kBlack,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Row(
@@ -531,8 +585,8 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                   Expanded(
                     child: TextField(
                       controller: _messageController,
-                      style: TextStyle(
-                        color: dark ? kCream : kCharcoal,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
@@ -540,7 +594,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       decoration: InputDecoration(
                         hintText: 'Message ${widget.contactName}',
                         hintStyle: TextStyle(
-                          color: dark ? kCream.withValues(alpha: 0.5) : kCharcoal.withValues(alpha: 0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                         ),
                         border: InputBorder.none,
                       ),
@@ -553,7 +607,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       height: 40,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: dark ? kYellow : kBlack,
+                        color: Colors.white24,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: const Text(
@@ -598,22 +652,8 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     );
   }
 
-  Widget _smallClose(VoidCallback onTap, bool dark) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: dark ? kDarkCream : kCream,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.close_rounded,
-            color: dark ? kCream : kCharcoal,
-            size: 18,
-          ),
-        ),
-      );
+  // ...existing code...
+
 
   BoxDecoration _softBackground(bool dark) => BoxDecoration(
         color: dark ? kDarkCream : kCream,
