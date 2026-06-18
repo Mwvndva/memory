@@ -311,127 +311,141 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: SingleChildScrollView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                // extra top padding so back button doesn't overlap
-                padding: EdgeInsets.fromLTRB(
-                  18,
-                  80,
-                  18,
-                  28 + MediaQuery.viewInsetsOf(context).bottom,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Compact header
-                    Text('Create account', style: _headline(fg, 26)),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Start your circle with the real you.',
-                      style: _small(fg.withValues(alpha: .68)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Fixed header (stationary)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Create account', style: _headline(fg, 26)),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Start your circle with the real you.',
+                          style: _small(fg.withValues(alpha: .68)),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
+                  ),
+                  const SizedBox(height: 12),
 
-                    // Form container: visually groups all fields and controls
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: dark ? kBlack : Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          if (!dark)
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8),
-                            ),
-                        ],
+                  // Scrollable form area
+                  Expanded(
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: EdgeInsets.fromLTRB(
+                        18,
+                        0,
+                        18,
+                        28 + MediaQuery.viewInsetsOf(context).bottom,
                       ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Expanded(child: _field('First name', _firstName, '', dark)),
-                              const SizedBox(width: 10),
-                              Expanded(child: _field('Last name', _lastName, '', dark)),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          _field('Username', _username, '', dark),
-                          _status(usernameStatus, usernameOk),
-                          const SizedBox(height: 8),
-                          _field('Email', _email, '', dark, keyboard: TextInputType.emailAddress),
-                          const SizedBox(height: 8),
-                          _phoneField(dark),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(child: _field('Password', _password, '', dark, obscure: _passwordObscure, onToggleObscure: () => setState(() => _passwordObscure = !_passwordObscure))),
-                              const SizedBox(width: 10),
-                              Expanded(child: _field('Confirm password', _confirmPassword, '', dark, obscure: _confirmObscure, onToggleObscure: () => setState(() => _confirmObscure = !_confirmObscure))),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          _passwordRequirements(_password.text, _confirmPassword.text),
-                          const SizedBox(height: 8),
-                          _status(passwordStatus, passwordOk),
-                          const SizedBox(height: 12),
-                          GestureDetector(
-                            onTap: () => setState(() => acceptedTerms = !acceptedTerms),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: acceptedTerms ? (dark ? kYellow : kBlack) : (dark ? kBlack : kYellow),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: acceptedTerms ? Colors.transparent : kBlack.withValues(alpha: 0.2),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: acceptedTerms ? Icon(Icons.check_rounded, color: dark ? kBlack : kYellow, size: 14) : null,
+                          // Form container: visually groups all fields and controls
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: RichText(
-                                    text: TextSpan(
-                                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: dark ? kCream : kCharcoal),
-                                      children: [
-                                        const TextSpan(text: 'I agree to the '),
-                                        WidgetSpan(
-                                          alignment: PlaceholderAlignment.middle,
-                                          child: GestureDetector(
-                                            onTap: () => _showTermsSheet(context, dark),
-                                            child: const Text('Terms and Conditions', style: TextStyle(color: kBlack, decoration: TextDecoration.underline)),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(child: _field('First name', _firstName, '', dark)),
+                                    const SizedBox(width: 10),
+                                    Expanded(child: _field('Last name', _lastName, '', dark)),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                _field('Username', _username, '', dark),
+                                _status(usernameStatus, usernameOk),
+                                const SizedBox(height: 8),
+                                _field('Email', _email, '', dark, keyboard: TextInputType.emailAddress),
+                                const SizedBox(height: 8),
+                                _phoneField(dark),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Expanded(child: _field('Password', _password, '', dark, obscure: _passwordObscure, onToggleObscure: () => setState(() => _passwordObscure = !_passwordObscure))),
+                                    const SizedBox(width: 10),
+                                    Expanded(child: _field('Confirm password', _confirmPassword, '', dark, obscure: _confirmObscure, onToggleObscure: () => setState(() => _confirmObscure = !_confirmObscure))),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                _passwordRequirements(_password.text, _confirmPassword.text),
+                                const SizedBox(height: 8),
+                                _status(passwordStatus, passwordOk),
+                                const SizedBox(height: 12),
+                                GestureDetector(
+                                  onTap: () => setState(() => acceptedTerms = !acceptedTerms),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          color: acceptedTerms ? kBlack : kYellow,
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: acceptedTerms ? Colors.transparent : kBlack.withValues(alpha: 0.2),
+                                            width: 1.5,
                                           ),
                                         ),
-                                      ],
-                                    ),
+                                        child: acceptedTerms ? Icon(Icons.check_rounded, color: kYellow, size: 14) : null,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: RichText(
+                                          text: TextSpan(
+                                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: kCharcoal),
+                                            children: [
+                                              const TextSpan(text: 'I agree to the '),
+                                              WidgetSpan(
+                                                alignment: PlaceholderAlignment.middle,
+                                                child: GestureDetector(
+                                                  onTap: () => _showTermsSheet(context, dark),
+                                                  child: const Text('Terms and Conditions', style: TextStyle(color: kBlack, decoration: TextDecoration.underline)),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
+                                ),
+                                const SizedBox(height: 14),
+                                // Create button
+                                _pill(
+                                  'Create account',
+                                  _onSubmit,
+                                  dark,
+                                  color: _createLoading ? kBlack.withValues(alpha: 0.9) : kBlack,
+                                  foreground: Colors.white,
+                                  isLoading: _createLoading,
+                                  disabled: _createLoading,
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 14),
-                          // Create button
-                          _pill(
-                            'Create account',
-                            _onSubmit,
-                            dark,
-                            color: _createLoading ? kBlack.withValues(alpha: 0.9) : (dark ? kYellow : kBlack),
-                            foreground: Colors.white,
-                            isLoading: _createLoading,
-                            disabled: _createLoading,
-                          ),
+                          const SizedBox(height: 18),
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             Positioned(
@@ -714,15 +728,15 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 controller: _phone,
                 keyboardType: TextInputType.phone,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w900,
-                  color: dark ? kCream : kBlack,
+                  color: Colors.white,
                 ),
                 decoration: InputDecoration(
                   hintText: '',
                   filled: true,
-                  fillColor: dark ? kDarkCream : Colors.white,
+                  fillColor: Colors.black,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
