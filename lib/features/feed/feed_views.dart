@@ -61,7 +61,7 @@ class MainAppScaffold extends ConsumerWidget {
       height: 58,
       padding: const EdgeInsets.all(7),
       decoration: BoxDecoration(
-        color: dark ? kBlack : kYellow,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: kBlack.withValues(alpha: 0.1),
