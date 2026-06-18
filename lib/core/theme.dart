@@ -4,9 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const kYellow = Color(0xFFFADA5E);
 const kBlack = Color(0xFF000000);
-const kCharcoal = kBlack;
+// Primary text color used on light backgrounds
+const kCharcoal = Color(0xFF191716);
+// Background color used in dark theme surfaces
 const kDarkCream = kBlack;
-const kCream = kYellow;
+// Soft cream used for light-theme surfaces (previously kYellow)
+const kCream = Color(0xFFFFF8EF);
 
 const kAmber = Color(0xFFFFC857);
 const kMint = Color(0xFF5ED6B3);
