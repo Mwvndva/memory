@@ -333,6 +333,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
   }
 
   Widget _capturePreview() {
+    final dark = ref.watch(isDarkProvider);
     return GestureDetector(
       onTap: _hasRecording ? () => setState(() => _captureCaptionOpen = true) : null,
       child: Container(
@@ -418,7 +419,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(
+                        SizedBox(
                           width: 36,
                           height: 36,
                           child: CircularProgressIndicator(
@@ -593,4 +594,3 @@ class _PulseRedDotState extends State<_PulseRedDot> with SingleTickerProviderSta
     );
   }
 }
-

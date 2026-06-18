@@ -99,8 +99,8 @@ class CircleChatListView extends ConsumerWidget {
                     physics: const BouncingScrollPhysics(),
                     children: [
                       if (ref.watch(pendingRequestsProvider).isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.only(left: 8, bottom: 8, top: 12),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8, bottom: 8, top: 12),
                           child: Text(
                             'SHARE REQUESTS',
                             style: TextStyle(
@@ -207,7 +207,7 @@ class CircleChatListView extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                                 colors: [dark ? kYellow : kBlack, kAmber],
                     ),
                     borderRadius: BorderRadius.circular(999),
@@ -351,7 +351,7 @@ class CircleChatListView extends ConsumerWidget {
                     ),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text(
+                      child: Text(
                         'Remove',
                         style: TextStyle(
                           color: dark ? kYellow : kBlack,
@@ -1116,7 +1116,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: LinearGradient(
                                     colors: [dark ? kYellow : kBlack, kAmber],

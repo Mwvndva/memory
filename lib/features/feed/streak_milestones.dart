@@ -794,7 +794,7 @@ const _circle30Messages = [
   "30 users strong! Your circle is thriving and full of moments waiting to be captured. 📸🔥",
 ];
 
-class CircleMilestoneCardWidget extends ConsumerWidget {
+class CircleMilestoneCardWidget extends StatelessWidget {
   final String circleOwnerUsername;
   final int milestone;
   final List<CircleMemberWithMemories> members;
@@ -810,7 +810,7 @@ class CircleMilestoneCardWidget extends ConsumerWidget {
     required this.message,
   });
 
-  Widget _buildAvatarCluster(WidgetRef ref) {
+  Widget _buildAvatarCluster() {
     final N = members.length;
     if (N == 0) return const SizedBox();
 
@@ -897,7 +897,7 @@ class CircleMilestoneCardWidget extends ConsumerWidget {
               ),
               child: CircleAvatar(
                 radius: size / 2,
-                backgroundColor: index == 0 ? (ref.watch(isDarkProvider) ? kYellow : kBlack) : kLavender,
+                backgroundColor: index == 0 ? kBlack : kLavender,
                 backgroundImage: avatarProvider,
                 child: avatarProvider == null
                     ? Text(
@@ -918,7 +918,7 @@ class CircleMilestoneCardWidget extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Container(
       width: 310,
       height: 420,
@@ -968,7 +968,7 @@ class CircleMilestoneCardWidget extends ConsumerWidget {
                   ),
 
                   // Fermat's Spiral avatar packing layout
-                  _buildAvatarCluster(ref),
+                  _buildAvatarCluster(),
 
                   // Bottom Translucent Congratulatory bubble
                   Container(
@@ -1254,4 +1254,3 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
     );
   }
 }
-
