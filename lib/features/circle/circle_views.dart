@@ -1086,19 +1086,31 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          (dark ? kYellow : kBlack).withValues(alpha: 0.12),
-                          kAmber.withValues(alpha: 0.08),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: dark ? null : Colors.white,
+                      gradient: dark
+                          ? LinearGradient(
+                              colors: [
+                                (kYellow).withValues(alpha: 0.12),
+                                kAmber.withValues(alpha: 0.08),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: (dark ? kYellow : kBlack).withValues(alpha: 0.15),
                         width: 1.5,
                       ),
+                      boxShadow: dark
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
                     ),
                     child: Column(
                       children: [

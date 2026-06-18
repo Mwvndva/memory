@@ -159,9 +159,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
                   dark,
                   color: _loginLoading ? kBlack.withValues(alpha: 0.9) : (dark ? kYellow : kBlack),
                   foreground: Colors.white,
+                  isLoading: _loginLoading,
                 ),
-                if (_loginLoading) const SizedBox(height: 8),
-                if (_loginLoading) Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: dark ? kBlack : kYellow, strokeWidth: 2.2))),
                 const SizedBox(height: 18),
                 _pill(
                   'Create account',
@@ -292,11 +291,12 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: SingleChildScrollView(
+                child: SingleChildScrollView(
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                // add extra top padding so the fixed back button doesn't overlap content when scrolling
                 padding: EdgeInsets.fromLTRB(
                   26,
-                  78,
+                  110,
                   26,
                   28 + MediaQuery.viewInsetsOf(context).bottom,
                 ),
@@ -420,9 +420,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       dark,
                       color: _createLoading ? kBlack.withValues(alpha: 0.9) : (dark ? kYellow : kBlack),
                       foreground: Colors.white,
+                      isLoading: _createLoading,
                     ),
-                    if (_createLoading) const SizedBox(height: 8),
-                    if (_createLoading) const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.2))),
                   ],
                 ),
               ),
@@ -715,7 +714,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 decoration: InputDecoration(
                   hintText: '',
                   filled: true,
-                  fillColor: dark ? kDarkCream : kCream,
+                  fillColor: dark ? kDarkCream : Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
@@ -801,11 +800,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
                         child: _avatarBytes == null
                             ? Text(
                                 initialText,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 38,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                                style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white),
                               )
                             : null,
                       ),
@@ -1522,6 +1517,7 @@ Widget _pill(
   Color? foreground,
   bool compact = false,
   double? width,
+  bool isLoading = false,
 }) =>
     GestureDetector(
       onTap: onTap,
@@ -1533,13 +1529,22 @@ Widget _pill(
           color: color ?? (dark ? kYellow : kBlack),
           borderRadius: BorderRadius.circular(999),
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: foreground ?? (dark ? kBlack : kYellow),
-            fontSize: compact ? 10 : 13,
-            fontWeight: FontWeight.w900,
-          ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Opacity(
+              opacity: isLoading ? 0 : 1,
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: foreground ?? (dark ? kBlack : kYellow),
+                  fontSize: compact ? 10 : 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            if (isLoading) const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.2)),
+          ],
         ),
       ),
     );
