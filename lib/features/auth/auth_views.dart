@@ -314,17 +314,35 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Fixed header (stationary)
+                  // Fixed header (stationary) with inline Back button
                   Padding(
                     padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Create account', style: _headline(fg, 26)),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Start your circle with the real you.',
-                          style: _small(fg.withValues(alpha: .68)),
+                        SizedBox(
+                          width: 58,
+                          height: 34,
+                          child: _pill(
+                            'Back',
+                            () => context.pop(),
+                            dark,
+                            compact: true,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Create account', style: _headline(fg, 26)),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Start your circle with the real you.',
+                                style: _small(fg.withValues(alpha: .68)),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -448,20 +466,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 ],
               ),
             ),
-            Positioned(
-              left: 18,
-              top: 8,
-              child: SizedBox(
-                width: 58,
-                height: 34,
-                child: _pill(
-                  'Back',
-                  () => context.pop(),
-                  dark,
-                  compact: true,
-                ),
-              ),
-            ),
+            // Back button moved inline in header
           ],
         ),
       ),
