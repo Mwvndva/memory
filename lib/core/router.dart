@@ -7,6 +7,7 @@ import '../features/auth/auth_views.dart';
 import '../features/feed/feed_views.dart';
 import '../features/capture/capture_views.dart';
 import '../features/circle/circle_views.dart';
+import '../features/dev/dev_diagnostics.dart';
 import '../repositories/auth_repository.dart';
 import 'theme.dart';
 
@@ -77,6 +78,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/contacts',
         builder: (context, state) => const ContactsSetupView(),
+      ),
+      // Dev-only diagnostics
+      GoRoute(
+        path: '/dev/diagnostics',
+        builder: (context, state) => const DevDiagnosticsView(),
       ),
       ShellRoute(
         navigatorKey: shellNavigatorKey,

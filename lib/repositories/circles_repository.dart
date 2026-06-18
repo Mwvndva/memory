@@ -93,12 +93,50 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
     }
     try {
       final dio = _ref.read(apiClientProvider);
+
+      // Preferred: create a pending request (inbox) on the server if the endpoint exists.
+      try {
+        final resp = await dio.post('/circles/requests', data: {'memberId': memberId});
+        // If the server accepted the request, return success (and don't refresh circle yet).
+        final data = resp.data;
+        return {
+          'ok': true,
+          'message': data is Map && data['message'] != null ? data['message'] : 'Request sent',
+          'status': resp.statusCode,
+        };
+      } catch (e) {
+        // If the requests endpoint is not available (404) or fails, fall back to older behavior.
+        // We'll inspect the error and decide whether to try the fallback.
+        if (e is DioException && e.response?.statusCode == 404) {
+          // fallback below
+        } else if (e is DioException) {
+          // If server returned a meaningful error (e.g., 409), propagate it.
+          final status = e.response?.statusCode;
+          String msg = 'Failed to send request.';
+          if (status == 409) {
+            try {
+              final d = e.response?.data;
+              if (d is Map && d['message'] != null) msg = d['message'].toString();
+            } catch (_) {}
+          } else if (e.response != null && e.response?.data != null) {
+            final d = e.response!.data;
+            if (d is Map && d['message'] != null) msg = d['message'].toString();
+          } else {
+            msg = e.message ?? msg;
+          }
+          return {'ok': false, 'message': msg, 'status': status};
+        }
+
+        // otherwise continue to fallback
+      }
+
+      // Fallback: older endpoint behavior which may directly add the member (if permitted)
       final response = await dio.post('/circles/members', data: {'memberId': memberId});
       await fetchCircle(); // Refresh list
       final data = response.data;
       return {
         'ok': true,
-        'message': data is Map && data['message'] != null ? data['message'] : 'Request sent',
+        'message': data is Map && data['message'] != null ? data['message'] : 'Member added',
         'status': response.statusCode,
       };
     } on DioException catch (e) {
