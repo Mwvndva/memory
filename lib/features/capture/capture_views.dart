@@ -273,7 +273,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                                 'Send to circle',
                                 _sendToCircle,
                                 dark,
-                                color: kCoral,
+                                color: dark ? kYellow : kBlack,
                                 foreground: Colors.white,
                                 width: 282,
                               )
@@ -284,7 +284,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                                   height: 82,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: kCoral,
+                                    color: dark ? kYellow : kBlack,
                                     border: Border.all(
                                       color: const Color(0xFFFFE7DD),
                                       width: 10,
@@ -363,7 +363,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                         color: Colors.black,
                         child: Center(
                           child: _recordedVideoPath != null
-                              ? const CircularProgressIndicator(color: kCoral)
+                              ? CircularProgressIndicator(color: dark ? kYellow : kBlack)
                               : const Text(
                                   'Mock Video Preview\n(Looping Simulation)',
                                   textAlign: TextAlign.center,
@@ -422,7 +422,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
                           width: 36,
                           height: 36,
                           child: CircularProgressIndicator(
-                            color: kCoral,
+                            color: dark ? kYellow : kBlack,
                             strokeWidth: 3,
                           ),
                         ),
@@ -516,7 +516,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> {
         gradient: LinearGradient(
           colors: dark
               ? const [kDarkCream, kCharcoal]
-              : const [kCream, kPaper],
+              : const [kYellow, kYellow],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),

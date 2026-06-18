@@ -41,14 +41,14 @@ class MemoryApp extends ConsumerWidget {
         textTheme: GoogleFonts.plusJakartaSansTextTheme(
           ThemeData.light().textTheme,
         ),
-        colorScheme: ColorScheme.fromSeed(seedColor: kCoral, brightness: Brightness.light),
+        colorScheme: ColorScheme.fromSeed(seedColor: kYellow, brightness: Brightness.light),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         textTheme: GoogleFonts.plusJakartaSansTextTheme(
           ThemeData.dark().textTheme,
         ),
-        colorScheme: ColorScheme.fromSeed(seedColor: kCoral, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(seedColor: kYellow, brightness: Brightness.dark),
       ),
       routerConfig: router,
       builder: (context, child) {

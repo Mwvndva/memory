@@ -154,17 +154,17 @@ void showGlobalNotification({
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: dark ? const Color(0xFF1E1915) : Colors.white,
+                  color: dark ? kBlack : kYellow,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
+                      color: kBlack.withValues(alpha: 0.12),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
                   ],
                   border: Border.all(
-                    color: const Color(0xFFFF6B57).withValues(alpha: 0.15),
+                    color: kBlack.withValues(alpha: 0.15),
                     width: 1.5,
                   ),
                 ),
@@ -173,13 +173,13 @@ void showGlobalNotification({
                     Container(
                       width: 38,
                       height: 38,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFF6B57),
+                      decoration: BoxDecoration(
+                        color: dark ? kYellow : kBlack,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.notifications_active_rounded,
-                        color: Colors.white,
+                        color: dark ? kBlack : kYellow,
                         size: 20,
                       ),
                     ),
@@ -192,7 +192,7 @@ void showGlobalNotification({
                           Text(
                             title,
                             style: TextStyle(
-                              color: dark ? const Color(0xFFFFF7F0) : const Color(0xFF1E1915),
+                              color: dark ? kYellow : kBlack,
                               fontWeight: FontWeight.w900,
                               fontSize: 13,
                             ),
@@ -201,7 +201,7 @@ void showGlobalNotification({
                           Text(
                             body,
                             style: TextStyle(
-                              color: dark ? const Color(0xFFFFF7F0).withValues(alpha: 0.7) : const Color(0xFF1E1915).withValues(alpha: 0.7),
+                              color: (dark ? kYellow : kBlack).withValues(alpha: 0.7),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),

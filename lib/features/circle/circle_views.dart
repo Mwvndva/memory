@@ -53,7 +53,7 @@ class CircleChatListView extends ConsumerWidget {
                           Text(
                             'Chats',
                             style: TextStyle(
-                              color: kCoralDark,
+                              color: dark ? kYellow : kBlack,
                               fontSize: 12,
                               fontWeight: FontWeight.w900,
                             ),
@@ -73,7 +73,7 @@ class CircleChatListView extends ConsumerWidget {
                       onTap: () => _showProfileSheet(context),
                       child: CircleAvatar(
                         radius: 22,
-                        backgroundColor: kCoral,
+                        backgroundColor: dark ? kYellow : kBlack,
                         backgroundImage: user.avatarBytes != null
                             ? MemoryImage(user.avatarBytes!)
                             : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
@@ -104,7 +104,7 @@ class CircleChatListView extends ConsumerWidget {
                           child: Text(
                             'SHARE REQUESTS',
                             style: TextStyle(
-                              color: kCoralDark,
+                              color: dark ? kYellow : kBlack,
                               fontSize: 11,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1.1,
@@ -151,17 +151,17 @@ class CircleChatListView extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: dark ? kDarkPaper : kPaper,
+        color: dark ? kBlack : kYellow,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: kCoral.withValues(alpha: 0.15),
+          color: kBlack.withValues(alpha: 0.15),
           width: 1.2,
         ),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: kCoral,
+            backgroundColor: dark ? kYellow : kBlack,
             backgroundImage: (req.avatarUrl != null && req.avatarUrl!.isNotEmpty)
                 ? NetworkImage(_formatImageUrl(req.avatarUrl!)) as ImageProvider
                 : null,
@@ -208,12 +208,12 @@ class CircleChatListView extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [kCoral, kAmber],
+                      colors: [dark ? kYellow : kBlack, kAmber],
                     ),
                     borderRadius: BorderRadius.circular(999),
                     boxShadow: [
                       BoxShadow(
-                        color: kCoral.withValues(alpha: 0.25),
+                        color: kBlack.withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -263,7 +263,7 @@ class CircleChatListView extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: dark ? kDarkPaper : kPaper,
+        color: dark ? kBlack : kYellow,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -278,7 +278,7 @@ class CircleChatListView extends ConsumerWidget {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: kCoral,
+                    backgroundColor: dark ? kYellow : kBlack,
                     backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
                         ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
                         : null,
@@ -323,7 +323,7 @@ class CircleChatListView extends ConsumerWidget {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  backgroundColor: dark ? kDarkPaper : kPaper,
+                  backgroundColor: dark ? kBlack : kYellow,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   title: Text(
                     'Remove from Circle',
@@ -354,7 +354,7 @@ class CircleChatListView extends ConsumerWidget {
                       child: const Text(
                         'Remove',
                         style: TextStyle(
-                          color: kCoral,
+                          color: dark ? kYellow : kBlack,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -392,7 +392,7 @@ class CircleChatListView extends ConsumerWidget {
         gradient: LinearGradient(
           colors: dark
               ? const [kDarkCream, kCharcoal]
-              : const [kCream, kPaper],
+              : const [kYellow, kYellow],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),
@@ -485,7 +485,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 _smallClose(() => context.pop(), dark),
                 const SizedBox(width: 12),
                 CircleAvatar(
-                  backgroundColor: kCoral,
+                  backgroundColor: dark ? kYellow : kBlack,
                   child: Text(widget.contactName[0]),
                 ),
                 const SizedBox(width: 10),
@@ -503,7 +503,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             if (_loadingHistory)
               const Padding(
                 padding: EdgeInsets.only(top: 24),
-                child: Center(child: CircularProgressIndicator(color: kCoral)),
+                child: Center(child: CircularProgressIndicator(color: dark ? kYellow : kBlack)),
               )
             else
               Expanded(
@@ -522,7 +522,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
               height: 52,
               padding: const EdgeInsets.only(left: 16, right: 6),
               decoration: BoxDecoration(
-                color: dark ? kDarkPaper : kPaper,
+                color: dark ? kBlack : kYellow,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Row(
@@ -552,7 +552,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       height: 40,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: kCoral,
+                        color: dark ? kYellow : kBlack,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: const Text(
@@ -582,7 +582,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         constraints: const BoxConstraints(maxWidth: 260),
         decoration: BoxDecoration(
-          color: mine ? kCoral : (dark ? kDarkPaper : kPaper),
+          color: mine ? (dark ? kYellow : kBlack) : (dark ? kBlack : kYellow),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Text(
@@ -619,7 +619,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
         gradient: LinearGradient(
           colors: dark
               ? const [kDarkCream, kCharcoal]
-              : const [kCream, kPaper],
+              : const [kYellow, kYellow],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),
@@ -863,7 +863,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           child: Text(
             title,
             style: const TextStyle(
-              color: kCoralDark,
+              color: kBlack,
               fontSize: 11,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.1,
@@ -993,7 +993,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       margin: const EdgeInsets.all(18),
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
       decoration: BoxDecoration(
-        color: dark ? kDarkPaper : kPaper,
+        color: dark ? kBlack : kYellow,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
@@ -1088,7 +1088,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          kCoral.withValues(alpha: 0.12),
+                          (dark ? kYellow : kBlack).withValues(alpha: 0.12),
                           kAmber.withValues(alpha: 0.08),
                         ],
                         begin: Alignment.topLeft,
@@ -1096,7 +1096,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: kCoral.withValues(alpha: 0.15),
+                        color: (dark ? kYellow : kBlack).withValues(alpha: 0.15),
                         width: 1.5,
                       ),
                     ),
@@ -1119,14 +1119,14 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: LinearGradient(
-                                    colors: [kCoral, kAmber],
+                                    colors: [dark ? kYellow : kBlack, kAmber],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
                                 ),
                                 child: CircleAvatar(
                                   radius: 36,
-                                  backgroundColor: dark ? kDarkPaper : kPaper,
+                                  backgroundColor: dark ? kBlack : kYellow,
                                   backgroundImage: user.avatarBytes != null
                                       ? MemoryImage(user.avatarBytes!)
                                       : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
@@ -1136,7 +1136,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                       ? Text(
                                           displayFirstName.isNotEmpty ? displayFirstName[0].toUpperCase() : '?',
                                           style: const TextStyle(
-                                            color: kCoral,
+                                            color: dark ? kYellow : kBlack,
                                             fontSize: 28,
                                             fontWeight: FontWeight.w900,
                                           ),
@@ -1150,16 +1150,16 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: kCoral,
+                                    color: dark ? kYellow : kBlack,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: dark ? kDarkPaper : kPaper,
+                                      color: dark ? kBlack : kYellow,
                                       width: 2,
                                     ),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.camera_alt_rounded,
-                                    color: Colors.white,
+                                    color: dark ? kBlack : kYellow,
                                     size: 14,
                                   ),
                                 ),
@@ -1246,22 +1246,22 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       height: 48,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: kCoralDark.withValues(alpha: 0.08),
+                        color: kBlack.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: kCoralDark.withValues(alpha: 0.3),
+                          color: kBlack.withValues(alpha: 0.3),
                           width: 1.2,
                         ),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.logout_rounded, color: kCoralDark, size: 18),
+                          Icon(Icons.logout_rounded, color: kBlack, size: 18),
                           SizedBox(width: 8),
                           Text(
                             'Log Out',
                             style: TextStyle(
-                              color: kCoralDark,
+                              color: kBlack,
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                             ),
@@ -1322,7 +1322,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: active ? kCoral : Colors.transparent,
+                          color: active ? (dark ? kYellow : kBlack) : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -1353,7 +1353,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             context,
             'Memories',
             '${user.streakDays} days',
-            const [kCoral, kAmber],
+            const [kYellow, kAmber],
             dark,
           ),
         ),
@@ -1497,7 +1497,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         margin: const EdgeInsets.fromLTRB(18, 18, 18, 18),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: dark ? kDarkPaper : kPaper,
+          color: dark ? kBlack : kYellow,
           borderRadius: BorderRadius.circular(26),
         ),
         child: child,
@@ -1695,7 +1695,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 Text(
                   '$circleCount / 30',
                   style: const TextStyle(
-                    color: kCoralDark,
+                    color: kBlack,
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1718,7 +1718,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 circleCount < 30 ? () => _showInviteOptions(context, dark) : () {},
                 dark,
                 compact: true,
-                color: kCoral,
+                color: dark ? kYellow : kBlack,
                 foreground: Colors.white,
               ),
             ),
@@ -1768,7 +1768,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           decoration: BoxDecoration(
-            color: dark ? kDarkPaper : Colors.white,
+            color: dark ? kBlack : Colors.white,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
@@ -1829,7 +1829,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   child: Container(
                     height: 44,
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(color: kCoral, borderRadius: BorderRadius.circular(999)),
+                    decoration: BoxDecoration(color: dark ? kYellow : kBlack, borderRadius: BorderRadius.circular(999)),
                     child: const Text('Close', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
                   ),
                 ),
@@ -1847,7 +1847,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(heading, style: const TextStyle(color: kCoralDark, fontSize: 13, fontWeight: FontWeight.w800)),
+          Text(heading, style: TextStyle(color: dark ? kYellow : kBlack, fontSize: 13, fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
           Text(body, style: TextStyle(color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8), fontSize: 12.5, height: 1.45)),
         ],
@@ -1859,7 +1859,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: dark ? kDarkPaper : kPaper,
+        backgroundColor: dark ? kBlack : kYellow,
         title: Text(
           title,
           style: TextStyle(
@@ -1879,7 +1879,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close', style: TextStyle(color: kCoral, fontWeight: FontWeight.bold)),
+            child: Text('Close', style: TextStyle(color: dark ? kYellow : kBlack, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

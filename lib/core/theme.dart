@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const kCream = Color(0xFFFFF8BE);
-const kPaper = Color(0xFFFFFEEC);
-const kCoral = Color(0xFFFF6B57);
-const kCoralDark = Color(0xFFE84F3B);
+const kYellow = Color(0xFFFFEA00);
+const kBlack = Color(0xFF000000);
+const kCharcoal = kBlack;
+const kDarkCream = kBlack;
+const kCream = kYellow;
+
 const kAmber = Color(0xFFFFC857);
 const kMint = Color(0xFF5ED6B3);
 const kSky = Color(0xFF63B3FF);
 const kLavender = Color(0xFFBBA7FF);
-const kCharcoal = Color(0xFF000000);
-const kDarkPaper = Color(0xFF121212);
-const kDarkCream = Color(0xFF000000);
 
 enum ThemeChoice { system, dark, light }
 

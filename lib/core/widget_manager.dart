@@ -20,10 +20,8 @@ Future<String> _renderMemoryCard(MemoryItem memory) async {
       const ui.Offset(400, 400),
       memory.colors,
     );
-  } else if (memory.colors.isNotEmpty) {
-    paint.color = memory.colors.first;
   } else {
-    paint.color = const Color(0xFFFF6B57); // fallback
+    paint.color = const Color(0xFFFFEA00); // fallback yellow
   }
   canvas.drawRect(ui.Rect.fromLTWH(0, 0, 400, 400), paint);
 

@@ -145,18 +145,16 @@ class _LoginViewState extends ConsumerState<LoginView> {
                   const SizedBox(height: 10),
                   Text(
                     _errorMessage,
-                    style: const TextStyle(color: kCoralDark, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: kBlack, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ],
                 const SizedBox(height: 12),
-                _pill('Continue', _onLogin, dark, color: kCoral, foreground: Colors.white),
+                _pill('Continue', _onLogin, dark),
                 const SizedBox(height: 28),
                 _pill(
                   'Create account',
                   () => context.push('/create'),
                   dark,
-                  color: dark ? kCream : kCharcoal,
-                  foreground: dark ? kCharcoal : Colors.white,
                 ),
               ],
             ),
@@ -244,7 +242,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('You must agree to the Terms & Conditions to register.'),
-          backgroundColor: kCoralDark,
+          backgroundColor: kBlack,
         ),
       );
       return;
@@ -346,20 +344,20 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                             height: 20,
                             decoration: BoxDecoration(
                               color: acceptedTerms
-                                  ? kCoral
-                                  : (dark ? kDarkCream : kCream),
+                                  ? (dark ? kYellow : kBlack)
+                                  : (dark ? kBlack : kYellow),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
                                 color: acceptedTerms
                                     ? Colors.transparent
-                                    : (dark ? Colors.white : kCharcoal).withValues(alpha: 0.2),
+                                    : kBlack.withValues(alpha: 0.2),
                                 width: 1.5,
                               ),
                             ),
                             child: acceptedTerms
-                                ? const Icon(
+                                ? Icon(
                                     Icons.check_rounded,
-                                    color: Colors.white,
+                                    color: dark ? kBlack : kYellow,
                                     size: 14,
                                   )
                                 : null,
@@ -382,7 +380,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                       child: const Text(
                                         'Terms and Conditions',
                                         style: TextStyle(
-                                          color: kCoral,
+                                          color: kBlack,
                                           decoration: TextDecoration.underline,
                                         ),
                                       ),
@@ -400,8 +398,6 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       'Create account',
                       _onSubmit,
                       dark,
-                      color: kCoral,
-                      foreground: Colors.white,
                     ),
                   ],
                 ),
@@ -439,7 +435,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           margin: const EdgeInsets.all(18),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           decoration: BoxDecoration(
-            color: dark ? kDarkPaper : Colors.white,
+            color: dark ? kBlack : Colors.white,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
@@ -541,7 +537,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     height: 44,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: kCoral,
+                      color: dark ? kYellow : kBlack,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: const Text(
@@ -571,7 +567,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           Text(
             heading,
             style: const TextStyle(
-              color: kCoralDark,
+              color: kBlack,
               fontSize: 13,
               fontWeight: FontWeight.w800,
             ),
@@ -609,7 +605,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               width: 96,
               child: DropdownButtonFormField<CountryInfo>(
                 initialValue: selectedCountry,
-                dropdownColor: dark ? kDarkPaper : kPaper,
+                dropdownColor: dark ? kBlack : kYellow,
                 borderRadius: BorderRadius.circular(16),
                 icon: Icon(
                   Icons.keyboard_arrow_down_rounded,
@@ -807,7 +803,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
                 'Continue',
                 () => context.go('/contacts'),
                 dark,
-                color: kCoral,
+                color: dark ? kYellow : kBlack,
                 foreground: Colors.white,
               ),
               const SizedBox(height: 10),
@@ -924,7 +920,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         return Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            color: dark ? kDarkPaper : kPaper,
+            color: dark ? kBlack : kYellow,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
             boxShadow: [
               BoxShadow(
@@ -1115,7 +1111,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           child: Text(
             'Contacts already on Memory',
             style: TextStyle(
-              color: kCoralDark,
+              color: kBlack,
               fontSize: 12,
               fontWeight: FontWeight.w900,
             ),
@@ -1132,7 +1128,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           initial: initial,
           name: displayName,
           subtitle: '@${matchedUser.username}',
-          color: kCoral.withValues(alpha: 0.6),
+          color: (dark ? kYellow : kBlack).withValues(alpha: 0.6),
           fg: fg,
           dark: dark,
           isMock: kUseMockBackend,
@@ -1160,7 +1156,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
           child: Center(
-            child: CircularProgressIndicator(color: kCoral),
+            child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
           ),
         ),
       );
@@ -1199,7 +1195,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                   context.go('/feed');
                 },
                 dark,
-                color: kCoral,
+                color: dark ? kYellow : kBlack,
                 foreground: Colors.white,
               ),
             ],
@@ -1276,7 +1272,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               },
               dark,
               compact: true,
-              color: isAdded ? Colors.grey.withValues(alpha: 0.5) : kCoral,
+              color: isAdded ? Colors.grey.withValues(alpha: 0.5) : (dark ? kYellow : kBlack),
               foreground: Colors.white,
             ),
           ),
@@ -1289,7 +1285,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [kCoral, kAmber]),
+        gradient: LinearGradient(colors: [dark ? kYellow : kBlack, kAmber]),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -1385,7 +1381,7 @@ Widget _status(String text, bool ok) => Padding(
       child: Text(
         text,
         style: TextStyle(
-          color: ok ? const Color(0xFF20A978) : kCoralDark,
+          color: ok ? const Color(0xFF20A978) : kBlack,
           fontSize: 10,
           fontWeight: FontWeight.w900,
         ),
@@ -1419,17 +1415,17 @@ Widget _field(
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w900,
-            color: dark ? kCream : kCharcoal,
+            color: dark ? kBlack : Colors.white,
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.35),
+              color: (dark ? kBlack : Colors.white).withValues(alpha: 0.35),
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
             filled: true,
-            fillColor: dark ? kDarkCream : kCream,
+            fillColor: dark ? kYellow : kBlack,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
@@ -1459,13 +1455,13 @@ Widget _pill(
         height: compact ? 34 : 46,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: color ?? (dark ? kDarkCream : kCream),
+          color: color ?? (dark ? kYellow : kBlack),
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: foreground ?? (dark ? kCream : kCharcoal),
+            color: foreground ?? (dark ? kBlack : kYellow),
             fontSize: compact ? 10 : 13,
             fontWeight: FontWeight.w900,
           ),

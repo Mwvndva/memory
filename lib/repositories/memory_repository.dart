@@ -16,9 +16,9 @@ Color parseHexColor(String hexStr) {
   } else if (clean.length == 8) {
     clean = 'FF${clean.substring(clean.length - 6)}';
   } else {
-    return const Color(0xFFFF6B57);
+    return const Color(0xFFFFEA00);
   }
-  return Color(int.tryParse(clean, radix: 16) ?? 0xFFFF6B57);
+  return Color(int.tryParse(clean, radix: 16) ?? 0xFFFFEA00);
 }
 
 class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
@@ -42,7 +42,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       initial: 'A',
       time: '8 min ago',
       caption: 'The ridiculous cake moment',
-      avatar: kCoral,
+      avatar: kYellow,
       colors: [Color(0xFFFF826E), kAmber, kMint],
       ageHours: .13,
     ),
@@ -70,7 +70,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       time: '2 days ago',
       caption: 'Sunset on the way home',
       avatar: kLavender,
-      colors: [kLavender, kCoral, kAmber],
+      colors: [kLavender, kYellow, kAmber],
       ageHours: 48,
     ),
   ];
@@ -128,7 +128,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
         initial: initial,
         time: 'Just now',
         caption: caption,
-        avatar: kCoral,
+        avatar: kYellow,
         colors: colors,
         ageHours: 0.01,
         videoPath: videoPath,

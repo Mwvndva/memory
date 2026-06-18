@@ -61,29 +61,30 @@ class MainAppScaffold extends ConsumerWidget {
       height: 58,
       padding: const EdgeInsets.all(7),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: dark
-              ? [kDarkPaper.withValues(alpha: 0.95), kCharcoal.withValues(alpha: 0.9)]
-              : [Colors.white.withValues(alpha: 0.92), kCream.withValues(alpha: 0.88)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        color: dark ? kBlack : kYellow,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+          color: kBlack.withValues(alpha: 0.1),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: kCoral.withValues(alpha: 0.12),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            color: kBlack.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          _tab(context, path == '/feed', '/feed', Icons.more_horiz_rounded, 'Memory', dark),
+          _tab(
+            context,
+            path == '/feed',
+            '/feed',
+            Icons.view_agenda_rounded, // Stacked rectangles
+            'Memory',
+            dark,
+          ),
           _tab(
             context,
             path == '/capture',
@@ -127,49 +128,26 @@ class MainAppScaffold extends ConsumerWidget {
             Container(
               height: 44,
               decoration: BoxDecoration(
-                gradient: active
-                    ? LinearGradient(
-                        colors: dark
-                            ? [const Color(0xFFE84F3B), const Color(0xFFE84F3B).withValues(alpha: 0.75)]
-                            : [const Color(0xFFFF6B57), const Color(0xFFFF826E)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: active ? null : Colors.transparent,
+                color: active ? (dark ? kYellow : kBlack) : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
-                boxShadow: active
-                    ? [
-                        BoxShadow(
-                          color: kCoral.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        )
-                      ]
-                    : null,
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: 18,
-                    color: active
-                        ? Colors.white
-                        : (dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62)),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: active
-                          ? Colors.white
-                          : (dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62)),
-                      fontSize: 12,
-                      fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                    ),
-                  ),
-                ],
+              child: Center(
+                child: icon == Icons.view_agenda_rounded
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _rect(active, dark),
+                          const SizedBox(height: 3),
+                          _rect(active, dark),
+                        ],
+                      )
+                    : Icon(
+                        icon,
+                        size: 24, // Increased size since label is gone
+                        color: active
+                            ? (dark ? kBlack : kYellow)
+                            : kBlack.withValues(alpha: 0.4),
+                      ),
               ),
             ),
             if (badge != null)
@@ -178,11 +156,11 @@ class MainAppScaffold extends ConsumerWidget {
                 top: -3,
                 child: CircleAvatar(
                   radius: 9,
-                  backgroundColor: active ? Colors.white : kCoral,
+                backgroundColor: active ? (dark ? kBlack : kYellow) : (dark ? kYellow : kBlack),
                   child: Text(
                     badge,
                     style: TextStyle(
-                      color: active ? kCoral : Colors.white,
+                      color: active ? (dark ? kYellow : kBlack) : (dark ? kBlack : kYellow),
                       fontSize: 9,
                       fontWeight: FontWeight.w900,
                     ),
@@ -191,6 +169,17 @@ class MainAppScaffold extends ConsumerWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _rect(bool active, bool dark) {
+    return Container(
+      width: 22,
+      height: 9,
+      decoration: BoxDecoration(
+        color: active ? (dark ? kBlack : kYellow) : kBlack.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(3),
       ),
     );
   }
@@ -329,7 +318,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
             margin: const EdgeInsets.fromLTRB(18, 18, 18, 18),
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: dark ? kDarkPaper : kPaper,
+              color: dark ? kBlack : kYellow,
               borderRadius: BorderRadius.circular(26),
             ),
             child: Column(
@@ -503,11 +492,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                     width: 76,
                     height: 76,
                     decoration: BoxDecoration(
-                      color: kCoral,
+                      color: dark ? kYellow : kBlack,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: kCoral.withValues(alpha: 0.4),
+                          color: (dark ? kYellow : kBlack).withValues(alpha: 0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -599,7 +588,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                     Container(
                       color: Colors.black,
                       child: const Center(
-                        child: CircularProgressIndicator(color: kCoral),
+                        child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
                       ),
                     ),
                   if (_feedVideoController != null && _feedVideoController!.value.isInitialized)
@@ -760,7 +749,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
   Widget _memoryGrid(List<MemoryItem> archived, bool dark) {
     if (archived.isEmpty) {
       return Container(
-        color: dark ? kCharcoal : kPaper,
+        color: dark ? kBlack : kYellow,
         padding: const EdgeInsets.fromLTRB(26, 82, 26, 90),
         child: Column(
           children: [
@@ -801,7 +790,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
         if ((details.primaryVelocity ?? 0) < 0) setState(() => _gridOpen = false);
       },
       child: Container(
-        color: dark ? kCharcoal : kPaper,
+        color: dark ? kBlack : kYellow,
         padding: const EdgeInsets.fromLTRB(26, 82, 26, 90),
         child: Column(
           children: [
@@ -924,7 +913,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 height: 50,
                 padding: const EdgeInsets.only(left: 16, right: 6),
                 decoration: BoxDecoration(
-                  color: dark ? kDarkPaper : Colors.white,
+                  color: dark ? kBlack : Colors.white,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -944,7 +933,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                       height: 38,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: kCoral,
+                        color: dark ? kYellow : kBlack,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: const Text(
