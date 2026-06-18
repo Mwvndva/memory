@@ -28,18 +28,94 @@ export class UsersService {
     return { available: !existing };
   }
 
-  // ─── Profile retrieval ─────────────────────────────────────────────────────
+  // ─── Profile retrieval (reads pre-cached stats — O(1)) ────────────────────
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: USER_SELECT,
+      select: {
+        ...USER_SELECT,
+        phone: true,
+      },
     });
     if (!user) throw new NotFoundException('User not found');
-    const stats = await this.getUserStats(userId);
+
+    // Derive flag emoji from phone prefix (cached in DB as `country`)
+    const flagEmoji = user.country || user.phone?.split(' ')[0] || '🇰🇪';
+
+    // Compute circle pulse (consecutive days anyone in circle posted)
+    const circlePulseDays = await this._getCirclePulseDays(userId);
+
     return {
       ...user,
-      stats,
+      stats: {
+        streakDays:     user.streakDays,
+        circlePulseDays,
+        countryRank:    user.countryRank,
+        globalRank:     user.globalRank ?? null,
+        flagEmoji,
+      },
     };
+  }
+
+  /**
+   * Recalculate and persist streak + global/country ranks for a single user.
+   * Called after a memory is created so stats stay fresh without scanning
+   * every user on every profile fetch.
+   */
+  async recalculateUserStats(userId: string) {
+    // 1. Fetch this user's memories for streak calculation
+    const memories = await this.prisma.memory.findMany({
+      where: { creatorId: userId },
+      select: { createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const streak = this.calculateUserStreak(memories);
+
+    // 2. Fetch country of the user
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { phone: true },
+    });
+    const country = user?.phone?.split(' ')[0] || '🇰🇪';
+
+    // 3. Compute global rank by comparing with all stored streakDays (fast — just reads one column)
+    const allUsers = await this.prisma.user.findMany({
+      select: { id: true, streakDays: true, country: true },
+    });
+
+    // Sort globally to find the new user's global rank
+    const sorted = [...allUsers]
+      .map((u) => ({ ...u, streakDays: u.id === userId ? streak : u.streakDays }))
+      .sort((a, b) => b.streakDays - a.streakDays);
+
+    let globalRank = 1;
+    let prev = -1;
+    for (let i = 0; i < sorted.length; i++) {
+      if (sorted[i].streakDays !== prev) { globalRank = i + 1; prev = sorted[i].streakDays; }
+      if (sorted[i].id === userId) break;
+    }
+
+    // Country rank
+    const countryPeers = sorted.filter((u) =>
+      (u.id === userId ? country : u.country) === country,
+    );
+    let countryRank = 1;
+    let prevC = -1;
+    for (let i = 0; i < countryPeers.length; i++) {
+      if (countryPeers[i].streakDays !== prevC) { countryRank = i + 1; prevC = countryPeers[i].streakDays; }
+      if (countryPeers[i].id === userId) break;
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        streakDays: streak,
+        country,
+        countryRank,
+        globalRank: globalRank <= 300000 ? globalRank : null,
+      },
+    });
   }
 
   // ─── Profile update ────────────────────────────────────────────────────────
@@ -56,12 +132,21 @@ export class UsersService {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data,
-      select: USER_SELECT,
+      select: { ...USER_SELECT, phone: true },
     });
-    const stats = await this.getUserStats(userId);
+
+    const flagEmoji = user.country || user.phone?.split(' ')[0] || '🇰🇪';
+    const circlePulseDays = await this._getCirclePulseDays(userId);
+
     return {
       ...user,
-      stats,
+      stats: {
+        streakDays:     user.streakDays,
+        circlePulseDays,
+        countryRank:    user.countryRank,
+        globalRank:     user.globalRank ?? null,
+        flagEmoji,
+      },
     };
   }
 
@@ -217,6 +302,21 @@ export class UsersService {
       globalRank,
       flagEmoji,
     };
+  }
+
+  // ─── Circle Pulse (private helper) ───────────────────────────────────
+  private async _getCirclePulseDays(userId: string): Promise<number> {
+    const circleMemberships = await this.prisma.circleMembership.findMany({
+      where: { userId, accepted: true },
+      select: { memberId: true },
+    });
+    const circleUserIds = [userId, ...circleMemberships.map((m) => m.memberId)];
+    const circleMemories = await this.prisma.memory.findMany({
+      where: { creatorId: { in: circleUserIds } },
+      select: { createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return this.calculateCirclePulse(circleMemories);
   }
 
   private calculateUserStreak(memories: { createdAt: Date }[]): number {

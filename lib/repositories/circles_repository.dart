@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_client.dart';
 import '../core/api_config.dart';
 import 'auth_repository.dart';
+import '../models/user_profile.dart';
 import '../features/feed/streak_milestones.dart';
 import '../core/theme.dart';
 import '../core/router.dart';
@@ -47,9 +48,22 @@ class CircleMember {
 
 class CirclesNotifier extends StateNotifier<List<CircleMember>> {
   CirclesNotifier(this._ref) : super(const []) {
-    if (!kUseMockBackend) {
+    // Only fetch when authenticated. Also listen for auth changes to refresh.
+    final user = _ref.read(authProvider);
+    if (!kUseMockBackend && user.isAuthenticated) {
       fetchCircle();
     }
+
+    _ref.listen<UserProfile>(authProvider, (previous, next) {
+      if ((previous?.isAuthenticated ?? false) != next.isAuthenticated) {
+        if (next.isAuthenticated) {
+          fetchCircle();
+        } else {
+          // Clear local circle on logout
+          state = const [];
+        }
+      }
+    });
   }
 
   final Ref _ref;
@@ -254,6 +268,8 @@ final circlesProvider =
 
 class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
   PendingRequestsNotifier(this._ref) : super(const []) {
+    // Load pending requests only when authenticated
+    final user = _ref.read(authProvider);
     if (kUseMockBackend) {
       state = const [
         CircleMember(
@@ -262,9 +278,19 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
           firstName: 'Kofi',
         ),
       ];
-    } else {
+    } else if (user.isAuthenticated) {
       fetchPendingRequests();
     }
+
+    _ref.listen<UserProfile>(authProvider, (previous, next) {
+      if ((previous?.isAuthenticated ?? false) != next.isAuthenticated) {
+        if (next.isAuthenticated) {
+          fetchPendingRequests();
+        } else {
+          state = const [];
+        }
+      }
+    });
   }
 
   final Ref _ref;

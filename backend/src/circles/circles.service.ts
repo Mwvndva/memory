@@ -14,6 +14,56 @@ export class CirclesService {
     private readonly gateway: AppGateway,
   ) {}
 
+  // ─── Send a friend request (creates pending membership) ─────────────────
+
+  /**
+   * POST /circles/requests
+   * Creates a CircleMembership with accepted=false (pending) and notifies
+   * the target user via WebSocket so their inbox updates in real time.
+   */
+  async sendRequest(userId: string, memberId: string) {
+    if (userId === memberId) {
+      throw new BadRequestException('You cannot send a request to yourself');
+    }
+
+    // Ensure the target user exists
+    const target = await this.prisma.user.findUnique({ where: { id: memberId } });
+    if (!target) throw new NotFoundException('User not found');
+
+    // Check if a membership (pending or accepted) already exists
+    const existing = await this.prisma.circleMembership.findUnique({
+      where: { unique_user_member: { userId, memberId } },
+    });
+    if (existing) {
+      if (existing.accepted) {
+        throw new ConflictException('This user is already in your circle');
+      }
+      throw new ConflictException('A pending request to this user already exists');
+    }
+
+    const sender = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true, firstName: true, avatarUrl: true },
+    });
+
+    const membership = await this.prisma.circleMembership.create({
+      data: { userId, memberId, accepted: false },
+      include: {
+        member: { select: { id: true, username: true, firstName: true, avatarUrl: true } },
+      },
+    });
+
+    // Notify the receiver in real time (so their pending-requests badge updates)
+    this.gateway.sendToUser(memberId, 'new_circle_request', {
+      senderId: userId,
+      senderUsername: sender?.username ?? '',
+      senderFirstName: sender?.firstName ?? '',
+      senderAvatarUrl: sender?.avatarUrl ?? null,
+    });
+
+    return { message: 'Circle request sent', membership };
+  }
+
   // ─── Add member (directed friendship) ─────────────────────────────────────
 
   async addMember(userId: string, memberId: string) {

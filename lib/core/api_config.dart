@@ -12,6 +12,7 @@
 const String kBaseUrl = 'http://80.190.82.31:3000';
 
 /// WebSocket endpoint (ws://) used by the chat/notification layer.
+/// Must match the @WebSocketGateway({ path: '/ws' }) decorator in the backend.
 const String kWebSocketUrl = 'ws://80.190.82.31:3000/ws';
 
 // ---------------------------------------------------------------------------

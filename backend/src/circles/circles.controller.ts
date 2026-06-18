@@ -36,6 +36,18 @@ export class CirclesController {
   }
 
   /**
+   * POST /circles/requests
+   * Authenticated — sends a circle (friend) request to a user by their UUID.
+   * Creates a pending CircleMembership (accepted=false) and notifies the
+   * receiver via WebSocket. This is the primary path used by the Flutter app.
+   * Body: { "memberId": "<uuid>" }
+   */
+  @Post('requests')
+  sendRequest(@Req() req: any, @Body() dto: AddMemberDto) {
+    return this.circlesService.sendRequest(req.user.id, dto.memberId);
+  }
+
+  /**
    * POST /circles/members
    * Authenticated — adds a user to the caller's circle by their UUID.
    * Body: { "memberId": "<uuid>" }
@@ -44,6 +56,7 @@ export class CirclesController {
   addMember(@Req() req: any, @Body() dto: AddMemberDto) {
     return this.circlesService.addMember(req.user.id, dto.memberId);
   }
+
 
   /**
    * DELETE /circles/members/:memberId

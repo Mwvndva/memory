@@ -50,6 +50,11 @@ export class MessagesController {
       userId,
       parseInt(page, 10),
       parseInt(limit, 10),
-    );
+    ).then(async (result) => {
+      // Mark all messages from this sender to the current user as read
+      // (fire-and-forget — don't await so response isn't delayed)
+      this.messagesService.markRead(req.user.id, userId).catch(() => {});
+      return result;
+    });
   }
 }

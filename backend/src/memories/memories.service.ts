@@ -1,12 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, forwardRef, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppGateway } from '../gateway/app.gateway';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class MemoriesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gateway: AppGateway,
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -94,6 +97,9 @@ export class MemoriesService {
     } catch (err) {
       // Safe fallback - don't crash memory creation if notifications fail
     }
+
+    // Update the creator's streak and ranking (fire-and-forget — non-blocking)
+    this.usersService.recalculateUserStats(creatorId).catch(() => {});
 
     return memory;
   }

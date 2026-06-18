@@ -11,6 +11,7 @@ import 'circles_repository.dart';
 import '../core/router.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_repository.dart';
+import '../models/user_profile.dart';
 import 'package:flutter/material.dart';
 import '../features/feed/streak_milestones.dart';
 import '../core/theme.dart';
@@ -44,9 +45,27 @@ class ChatNotifier extends StateNotifier<ChatState> {
       : super(kUseMockBackend
             ? _initialState
             : const ChatState(messagesByContact: {}, unreadNotifications: 0)) {
-    if (!kUseMockBackend) {
+    // Only initialize websocket when authenticated. Also listen to auth changes to clear/reconnect.
+    final user = _ref.read(authProvider);
+    if (!kUseMockBackend && user.isAuthenticated) {
       _initWebSocket();
     }
+
+    _ref.listen<UserProfile>(authProvider, (previous, next) {
+      if ((previous?.isAuthenticated ?? false) != next.isAuthenticated) {
+        if (next.isAuthenticated) {
+          // Reconnect WS
+          _initWebSocket();
+        } else {
+          // Clear messages on logout
+          state = const ChatState(messagesByContact: {}, unreadNotifications: 0);
+          try {
+            _channel?.sink.close();
+            _channel = null;
+          } catch (_) {}
+        }
+      }
+    });
   }
 
   final Ref _ref;
