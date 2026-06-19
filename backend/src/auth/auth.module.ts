@@ -3,10 +3,25 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
+import type { StringValue } from 'ms';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RateLimitGuard } from './guards/rate-limit.guard';
+
+function resolveJwtExpiresIn(config: ConfigService): StringValue | number {
+  const rawValue = config.get<string>('JWT_EXPIRES_IN')?.trim();
+  if (!rawValue) {
+    return '30d';
+  }
+
+  const parsed = Number(rawValue);
+  if (Number.isFinite(parsed) && String(parsed) === rawValue) {
+    return parsed;
+  }
+
+  return rawValue as StringValue;
+}
 
 @Module({
   imports: [
@@ -18,7 +33,7 @@ import { RateLimitGuard } from './guards/rate-limit.guard';
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN') ?? '30d',
+          expiresIn: resolveJwtExpiresIn(config),
         },
       }),
     }),
