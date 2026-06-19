@@ -99,6 +99,12 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.clients.set(payload.sub, client);
       await this.redisService.setSocketSession(payload.sub, payload.sub);
 
+      client.on('close', (code: number, reason: Buffer) => {
+        this.logger.warn(
+          `🔌 Socket closed for ${client.username || payload.username} code=${code} reason=${reason?.toString?.() ?? ''}`,
+        );
+      });
+
       this.logger.log(`✅ Connected: ${payload.username} (${payload.sub})`);
 
       this._send(client, { event: 'connected', data: { userId: payload.sub, username: payload.username } });
@@ -250,6 +256,13 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     return update;
+  }
+
+  @SubscribeMessage('ping')
+  handlePing(@ConnectedSocket() client: AuthenticatedSocket) {
+    if (!client.userId) throw new WsException('Unauthorized');
+    this._send(client, { event: 'pong', data: { ts: Date.now() } });
+    return { ok: true };
   }
 
   /** Send an event to a specific user if they are online. */

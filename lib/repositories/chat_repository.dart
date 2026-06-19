@@ -60,10 +60,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
         } else {
           // Clear messages on logout
           state = const ChatState(messagesByContact: {}, unreadNotifications: 0);
-          try {
-            _channel?.sink.close();
-            _channel = null;
-          } catch (_) {}
+          _connectionGeneration++;
+          _closeSocket(manual: true);
         }
       }
     });
@@ -71,6 +69,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   final Ref _ref;
   WebSocketChannel? _channel;
+  Timer? _keepAliveTimer;
+  Timer? _reconnectTimer;
+  bool _isConnecting = false;
+  bool _manualClose = false;
+  bool _disposed = false;
+  int _reconnectAttempt = 0;
+  int _connectionGeneration = 0;
 
   // ─── Default mock data (shown when kUseMockBackend = true) ────────────────
 
@@ -140,62 +145,82 @@ class ChatNotifier extends StateNotifier<ChatState> {
   //   { "event": "auth_error",    "data": { "message" } }
 
   Future<void> _initWebSocket() async {
+    if (kUseMockBackend || _disposed || _isConnecting) return;
+
+    final user = _ref.read(authProvider);
+    if (!user.isAuthenticated) return;
+
+    _isConnecting = true;
     try {
+      final connectionId = ++_connectionGeneration;
+      _closeSocket(manual: false);
+
       final storage = _ref.read(secureStorageProvider);
       final token = await storage.read(key: 'auth_token') ?? '';
+      if (token.isEmpty) {
+        _scheduleReconnect();
+        return;
+      }
 
-      // Prefer sending the JWT in the Authorization header when establishing
-      // the WebSocket connection. The web_socket_channel package supports
-      // passing headers on non-web platforms (mobile/desktop). For web,
-      // browsers do not allow setting arbitrary headers on the WS upgrade;
-      // in that case the backend also supports reading the token from the
-      // Sec-WebSocket-Protocol header as a fallback.
       final uri = Uri.parse(kWebSocketUrl);
-      final headers = <String, dynamic>{if (token.isNotEmpty) 'Authorization': 'Bearer $token'};
+      final headers = <String, dynamic>{'Authorization': 'Bearer $token'};
 
+      _manualClose = false;
       _channel = IOWebSocketChannel.connect(
         uri,
         headers: headers,
       );
+
+      _reconnectAttempt = 0;
+      _keepAliveTimer = Timer.periodic(const Duration(seconds: 25), (_) {
+        if (_disposed || _manualClose || _channel == null) return;
+        try {
+          _channel?.sink.add(jsonEncode({
+            'event': 'ping',
+            'data': {'ts': DateTime.now().toIso8601String()},
+          }));
+        } catch (_) {}
+      });
 
       _channel?.stream.listen(
         (raw) {
           try {
             final frame = jsonDecode(raw as String) as Map<String, dynamic>;
             final event = frame['event'] as String?;
-            final data  = frame['data']  as Map<String, dynamic>? ?? {};
+            final data = frame['data'] as Map<String, dynamic>? ?? {};
 
-                    // Handle incoming circle share requests (try optimistic insert then reconcile)
-                    if (event == 'new_circle_request') {
-                      try {
-                        // Attempt optimistic insert from WS payload
-                        final senderId = data['senderId']?.toString() ?? '';
-                        final senderUsername = data['senderUsername'] as String? ?? '';
-                        final senderFirstName = data['senderFirstName'] as String? ?? '';
-                        final senderAvatar = data['senderAvatarUrl'] as String? ?? data['senderAvatar'] as String?;
+            if (event == 'new_circle_request') {
+              try {
+                final senderId = data['senderId']?.toString() ?? '';
+                final senderUsername = data['senderUsername'] as String? ?? '';
+                final senderFirstName = data['senderFirstName'] as String? ?? '';
+                final senderAvatar = data['senderAvatarUrl'] as String? ?? data['senderAvatar'] as String?;
 
-                        if (senderId.isNotEmpty || senderUsername.isNotEmpty) {
-                          try {
-                            _ref.read(pendingRequestsProvider.notifier).addPending(
-                              CircleMember(
-                                id: senderId.isNotEmpty ? senderId : (senderUsername.isNotEmpty ? senderUsername : ''),
-                                username: senderUsername.isNotEmpty ? senderUsername : (senderId.isNotEmpty ? senderId : ''),
-                                firstName: senderFirstName.isNotEmpty ? senderFirstName : (senderUsername.isNotEmpty ? senderUsername : 'Friend'),
-                                avatarUrl: senderAvatar,
-                              ),
-                            );
-                          } catch (_) {}
-                        }
+                if (senderId.isNotEmpty || senderUsername.isNotEmpty) {
+                  try {
+                    _ref.read(pendingRequestsProvider.notifier).addPending(
+                      CircleMember(
+                        id: senderId.isNotEmpty ? senderId : (senderUsername.isNotEmpty ? senderUsername : ''),
+                        username: senderUsername.isNotEmpty ? senderUsername : (senderId.isNotEmpty ? senderId : ''),
+                        firstName: senderFirstName.isNotEmpty ? senderFirstName : (senderUsername.isNotEmpty ? senderUsername : 'Friend'),
+                        avatarUrl: senderAvatar,
+                      ),
+                    );
+                  } catch (_) {}
+                }
 
-                        // Reconcile shortly after to ensure server truth (in case of missed WS fields)
-                        Future.delayed(const Duration(seconds: 4), () {
-                          try {
-                            _ref.read(pendingRequestsProvider.notifier).fetchPendingRequests();
-                          } catch (_) {}
-                        });
-                      } catch (_) {}
-                      return;
-                    }
+                Future.delayed(const Duration(seconds: 4), () {
+                  try {
+                    _ref.read(pendingRequestsProvider.notifier).fetchPendingRequests();
+                  } catch (_) {}
+                });
+              } catch (_) {}
+              return;
+            }
+
+            if (event == 'pong') {
+              return;
+            }
 
             if (event == 'new_message') {
               _handleIncoming(data, isMine: false);
@@ -210,10 +235,70 @@ class ChatNotifier extends StateNotifier<ChatState> {
             }
           } catch (_) {}
         },
-        onError: (_) {},
-        cancelOnError: false,
+        onError: (error) {
+          _handleSocketClosed('error: $error', connectionId);
+        },
+        onDone: () {
+          _handleSocketClosed('closed', connectionId);
+        },
+        cancelOnError: true,
       );
+    } catch (_) {
+      _scheduleReconnect();
+    } finally {
+      _isConnecting = false;
+    }
+  }
+
+  void _handleSocketClosed(String reason, int connectionId) {
+    if (connectionId != _connectionGeneration) return;
+
+    _keepAliveTimer?.cancel();
+    _keepAliveTimer = null;
+    _channel = null;
+
+    if (_disposed || _manualClose) return;
+    if (!_ref.read(authProvider).isAuthenticated) return;
+
+    _scheduleReconnect(reason: reason);
+  }
+
+  void _scheduleReconnect({String reason = 'socket closed'}) {
+    if (_disposed || _manualClose) return;
+    if (!_ref.read(authProvider).isAuthenticated) return;
+    if (_reconnectTimer?.isActive ?? false) return;
+
+    final delays = <Duration>[
+      const Duration(seconds: 1),
+      const Duration(seconds: 2),
+      const Duration(seconds: 4),
+      const Duration(seconds: 8),
+      const Duration(seconds: 15),
+    ];
+    final index = _reconnectAttempt < delays.length ? _reconnectAttempt : delays.length - 1;
+    final delay = delays[index];
+    if (_reconnectAttempt < delays.length - 1) {
+      _reconnectAttempt++;
+    }
+
+    _reconnectTimer = Timer(delay, () {
+      _reconnectTimer = null;
+      if (_disposed || _manualClose) return;
+      if (!_ref.read(authProvider).isAuthenticated) return;
+      _initWebSocket();
+    });
+  }
+
+  void _closeSocket({required bool manual}) {
+    _manualClose = manual;
+    _keepAliveTimer?.cancel();
+    _keepAliveTimer = null;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    try {
+      _channel?.sink.close();
     } catch (_) {}
+    _channel = null;
   }
 
   void _handleIncoming(Map<String, dynamic> data, {required bool isMine}) {
@@ -498,7 +583,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   @override
   void dispose() {
-    _channel?.sink.close();
+    _disposed = true;
+    _connectionGeneration++;
+    _closeSocket(manual: true);
     super.dispose();
   }
 }
