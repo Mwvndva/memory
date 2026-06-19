@@ -106,12 +106,6 @@ export class AuthService {
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
   private issueToken(userId: string, username: string): string {
-    return this.jwt.sign(
-      { sub: userId, username },
-      {
-        secret: process.env.JWT_SECRET!,
-        expiresIn: (process.env.JWT_EXPIRES_IN ?? '30d') as any,
-      },
-    );
+    return this.jwt.sign({ sub: userId, username });
   }
 }
