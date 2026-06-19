@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/io.dart';
 
 import '../core/api_client.dart';
 import '../core/api_config.dart';
@@ -152,7 +152,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final uri = Uri.parse(kWebSocketUrl);
       final headers = <String, dynamic>{if (token.isNotEmpty) 'Authorization': 'Bearer $token'};
 
-      _channel = WebSocketChannel.connect(
+      _channel = IOWebSocketChannel.connect(
         uri,
         headers: headers,
       );
