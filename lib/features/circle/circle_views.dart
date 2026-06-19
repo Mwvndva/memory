@@ -473,43 +473,35 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-  final chatState = ref.watch(chatProvider);
-  final messages = chatState.messagesByContact[widget.contactName] ?? [];
-  final pending = ref.watch(pendingRequestsProvider);
-  final circleMembers = ref.watch(circlesProvider);
-  final isPendingRequest = pending.any((p) => p.username.toLowerCase() == widget.contactName.toLowerCase() || p.id == widget.contactName);
-  final isAccepted = circleMembers.any((m) => m.username.toLowerCase() == widget.contactName.toLowerCase() || m.id == widget.contactName);
+    final chatState = ref.watch(chatProvider);
+    final messages = chatState.messagesByContact[widget.contactName] ?? [];
+    final pending = ref.watch(pendingRequestsProvider);
+    final circleMembers = ref.watch(circlesProvider);
+    final isPendingRequest = pending.any((p) => p.username.toLowerCase() == widget.contactName.toLowerCase() || p.id == widget.contactName);
+    final isAccepted = circleMembers.any((m) => m.username.toLowerCase() == widget.contactName.toLowerCase() || m.id == widget.contactName);
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
-        padding: EdgeInsets.fromLTRB(
-          22,
-          0,
-          22,
-          16 + MediaQuery.paddingOf(context).bottom,
-        ),
         decoration: _softBackground(dark),
         child: Column(
           children: [
-            // Black header with Back, avatar and username
             Container(
-              width: double.infinity,
               color: kBlack,
-              padding: EdgeInsets.fromLTRB(12, 24, 12, 12),
+              padding: EdgeInsets.fromLTRB(
+                12,
+                MediaQuery.paddingOf(context).top + 8,
+                16,
+                12,
+              ),
               child: Row(
                 children: [
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    ),
+                  IconButton(
                     onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                    label: const Text('Back', style: TextStyle(fontWeight: FontWeight.w800)),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                    tooltip: 'Back',
                   ),
-                  const SizedBox(width: 8),
-                  // avatar lookup from circles provider
+                  const SizedBox(width: 4),
                   Builder(builder: (ctx) {
                     final members = ref.watch(circlesProvider);
                     final match = members.firstWhere(
@@ -529,271 +521,411 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       child: (match.avatarUrl == null || match.avatarUrl!.isEmpty)
                           ? Text(
                               match.firstName.isNotEmpty ? match.firstName[0].toUpperCase() : widget.contactName[0].toUpperCase(),
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+                              style: const TextStyle(color: kBlack, fontWeight: FontWeight.w900, fontSize: 13),
                             )
                           : null,
                     );
                   }),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      widget.contactName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.contactName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isAccepted
+                              ? 'Circle Member'
+                              : (isPendingRequest ? 'Wants to share' : 'Not in Circle'),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            if (_loadingHistory)
-              Padding(
-                padding: const EdgeInsets.only(top: 24),
-                child: Center(child: CircularProgressIndicator(color: dark ? kYellow : kBlack)),
-              )
-            else
-              Expanded(
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Background logo centered at 30% opacity, half the inbox
                     Center(
                       child: Opacity(
-                        opacity: 0.3,
+                        opacity: 0.15,
                         child: Image.asset(
                           'assets/images/memory-logo.png',
-                          width: MediaQuery.of(context).size.width * 0.5,
-                          height: MediaQuery.of(context).size.width * 0.5,
+                          width: MediaQuery.of(context).size.width * 0.45,
+                          height: MediaQuery.of(context).size.width * 0.45,
                           fit: BoxFit.contain,
                         ),
                       ),
                     ),
-                    ListView.builder(
-                  controller: _scrollController,
-                  itemCount: messages.length,
-                  padding: EdgeInsets.zero,
-                  itemBuilder: (context, i) {
-                    final msg = messages[i];
-                    return _inboxBubble(msg.sender, msg.text, msg.isMine, dark);
-                  },
-                    ),
+                    if (_loadingHistory)
+                      Center(
+                        child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
+                      )
+                    else if (messages.isEmpty)
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'No messages yet',
+                              style: TextStyle(
+                                color: kCharcoal,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Say hello to start the conversation!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: kCharcoal.withValues(alpha: 0.6),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ListView.builder(
+                        controller: _scrollController,
+                        itemCount: messages.length,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        physics: const BouncingScrollPhysics(),
+                        itemBuilder: (context, i) {
+                          final msg = messages[i];
+                          return _inboxBubble(msg.sender, msg.text, msg.isMine, dark);
+                        },
+                      ),
                   ],
                 ),
               ),
-            const SizedBox(height: 10),
-            // If this contact is a pending share request, lock the composer and show accept/ignore actions
-            if (isPendingRequest)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                decoration: BoxDecoration(
-                  color: dark ? kBlack : kYellow,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${widget.contactName} wants to share memories with you',
-                            style: TextStyle(
-                              color: dark ? kCream : kCharcoal,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Accept to start messaging. You can also ignore this request.',
-                            style: TextStyle(
-                              color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () async {
-                        // Accept the pending request and refresh circle + messages
-                        final success = await ref.read(pendingRequestsProvider.notifier).acceptRequest(
-                          // prefer id match
-                          pending.firstWhere((p) => p.username == widget.contactName, orElse: () => pending.firstWhere((p) => p.id == widget.contactName, orElse: () => CircleMember(id: widget.contactName, username: widget.contactName, firstName: widget.contactName))).id,
-                        );
-                        if (success) {
-                          // After accepting, ensure messages/history is loaded
-                          await ref.read(chatProvider.notifier).loadConversation(widget.contactName);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [dark ? kYellow : kBlack, kAmber]),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text('Accept', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () async {
-                        final id = pending.firstWhere((p) => p.username == widget.contactName, orElse: () => pending.firstWhere((p) => p.id == widget.contactName, orElse: () => CircleMember(id: widget.contactName, username: widget.contactName, firstName: widget.contactName))).id;
-                        await ref.read(pendingRequestsProvider.notifier).declineRequest(id);
-                        // After declining, go back to chat list (guard context.mounted)
-                        if (!context.mounted) return;
-                        context.pop();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text('Ignore', style: TextStyle(color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62), fontWeight: FontWeight.w900)),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (!isAccepted)
-              // Contact is neither pending nor accepted — lock composer until accepted
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                decoration: BoxDecoration(
-                  color: dark ? kBlack : kYellow,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${widget.contactName} is not in your circle',
-                            style: TextStyle(
-                              color: dark ? kCream : kCharcoal,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'You can only message this user after a share request is accepted.',
-                            style: TextStyle(
-                              color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () async {
-                        // Navigate back to list — user can send a request from there
-                        if (!context.mounted) return;
-                        context.pop();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
-                        ),
-                        child: Text('Back', style: TextStyle(color: dark ? kCream : kCharcoal, fontWeight: FontWeight.w900)),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                height: 52,
-                padding: const EdgeInsets.only(left: 16, right: 6),
-                decoration: BoxDecoration(
-                  color: dark ? kBlack : kBlack,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        onSubmitted: (_) => _sendMessage(),
-                        decoration: InputDecoration(
-                          hintText: 'Message ${widget.contactName}',
-                          hintStyle: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _sendMessage,
-                      child: Container(
-                        width: 56,
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text(
-                          'Send',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                22,
+                10,
+                22,
+                16 + MediaQuery.paddingOf(context).bottom,
               ),
+              child: _buildComposerOrBanner(
+                isPendingRequest,
+                isAccepted,
+                pending,
+                dark,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildComposerOrBanner(
+    bool isPendingRequest,
+    bool isAccepted,
+    List<CircleMember> pending,
+    bool dark,
+  ) {
+    if (isPendingRequest) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: kBlack,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${widget.contactName} wants to share memories',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Accept to start messaging and sharing memories.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      final id = pending.firstWhere(
+                        (p) => p.username == widget.contactName,
+                        orElse: () => pending.firstWhere(
+                          (p) => p.id == widget.contactName,
+                          orElse: () => CircleMember(
+                            id: widget.contactName,
+                            username: widget.contactName,
+                            firstName: widget.contactName,
+                          ),
+                        ),
+                      ).id;
+                      await ref.read(pendingRequestsProvider.notifier).declineRequest(id);
+                      if (!mounted) return;
+                      context.pop();
+                    },
+                    child: Container(
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'Ignore',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      final success = await ref.read(pendingRequestsProvider.notifier).acceptRequest(
+                        pending.firstWhere(
+                          (p) => p.username == widget.contactName,
+                          orElse: () => pending.firstWhere(
+                            (p) => p.id == widget.contactName,
+                            orElse: () => CircleMember(
+                              id: widget.contactName,
+                              username: widget.contactName,
+                              firstName: widget.contactName,
+                            ),
+                          ),
+                        ).id,
+                      );
+                      if (success) {
+                        await ref.read(chatProvider.notifier).loadConversation(widget.contactName);
+                      }
+                    },
+                    child: Container(
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: kYellow,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'Accept',
+                        style: TextStyle(
+                          color: kBlack,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    } else if (!isAccepted) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: kBlack,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${widget.contactName} is not in your circle',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'You can only message after a circle request is accepted.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 14),
+            GestureDetector(
+              onTap: () {
+                if (mounted) context.pop();
+              },
+              child: Container(
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'Back',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        height: 52,
+        padding: const EdgeInsets.only(left: 18, right: 6),
+        decoration: BoxDecoration(
+          color: kBlack,
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _messageController,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+                onSubmitted: (_) => _sendMessage(),
+                decoration: InputDecoration(
+                  hintText: 'Message ${widget.contactName}',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _sendMessage,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                decoration: BoxDecoration(
+                  color: kYellow,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'Send',
+                  style: TextStyle(
+                    color: kBlack,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   Widget _inboxBubble(String from, String text, bool mine, bool dark) {
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        constraints: const BoxConstraints(maxWidth: 260),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+        constraints: const BoxConstraints(maxWidth: 270),
         decoration: BoxDecoration(
-          color: mine ? (dark ? kYellow : kBlack) : (dark ? kBlack : kYellow),
-          borderRadius: BorderRadius.circular(18),
+          color: mine 
+              ? (dark ? kYellow : kBlack) 
+              : (dark ? kBlack : kCream),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: mine ? const Radius.circular(20) : const Radius.circular(4),
+            bottomRight: mine ? const Radius.circular(4) : const Radius.circular(20),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: mine ? Colors.white : (dark ? kCream : kCharcoal),
+            color: mine 
+                ? (dark ? kBlack : Colors.white) 
+                : (dark ? kCream : kCharcoal),
             fontSize: 13,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
+            height: 1.3,
           ),
         ),
       ),
     );
   }
-
-  // ...existing code...
-
 
   BoxDecoration _softBackground(bool dark) => BoxDecoration(
         color: dark ? kDarkCream : kCream,
