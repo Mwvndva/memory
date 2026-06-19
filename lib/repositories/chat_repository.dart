@@ -8,10 +8,10 @@ import '../core/api_config.dart';
 import '../core/secure_storage.dart';
 import '../models/message.dart';
 import 'circles_repository.dart';
+import '../models/user_profile.dart';
 import '../core/router.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_repository.dart';
-import '../models/user_profile.dart';
 import 'package:flutter/material.dart';
 import '../features/feed/streak_milestones.dart';
 import '../core/theme.dart';
@@ -143,8 +143,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final storage = _ref.read(secureStorageProvider);
       final token = await storage.read(key: 'auth_token') ?? '';
 
+      // Prefer sending the JWT in the Authorization header when establishing
+      // the WebSocket connection. The web_socket_channel package supports
+      // passing headers on non-web platforms (mobile/desktop). For web,
+      // browsers do not allow setting arbitrary headers on the WS upgrade;
+      // in that case the backend also supports reading the token from the
+      // Sec-WebSocket-Protocol header as a fallback.
+      final uri = Uri.parse(kWebSocketUrl);
+      final headers = <String, dynamic>{if (token.isNotEmpty) 'Authorization': 'Bearer $token'};
+
       _channel = WebSocketChannel.connect(
-        Uri.parse('$kWebSocketUrl?token=$token'),
+        uri,
+        headers: headers,
       );
 
       _channel?.stream.listen(
@@ -153,6 +163,38 @@ class ChatNotifier extends StateNotifier<ChatState> {
             final frame = jsonDecode(raw as String) as Map<String, dynamic>;
             final event = frame['event'] as String?;
             final data  = frame['data']  as Map<String, dynamic>? ?? {};
+
+                    // Handle incoming circle share requests (try optimistic insert then reconcile)
+                    if (event == 'new_circle_request') {
+                      try {
+                        // Attempt optimistic insert from WS payload
+                        final senderId = data['senderId']?.toString() ?? '';
+                        final senderUsername = data['senderUsername'] as String? ?? '';
+                        final senderFirstName = data['senderFirstName'] as String? ?? '';
+                        final senderAvatar = data['senderAvatarUrl'] as String? ?? data['senderAvatar'] as String?;
+
+                        if (senderId.isNotEmpty || senderUsername.isNotEmpty) {
+                          try {
+                            _ref.read(pendingRequestsProvider.notifier).addPending(
+                              CircleMember(
+                                id: senderId.isNotEmpty ? senderId : (senderUsername.isNotEmpty ? senderUsername : ''),
+                                username: senderUsername.isNotEmpty ? senderUsername : (senderId.isNotEmpty ? senderId : ''),
+                                firstName: senderFirstName.isNotEmpty ? senderFirstName : (senderUsername.isNotEmpty ? senderUsername : 'Friend'),
+                                avatarUrl: senderAvatar,
+                              ),
+                            );
+                          } catch (_) {}
+                        }
+
+                        // Reconcile shortly after to ensure server truth (in case of missed WS fields)
+                        Future.delayed(const Duration(seconds: 4), () {
+                          try {
+                            _ref.read(pendingRequestsProvider.notifier).fetchPendingRequests();
+                          } catch (_) {}
+                        });
+                      } catch (_) {}
+                      return;
+                    }
 
             if (event == 'new_message') {
               _handleIncoming(data, isMine: false);

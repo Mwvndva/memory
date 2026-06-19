@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -268,7 +269,8 @@ final circlesProvider =
 
 class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
   PendingRequestsNotifier(this._ref) : super(const []) {
-    // Load pending requests only when authenticated
+    // Load pending requests only when authenticated. Also start a lightweight
+    // reconciliation poll so we don't depend entirely on WebSocket delivery.
     final user = _ref.read(authProvider);
     if (kUseMockBackend) {
       state = const [
@@ -280,20 +282,24 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
       ];
     } else if (user.isAuthenticated) {
       fetchPendingRequests();
+      _startReconciliationPoll();
     }
 
     _ref.listen<UserProfile>(authProvider, (previous, next) {
       if ((previous?.isAuthenticated ?? false) != next.isAuthenticated) {
         if (next.isAuthenticated) {
           fetchPendingRequests();
+          _startReconciliationPoll();
         } else {
           state = const [];
+          _cancelReconciliationPoll();
         }
       }
     });
   }
 
   final Ref _ref;
+  Timer? _reconTimer;
 
   Future<void> fetchPendingRequests() async {
     try {
@@ -305,6 +311,28 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
         return CircleMember.fromJson(userJson);
       }).toList();
     } catch (_) {}
+  }
+
+  /// Optimistically add a pending request locally. This is used when a WS
+  /// event arrives so the UI updates immediately. A reconciliation poll will
+  /// ensure server truth shortly after.
+  void addPending(CircleMember member) {
+    if (state.any((m) => m.id == member.id || m.username == member.username)) return;
+    state = [...state, member];
+  }
+
+  void _startReconciliationPoll() {
+    _cancelReconciliationPoll();
+    _reconTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      try {
+        fetchPendingRequests();
+      } catch (_) {}
+    });
+  }
+
+  void _cancelReconciliationPoll() {
+    _reconTimer?.cancel();
+    _reconTimer = null;
   }
 
   Future<bool> acceptRequest(String senderId) async {
@@ -342,6 +370,12 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
     } catch (_) {
       return false;
     }
+  }
+
+  @override
+  void dispose() {
+    _cancelReconciliationPoll();
+    super.dispose();
   }
 }
 

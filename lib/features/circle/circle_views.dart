@@ -112,7 +112,14 @@ class CircleChatListView extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        ...ref.watch(pendingRequestsProvider).map((req) => _requestRow(context, req, dark, ref)),
+                        ...ref.watch(pendingRequestsProvider).map((req) => GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                // Open the chat/inbox for this requester (thread placeholder)
+                                context.push('/chat/${req.username}');
+                              },
+                              child: _requestRow(context, req, dark, ref),
+                            )),
                         const SizedBox(height: 18),
                       ],
                       if (circleMembers.isEmpty && ref.watch(pendingRequestsProvider).isEmpty)
@@ -466,8 +473,12 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final chatState = ref.watch(chatProvider);
-    final messages = chatState.messagesByContact[widget.contactName] ?? [];
+  final chatState = ref.watch(chatProvider);
+  final messages = chatState.messagesByContact[widget.contactName] ?? [];
+  final pending = ref.watch(pendingRequestsProvider);
+  final circleMembers = ref.watch(circlesProvider);
+  final isPendingRequest = pending.any((p) => p.username.toLowerCase() == widget.contactName.toLowerCase() || p.id == widget.contactName);
+  final isAccepted = circleMembers.any((m) => m.username.toLowerCase() == widget.contactName.toLowerCase() || m.id == widget.contactName);
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -573,56 +584,185 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 ),
               ),
             const SizedBox(height: 10),
-            Container(
-              height: 52,
-              padding: const EdgeInsets.only(left: 16, right: 6),
-              decoration: BoxDecoration(
-                color: dark ? kBlack : kBlack,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      onSubmitted: (_) => _sendMessage(),
-                      decoration: InputDecoration(
-                        hintText: 'Message ${widget.contactName}',
-                        hintStyle: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5),
-                        ),
-                        border: InputBorder.none,
+            // If this contact is a pending share request, lock the composer and show accept/ignore actions
+            if (isPendingRequest)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: dark ? kBlack : kYellow,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${widget.contactName} wants to share memories with you',
+                            style: TextStyle(
+                              color: dark ? kCream : kCharcoal,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Accept to start messaging. You can also ignore this request.',
+                            style: TextStyle(
+                              color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: _sendMessage,
-                    child: Container(
-                      width: 56,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(999),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () async {
+                        // Accept the pending request and refresh circle + messages
+                        final success = await ref.read(pendingRequestsProvider.notifier).acceptRequest(
+                          // prefer id match
+                          pending.firstWhere((p) => p.username == widget.contactName, orElse: () => pending.firstWhere((p) => p.id == widget.contactName, orElse: () => CircleMember(id: widget.contactName, username: widget.contactName, firstName: widget.contactName))).id,
+                        );
+                        if (success) {
+                          // After accepting, ensure messages/history is loaded
+                          await ref.read(chatProvider.notifier).loadConversation(widget.contactName);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [dark ? kYellow : kBlack, kAmber]),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text('Accept', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
                       ),
-                      child: const Text(
-                        'Send',
-                        style: TextStyle(
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () async {
+                        final id = pending.firstWhere((p) => p.username == widget.contactName, orElse: () => pending.firstWhere((p) => p.id == widget.contactName, orElse: () => CircleMember(id: widget.contactName, username: widget.contactName, firstName: widget.contactName))).id;
+                        await ref.read(pendingRequestsProvider.notifier).declineRequest(id);
+                        // After declining, go back to chat list (guard context.mounted)
+                        if (!context.mounted) return;
+                        context.pop();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text('Ignore', style: TextStyle(color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62), fontWeight: FontWeight.w900)),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (!isAccepted)
+              // Contact is neither pending nor accepted — lock composer until accepted
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: dark ? kBlack : kYellow,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${widget.contactName} is not in your circle',
+                            style: TextStyle(
+                              color: dark ? kCream : kCharcoal,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'You can only message this user after a share request is accepted.',
+                            style: TextStyle(
+                              color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () async {
+                        // Navigate back to list — user can send a request from there
+                        if (!context.mounted) return;
+                        context.pop();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(999),
+                          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
+                        ),
+                        child: Text('Back', style: TextStyle(color: dark ? kCream : kCharcoal, fontWeight: FontWeight.w900)),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                height: 52,
+                padding: const EdgeInsets.only(left: 16, right: 6),
+                decoration: BoxDecoration(
+                  color: dark ? kBlack : kBlack,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        onSubmitted: (_) => _sendMessage(),
+                        decoration: InputDecoration(
+                          hintText: 'Message ${widget.contactName}',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                          border: InputBorder.none,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    GestureDetector(
+                      onTap: _sendMessage,
+                      child: Container(
+                        width: 56,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'Send',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
