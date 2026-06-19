@@ -57,17 +57,42 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(client: AuthenticatedSocket, req: IncomingMessage) {
     try {
-      const url = new URL(req.url ?? '/', `http://localhost`);
-      const token = url.searchParams.get('token');
+      // Prefer Authorization header (Bearer <token>). If not present,
+      // fall back to Sec-WebSocket-Protocol (useful for browser clients
+      // which cannot set arbitrary headers during the WebSocket upgrade).
+      const headers = (req.headers || {}) as Record<string, unknown>;
+      let token: string | undefined;
+
+      const authHeader = (headers['authorization'] || headers['Authorization']) as string | undefined;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.slice(7).trim();
+      }
+
+      // Fallback: some clients pass the token inside Sec-WebSocket-Protocol
+      if (!token && headers['sec-websocket-protocol']) {
+        const proto = String(headers['sec-websocket-protocol']);
+        // May be comma-separated list; pick the first entry that looks like a JWT
+        const candidates = proto.split(',').map((s) => s.trim()).filter(Boolean);
+        for (const p of candidates) {
+          if (p.startsWith('Bearer ')) {
+            token = p.slice(7).trim();
+            break;
+          }
+          // crude JWT shape check: contains two dots
+          if (p.split('.').length === 3) {
+            token = p;
+            break;
+          }
+        }
+      }
 
       if (!token) throw new Error('No token provided');
 
-      const payload = this.jwtService.verify<{ sub: string; username: string }>(
-        token,
-        { secret: process.env.JWT_SECRET ?? 'change_me_in_production' },
-      );
+      // Use the application's JwtService (configured via JwtModule). Avoid
+      // supplying a silent fallback secret here so missing secrets fail fast.
+      const payload = this.jwtService.verify<{ sub: string; username: string }>(token);
 
-      client.userId   = payload.sub;
+      client.userId = payload.sub;
       client.username = payload.username;
 
       // Track in memory-map and Redis
@@ -78,8 +103,10 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this._send(client, { event: 'connected', data: { userId: payload.sub, username: payload.username } });
     } catch (err) {
-      this.logger.warn(`❌ Rejected unauthenticated connection`);
-      this._send(client, { event: 'auth_error', data: { message: 'Invalid or missing token' } });
+      this.logger.warn(`❌ Rejected unauthenticated connection: ${err?.message ?? err}`);
+      try {
+        this._send(client, { event: 'auth_error', data: { message: 'Invalid or missing token' } });
+      } catch (_) {}
       client.terminate();
     }
   }
@@ -129,18 +156,20 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       throw new WsException(`Receiver user "${payload.receiver}" not found`);
     }
 
-    // Verify sender is in receiver's circle (and accepted)
-    const isMember = await this.prisma.circleMembership.findUnique({
-      where: {
-        unique_user_member: {
-          userId: receiverId,
-          memberId: client.userId,
-        },
-      },
+    // Verify sender has added (and has accepted) the receiver in their circle.
+    // With reciprocal upsert on accept, this will be true for both users after acceptance.
+    // Verify sender has added (and has accepted) the receiver in their circle,
+    // OR the receiver has added (and accepted) the sender. This symmetric
+    // check allows the message to be sent once either acceptance exists.
+    const outgoing = await this.prisma.circleMembership.findUnique({
+      where: { unique_user_member: { userId: client.userId, memberId: receiverId } },
+    });
+    const incoming = await this.prisma.circleMembership.findUnique({
+      where: { unique_user_member: { userId: receiverId, memberId: client.userId } },
     });
 
-    if (!isMember || !isMember.accepted) {
-      throw new WsException(`You are not in @${payload.receiver}'s circle`);
+    if (!((outgoing && outgoing.accepted) || (incoming && incoming.accepted))) {
+      throw new WsException(`You are not allowed to message @${payload.receiver}`);
     }
 
     // Persist to PostgreSQL
@@ -150,7 +179,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       text: payload.text.trim(),
     });
 
-    const outgoing = {
+    const outgoingPayload = {
       id: message.id,
       sender: client.username,
       text: message.text,
@@ -160,13 +189,13 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // Deliver to receiver if online
     if (receiverSocket) {
-      this._send(receiverSocket, { event: 'new_message', data: outgoing });
+      this._send(receiverSocket, { event: 'new_message', data: outgoingPayload });
     }
 
     // ACK to sender (with is_mine: true for their own display)
     this._send(client, {
       event: 'message_sent',
-      data: { ...outgoing, is_mine: true },
+      data: { ...outgoingPayload, is_mine: true },
     });
 
     return message;

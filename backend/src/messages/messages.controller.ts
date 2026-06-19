@@ -23,17 +23,17 @@ export class MessagesController {
     @Query('page') page = '1',
     @Query('limit') limit = '50',
   ) {
-    // Check if the target user is in the caller's circle (and accepted)
-    const isMember = await this.prisma.circleMembership.findUnique({
-      where: {
-        unique_user_member: {
-          userId: req.user.id,
-          memberId: userId,
-        },
-      },
+    // Check if the target user is in the caller's circle (accepted) OR the
+    // caller is in the target user's circle (accepted). This allows messaging
+    // to work for either party after acceptance.
+    const outgoing = await this.prisma.circleMembership.findUnique({
+      where: { unique_user_member: { userId: req.user.id, memberId: userId } },
+    });
+    const incoming = await this.prisma.circleMembership.findUnique({
+      where: { unique_user_member: { userId: userId, memberId: req.user.id } },
     });
 
-    if (!isMember || !isMember.accepted) {
+    if (!((outgoing && outgoing.accepted) || (incoming && incoming.accepted))) {
       return {
         data: [],
         meta: {

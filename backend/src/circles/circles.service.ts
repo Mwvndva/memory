@@ -172,6 +172,27 @@ export class CirclesService {
     // Check and trigger milestone broadcast for the circle owner (senderId)
     await this.checkAndBroadcastCircleMilestone(senderId);
 
+    // Ensure reciprocal accepted membership exists so both users see each other
+    // in their outgoing circle lists. This makes circles effectively mutual
+    // after acceptance and simplifies client logic.
+    try {
+      await this.prisma.circleMembership.create({
+        data: { userId: memberId, memberId: senderId, accepted: true },
+      });
+    } catch (err: any) {
+      // P2002 unique constraint -> already exists; attempt to update to accepted if needed
+      if (err?.code === 'P2002') {
+        try {
+          const existingReciprocal = await this.prisma.circleMembership.findFirst({
+            where: { userId: memberId, memberId: senderId },
+          });
+          if (existingReciprocal && !existingReciprocal.accepted) {
+            await this.prisma.circleMembership.update({ where: { id: existingReciprocal.id }, data: { accepted: true } });
+          }
+        } catch (_) {}
+      }
+    }
+
     return updated;
   }
 

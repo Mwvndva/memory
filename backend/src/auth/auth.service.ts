@@ -109,7 +109,7 @@ export class AuthService {
     return this.jwt.sign(
       { sub: userId, username },
       {
-        secret: process.env.JWT_SECRET ?? 'change_me_in_production',
+        secret: process.env.JWT_SECRET!,
         expiresIn: (process.env.JWT_EXPIRES_IN ?? '30d') as any,
       },
     );

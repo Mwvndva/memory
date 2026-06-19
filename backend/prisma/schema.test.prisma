@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("TEST_DATABASE_URL")
+}
+
+// Rest of the schema mirrors production schema. Kept minimal for tests.
+
+model User {
+  id           String   @id @default(uuid())
+  firstName    String   @map("first_name") @db.VarChar(50)
+  lastName     String   @map("last_name") @db.VarChar(50)
+  username     String   @unique @db.VarChar(30)
+  email        String   @unique @db.VarChar(100)
+  phone        String   @db.VarChar(20)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  avatarUrl    String?  @map("avatar_url") @db.VarChar(255)
+  country      String   @default("") @db.VarChar(50)
+  streakDays   Int      @default(0) @map("streak_days")
+  countryRank  Int      @default(1) @map("country_rank")
+  globalRank   Int?     @map("global_rank")
+  acceptedTermsAt DateTime? @map("accepted_terms_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  memories            Memory[]
+  sentMessages        Message[]          @relation("SentMessages")
+  receivedMessages    Message[]          @relation("ReceivedMessages")
+  userMemberships     CircleMembership[] @relation("UserMemberships")
+  memberMemberships   CircleMembership[] @relation("MemberMemberships")
+
+  @@index([phone], name: "idx_users_phone")
+  @@index([createdAt], name: "idx_users_created_at")
+  @@map("users")
+}
+
+model CircleMembership {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  memberId  String   @map("member_id")
+  accepted  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User @relation("UserMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  member User @relation("MemberMemberships", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, memberId], name: "unique_user_member")
+  @@index([userId], name: "idx_circle_user_id")
+  @@index([memberId], name: "idx_circle_member_id")
+  @@map("circle_memberships")
+}
+
+model Memory {
+  id             String   @id @default(uuid())
+  creatorId      String   @map("creator_id")
+  caption        String   @db.Text
+  videoUrl       String   @map("video_url") @db.VarChar(255)
+  gradientColors String[] @map("gradient_colors")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, createdAt(sort: Desc)], name: "idx_memories_creator_created")
+  @@map("memories")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String   @map("sender_id")
+  receiverId String   @map("receiver_id")
+  timestamp  DateTime @default(now())
+  text       String   @db.Text
+  isRead     Boolean  @default(false) @map("is_read")
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId, timestamp(sort: Desc)], name: "idx_messages_conversation")
+  @@index([receiverId, isRead], name: "idx_messages_unread")
+  @@map("messages")
+}
