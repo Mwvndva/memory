@@ -282,258 +282,258 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
       const SnackBar(content: Text('Memory posted successfully to your Circle!')),
     );
 
-    // Navigate back to feed
-    context.go('/feed');
+    // Navigate back to capture
+    context.go('/capture');
   }
 
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
+    final bottomPad = MediaQuery.paddingOf(context).bottom;
+    final topPad = MediaQuery.paddingOf(context).top;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
+      onVerticalDragEnd: (details) {
+        if ((details.primaryVelocity ?? 0) < -300) context.go('/feed');
+      },
       child: Scaffold(
+        backgroundColor: Colors.black,
         resizeToAvoidBottomInset: false,
-        body: Container(
-          decoration: _softBackground(dark),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                28,
-                24,
-                28,
-                94 + MediaQuery.paddingOf(context).bottom,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Full-screen camera preview
+            _capturePreview(),
+
+            // Top-right: person/circle icon
+            Positioned(
+              top: topPad + 16,
+              right: 20,
+              child: _overlayIconButton(
+                icon: Icons.person_rounded,
+                onTap: () => context.go('/circle'),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Text(
-                      'Record your memory',
-                      style: TextStyle(
-                        color: dark ? kCream : kCharcoal,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
+            ),
+
+            // Bottom controls row
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: bottomPad + 16,
+              child: SizedBox(
+                height: 90,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Grid button - bottom left
+                    Positioned(
+                      left: 36,
+                      child: _overlayIconButton(
+                        icon: Icons.grid_view_rounded,
+                        onTap: () => context.go('/feed'),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(child: _capturePreview()),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 82,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        _hasRecording
-                            ? _pill(
-                                'Send to circle',
-                                _sendToCircle,
-                                dark,
-                                color: dark ? kYellow : kBlack,
-                                foreground: Colors.white,
-                                width: 282,
-                              )
-                            : GestureDetector(
-                                onTap: _toggleRecording,
-                                child: Container(
-                                  width: 82,
-                                  height: 82,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: dark ? kYellow : kBlack,
-                                    border: Border.all(
-                                      color: const Color(0xFFFFE7DD),
-                                      width: 10,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    _isRecording ? Icons.stop_rounded : Icons.circle,
-                                    color: Colors.white,
-                                    size: 30,
-                                  ),
-                                ),
-                              ),
-                        if (!_hasRecording && !_isRecording && _cameras.length > 1)
-                          Positioned(
-                            right: 24,
+
+                    // Centre: capture button or send button
+                    _hasRecording
+                        ? _pill(
+                            'Send to circle',
+                            _sendToCircle,
+                            dark,
+                            color: dark ? kYellow : Colors.white,
+                            foreground: dark ? Colors.black : Colors.black,
+                            width: 200,
+                          )
+                        : GestureDetector(
+                            onTap: _toggleRecording,
                             child: Container(
+                              width: 82,
+                              height: 82,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                                color: _isRecording ? Colors.red : Colors.white,
                                 border: Border.all(
-                                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12),
-                                  width: 1.5,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  width: 4,
                                 ),
                               ),
-                              child: IconButton(
-                                tooltip: 'Switch camera',
-                                onPressed: _switchCamera,
-                                icon: Icon(
-                                  Icons.flip_camera_ios_rounded,
-                                  color: dark ? kCream : kCharcoal,
-                                ),
-                                iconSize: 22,
+                              child: Icon(
+                                _isRecording ? Icons.stop_rounded : Icons.circle,
+                                color: _isRecording ? Colors.white : Colors.red,
+                                size: 30,
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                ],
+
+                    // Flip camera - right of capture button
+                    if (!_hasRecording && !_isRecording && _cameras.length > 1)
+                      Positioned(
+                        right: 36,
+                        child: _overlayIconButton(
+                          icon: Icons.flip_camera_ios_rounded,
+                          onTap: _switchCamera,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
+      ),
+    );
+  }
+
+  // Helper for icon buttons overlaid on the camera preview
+  Widget _overlayIconButton({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.35),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+        ),
+        child: Icon(icon, color: Colors.white, size: 22),
       ),
     );
   }
 
   Widget _capturePreview() {
     final dark = ref.watch(isDarkProvider);
-    return GestureDetector(
-      onTap: _hasRecording ? () => setState(() => _captureCaptionOpen = true) : null,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF4A2B27), Color(0xFFA84538)],
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // 1. Live camera preview, video preview playback, or fallback
-              if (_hasRecording)
-                _videoPlayerController != null && _videoPlayerController!.value.isInitialized
-                    ? FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: _videoPlayerController!.value.size.width,
-                          height: _videoPlayerController!.value.size.height,
-                          child: VideoPlayer(_videoPlayerController!),
-                        ),
-                      )
-                    : Container(
-                        color: Colors.black,
-                        child: Center(
-                          child: _recordedVideoPath != null
-                              ? CircularProgressIndicator(color: dark ? kYellow : kBlack)
-                              : const Text(
-                                  'Mock Video Preview\n(Looping Simulation)',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+    return SizedBox.expand(
+      child: GestureDetector(
+        onTap: _hasRecording ? () => setState(() => _captureCaptionOpen = true) : null,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 1. Live camera preview, video preview playback, or fallback
+            if (_hasRecording)
+              _videoPlayerController != null && _videoPlayerController!.value.isInitialized
+                  ? FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoPlayerController!.value.size.width,
+                        height: _videoPlayerController!.value.size.height,
+                        child: VideoPlayer(_videoPlayerController!),
+                      ),
+                    )
+                  : Container(
+                      color: Colors.black,
+                      child: Center(
+                        child: _recordedVideoPath != null
+                            ? CircularProgressIndicator(color: dark ? kYellow : kBlack)
+                            : const Text(
+                                'Mock Video Preview\n(Looping Simulation)',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                        ),
-                      )
-              else if (_isCameraInitialized && _cameraController != null)
-                FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: _cameraController!.value.previewSize?.height ?? 1080,
-                    height: _cameraController!.value.previewSize?.width ?? 1920,
-                    child: CameraPreview(_cameraController!),
-                  ),
-                )
-              else if (_cameras.isEmpty)
-                // Fallback for emulators with no camera hardware
-                Container(
-                  color: Colors.black87,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.videocam_off_rounded,
-                          color: Colors.white.withValues(alpha: 0.3),
-                          size: 48,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No camera detected',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                // Premium loader while initializing
-                Container(
-                  color: Colors.black,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 36,
-                          height: 36,
-                          child: CircularProgressIndicator(
-                            color: dark ? kYellow : kBlack,
-                            strokeWidth: 3,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Starting camera...',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                              ),
+                      ),
+                    )
+            else if (_isCameraInitialized && _cameraController != null)
+              FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _cameraController!.value.previewSize?.height ?? 1080,
+                  height: _cameraController!.value.previewSize?.width ?? 1920,
+                  child: CameraPreview(_cameraController!),
                 ),
-
-              // 2. REC overlay indicator if recording
-              if (_isRecording)
-                Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Row(
+              )
+            else if (_cameras.isEmpty)
+              // Fallback for emulators with no camera hardware
+              Container(
+                color: Colors.black87,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const _PulseRedDot(),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.black38,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'REC',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Icon(
+                        Icons.videocam_off_rounded,
+                        color: Colors.white.withValues(alpha: 0.3),
+                        size: 48,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No camera detected',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                 ),
+              )
+            else
+              // Premium loader while initializing
+              Container(
+                color: Colors.black,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: CircularProgressIndicator(
+                          color: dark ? kYellow : kBlack,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Starting camera...',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
-              // 4. Caption editor overlay
-              if (_hasRecording && _captureCaptionOpen) _captureCaptionEditor(),
-            ],
-          ),
+            // 2. REC overlay indicator if recording
+            if (_isRecording)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Row(
+                  children: [
+                    const _PulseRedDot(),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black38,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'REC',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // 4. Caption editor overlay
+            if (_hasRecording && _captureCaptionOpen) _captureCaptionEditor(),
+          ],
         ),
       ),
     );

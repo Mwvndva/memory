@@ -51,9 +51,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      // If authenticated and on onboarding/auth views, redirect to main feed
+      // If authenticated and on onboarding/auth views, redirect to main capture
       if (path == '/login' || path == '/create' || path == '/avatar' || path == '/contacts' || path == '/') {
-        return '/feed';
+        return '/capture';
       }
 
       return null;

@@ -45,21 +45,24 @@ class CircleChatListView extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                      onPressed: () => context.go('/capture'),
+                      color: dark ? kCream : kCharcoal,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Your circle',
-                            style: TextStyle(
-                              color: dark ? kCream : kCharcoal,
-                              fontSize: 30,
-                              height: 1.05,
-                              fontWeight: FontWeight.w900,
-                            ),
+                      child: Center(
+                        child: Text(
+                          'Your circle',
+                          style: TextStyle(
+                            color: dark ? kCream : kCharcoal,
+                            fontSize: 30,
+                            height: 1.05,
+                            fontWeight: FontWeight.w900,
                           ),
-                        ],
+                        ),
                       ),
                     ),
                     GestureDetector(

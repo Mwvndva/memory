@@ -34,25 +34,7 @@ class MainAppScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dark = ref.watch(isDarkProvider);
-    final currentPath = GoRouterState.of(context).uri.path;
-    final bg = dark ? kDarkCream : kCream;
-
-    return Scaffold(
-      backgroundColor: bg,
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          Positioned.fill(child: child),
-          Positioned(
-            left: 18,
-            right: 18,
-            bottom: 18 + MediaQuery.paddingOf(context).bottom,
-            child: _tabBar(context, currentPath, dark, ref),
-          ),
-        ],
-      ),
-    );
+    return child;
   }
 
   Widget _tabBar(BuildContext context, String path, bool dark, WidgetRef ref) {
