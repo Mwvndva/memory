@@ -11,3 +11,7 @@ dist/
 
 # uploaded files
 uploads/
+
+# build cache
+tsconfig.build.tsbuildinfo
+
