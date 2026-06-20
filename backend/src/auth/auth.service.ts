@@ -68,7 +68,14 @@ export class AuthService {
         acceptedTermsAt: new Date(),
       },
       select: {
-        id: true, username: true, firstName: true, lastName: true, email: true,
+        id: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        avatarUrl: true,
+        createdAt: true,
       },
     });
 

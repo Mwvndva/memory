@@ -21,11 +21,12 @@ class AuthNotifier extends StateNotifier<UserProfile> {
       final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       if (isLoggedIn) {
         state = UserProfile(
-          firstName: prefs.getString('user_first_name') ?? 'Roy',
-          lastName: prefs.getString('user_last_name') ?? 'Nthiga',
-          username: prefs.getString('user_username') ?? 'roykeepsmemories',
-          email: prefs.getString('user_email') ?? 'roy@memory.app',
-          phone: prefs.getString('user_phone') ?? '+254 712 345 678',
+          firstName: prefs.getString('user_first_name') ?? '',
+          lastName: prefs.getString('user_last_name') ?? '',
+          username: prefs.getString('user_username') ?? '',
+          email: prefs.getString('user_email') ?? '',
+          phone: prefs.getString('user_phone') ?? '',
+          avatarUrl: prefs.getString('user_avatar_url'),
           isAuthenticated: true,
         );
       }
@@ -297,6 +298,7 @@ class AuthNotifier extends StateNotifier<UserProfile> {
       await prefs.remove('user_username');
       await prefs.remove('user_email');
       await prefs.remove('user_phone');
+      await prefs.remove('user_avatar_url');
     } catch (_) {}
   }
 
@@ -309,6 +311,11 @@ class AuthNotifier extends StateNotifier<UserProfile> {
       prefs.setString('user_username', state.username);
       prefs.setString('user_email', state.email);
       prefs.setString('user_phone', state.phone);
+      if (state.avatarUrl != null) {
+        prefs.setString('user_avatar_url', state.avatarUrl!);
+      } else {
+        prefs.remove('user_avatar_url');
+      }
     } catch (_) {}
   }
 }
