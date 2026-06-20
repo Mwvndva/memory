@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "prebuild": "node -e \"const fs=require('fs'); for (const p of ['dist','tsconfig.build.tsbuildinfo']) fs.rmSync(p, { recursive: true, force: true })\" && prisma generate",
+    "prebuild": "node -e \"const fs=require('fs'); for (const p of ['tsconfig.build.tsbuildinfo']) fs.rmSync(p, { recursive: true, force: true }); try { fs.rmSync('dist', { recursive: true, force: true }); } catch (e) {}\" && prisma generate",
     "build": "nest build",
     "postinstall": "prisma generate",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
