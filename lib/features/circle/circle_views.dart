@@ -353,12 +353,15 @@ class CircleChatListView extends ConsumerWidget {
                             final chatState = ref.watch(chatProvider);
                             final messages = chatState.messagesByContact[chatKey] ?? [];
                             final lastMessage = messages.isNotEmpty ? messages.last.text : 'No messages yet';
+                            final hasUnread = (chatState.unreadCounts[chatKey] ?? 0) > 0;
                             return Text(
                               lastMessage,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: _small(
                                 dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                              ).copyWith(
+                                fontWeight: hasUnread ? FontWeight.w900 : FontWeight.w500,
                               ),
                             );
                           },

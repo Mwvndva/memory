@@ -475,7 +475,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
       }
     });
 
-    if (feedMemories.isEmpty) {
+    if (feedMemories.isEmpty && archivedMemories.isEmpty) {
       final circleMembers = ref.watch(circlesProvider);
 
       if (circleMembers.isEmpty) {
@@ -535,22 +535,16 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
 
     // Determine current active memory
     final listToUse = _fromGrid ? archivedMemories : feedMemories;
-    if (listToUse.isEmpty) {
-      // Fallback
-      return Scaffold(
-        backgroundColor: dark ? kCharcoal : kCream,
-        body: const Center(child: Text('No memories in this view.')),
-      );
-    }
-    final activeIndex = _activeMemoryIndex % listToUse.length;
-    final m = listToUse[activeIndex];
+    final bool isEmptyFeed = listToUse.isEmpty;
+    final activeIndex = isEmptyFeed ? 0 : _activeMemoryIndex % listToUse.length;
+    final m = isEmptyFeed ? null : listToUse[activeIndex];
 
-    final isUrlCaption = m.caption.startsWith('http://') || m.caption.startsWith('https://');
-    final isVideoLoading = m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized);
-    final showCaption = m.caption.isNotEmpty && !isUrlCaption && !isVideoLoading;
+    final isUrlCaption = m != null && (m.caption.startsWith('http://') || m.caption.startsWith('https://'));
+    final isVideoLoading = m != null && m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized);
+    final showCaption = m != null && m.caption.isNotEmpty && !isUrlCaption && !isVideoLoading;
 
     // Trigger video initialization if active index changed
-    if (activeIndex != _enqueuedIndex) {
+    if (!isEmptyFeed && m != null && activeIndex != _enqueuedIndex) {
       _enqueuedIndex = activeIndex;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _initFeedVideo(m, activeIndex);
@@ -560,11 +554,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     return Scaffold(
       backgroundColor: Colors.black, // prevent Material3 theme lavender from bleeding through
       body: GestureDetector(
-        onVerticalDragEnd: (details) {
+        onVerticalDragEnd: isEmptyFeed ? null : (details) {
           if ((details.primaryVelocity ?? 0) < 0) _nextMemory(listToUse.length);
           if ((details.primaryVelocity ?? 0) > 0) _previousMemory(listToUse.length);
         },
-        onTap: () => setState(() => _composerOpen = !_composerOpen),
+        onTap: isEmptyFeed ? null : () => setState(() => _composerOpen = !_composerOpen),
         child: Stack(
           children: [
             Positioned.fill(
@@ -572,32 +566,47 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 fit: StackFit.expand,
                 children: [
                   // Always show black until feed is ready — prevents purple gradient flash
-                  if (!_feedReady)
+                  if (isEmptyFeed)
+                    Container(color: dark ? kCharcoal : kCream)
+                  else if (!_feedReady)
                     Container(color: Colors.black)
                   else
                     DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: m.colors,
+                          colors: m!.colors,
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                       ),
                     ),
-                  if (m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized))
+                  if (!isEmptyFeed && m != null && m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized))
                     Container(
                       color: Colors.black,
                       child: Center(
                         child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
                       ),
                     ),
-                  if (_feedVideoController != null && _feedVideoController!.value.isInitialized)
+                  if (!isEmptyFeed && _feedVideoController != null && _feedVideoController!.value.isInitialized)
                     FittedBox(
                       fit: BoxFit.cover,
                       child: SizedBox(
                         width: _feedVideoController!.value.size.width,
                         height: _feedVideoController!.value.size.height,
                         child: VideoPlayer(_feedVideoController!),
+                      ),
+                    ),
+                  if (isEmptyFeed)
+                    Center(
+                      child: Text(
+                        'No active memories in the last 24h.\nTap the grid icon to view history.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                 ],
@@ -610,6 +619,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 _fromGrid && !_gridOpen ? Icons.arrow_back_ios_new_rounded : Icons.grid_view_rounded,
                 () {
                   if (_fromGrid && !_gridOpen) {
+                    _feedVideoController?.pause();
                     setState(() {
                       _fromGrid = false;
                       _activeMemoryIndex = 0;
@@ -620,75 +630,77 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 },
               ),
             ),
-            Positioned(
-              top: top + 16,
-              right: 22,
-              child: _roundIcon(
-                _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                () {
-                  setState(() {
-                    _isMuted = !_isMuted;
-                    _feedVideoController?.setVolume(_isMuted ? 0.0 : 1.0);
-                  });
-                },
+            if (!isEmptyFeed)
+              Positioned(
+                top: top + 16,
+                right: 22,
+                child: _roundIcon(
+                  _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                  () {
+                    setState(() {
+                      _isMuted = !_isMuted;
+                      _feedVideoController?.setVolume(_isMuted ? 0.0 : 1.0);
+                    });
+                  },
+                ),
               ),
-            ),
-            Positioned(
-              top: top + 34,
-              left: 0,
-              right: 0,
-              child: TweenAnimationBuilder<double>(
-                key: ValueKey('header_${m.person}_${m.caption}'),
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 450),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) => Opacity(
-                  opacity: value,
-                  child: Transform.translate(
-                    offset: Offset(0, -15 * (1 - value)),
-                    child: child,
+            if (!isEmptyFeed && m != null)
+              Positioned(
+                top: top + 34,
+                left: 0,
+                right: 0,
+                child: TweenAnimationBuilder<double>(
+                  key: ValueKey('header_${m.person}_${m.caption}'),
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 450),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, -15 * (1 - value)),
+                      child: child,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 23,
+                        backgroundColor: m.avatar,
+                        backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty
+                            ? NetworkImage(_formatImageUrl(m.avatarUrl!)) as ImageProvider
+                            : null,
+                        child: m.avatarUrl == null || m.avatarUrl!.isEmpty
+                            ? Text(
+                                m.initial,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        m.person,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        m.time,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 23,
-                      backgroundColor: m.avatar,
-                      backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty
-                          ? NetworkImage(_formatImageUrl(m.avatarUrl!)) as ImageProvider
-                          : null,
-                      child: m.avatarUrl == null || m.avatarUrl!.isEmpty
-                          ? Text(
-                              m.initial,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      m.person,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      m.time,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
               ),
-            ),
-            if (showCaption)
+            if (!isEmptyFeed && showCaption)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 56),
@@ -717,14 +729,14 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                   ),
                 ),
               ),
-            if (_composerOpen)
+            if (!isEmptyFeed && _composerOpen && m != null)
               Positioned(
                 left: 44,
                 right: 16,
                 bottom: 94 + MediaQuery.paddingOf(context).bottom,
                 child: _messageComposer(m),
               ),
-            if (_gridOpen)
+            if (_gridOpen || (isEmptyFeed && !_fromGrid))
               Positioned.fill(
                 child: TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
@@ -809,6 +821,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 _smallClose(() {
                   _setGridOpen(false);
                   if (_fromGrid) {
+                    _feedVideoController?.pause();
                     setState(() {
                       _fromGrid = false;
                       _activeMemoryIndex = 0;
