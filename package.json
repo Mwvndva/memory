@@ -1,0 +1,10 @@
+{
+  "name": "memory-app-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "cd backend && npm ci",
+    "build": "cd backend && npm run build",
+    "start:prod": "cd backend && npm run start:prod"
+  }
+}
