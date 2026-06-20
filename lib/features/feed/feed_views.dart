@@ -482,7 +482,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
       if (circleMembers.isEmpty) {
         // Show '+' invite layout only if the user has no friends in their circle
         return Scaffold(
-          backgroundColor: dark ? kCharcoal : kCream,
+          backgroundColor: const Color(0xFFF4C430),
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -865,32 +865,71 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                         });
                         _setGridOpen(false);
                       },
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            colors: m.colors,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.all(7),
-                            child: CircleAvatar(
-                              radius: 11,
-                              backgroundColor: m.avatar,
-                              child: Text(
-                                m.initial,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // Thumbnail: network image from video URL, gradient fallback
+                            if (m.videoPath != null && m.videoPath!.isNotEmpty)
+                              Image.network(
+                                _formatImageUrl(m.videoPath!),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: m.colors,
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: m.colors,
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                              ),
+                            // Play icon overlay for videos
+                            if (m.videoPath != null && m.videoPath!.isNotEmpty)
+                              Center(
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.play_arrow_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            // Avatar badge at bottom-left
+                            Positioned(
+                              left: 7,
+                              bottom: 7,
+                              child: CircleAvatar(
+                                radius: 11,
+                                backgroundColor: m.avatar,
+                                child: Text(
+                                  m.initial,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ),
