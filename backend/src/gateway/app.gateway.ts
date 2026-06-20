@@ -138,12 +138,14 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() payload: SendMessagePayload,
   ) {
+    this.logger.log(`[WS send_message] Message from client="${client.username}" to receiver="${payload?.receiver}"`);
     if (!client.userId) throw new WsException('Unauthorized');
     if (!payload?.receiver || !payload?.text?.trim()) {
       throw new WsException('Invalid payload: receiver and text are required');
     }
 
     // Resolve receiver by username → userId from Redis/DB
+    this.logger.log(`[WS send_message] Step 1: Resolving receiver user UUID for username="${payload.receiver}"`);
     const receiverSocket = this._findByUsername(payload.receiver);
     let receiverId = receiverSocket?.userId;
 
@@ -159,14 +161,12 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     if (!receiverId) {
+      this.logger.warn(`[WS send_message] Receiver user "${payload.receiver}" not found`);
       throw new WsException(`Receiver user "${payload.receiver}" not found`);
     }
 
     // Verify sender has added (and has accepted) the receiver in their circle.
-    // With reciprocal upsert on accept, this will be true for both users after acceptance.
-    // Verify sender has added (and has accepted) the receiver in their circle,
-    // OR the receiver has added (and accepted) the sender. This symmetric
-    // check allows the message to be sent once either acceptance exists.
+    this.logger.log(`[WS send_message] Step 2: Verifying active circle membership between client="${client.username}" and receiver="${payload.receiver}"`);
     const outgoing = await this.prisma.circleMembership.findUnique({
       where: { unique_user_member: { userId: client.userId, memberId: receiverId } },
     });
@@ -175,10 +175,12 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     if (!((outgoing && outgoing.accepted) || (incoming && incoming.accepted))) {
+      this.logger.warn(`[WS send_message] Blocked: client="${client.username}" is not allowed to message receiver="${payload.receiver}"`);
       throw new WsException(`You are not allowed to message @${payload.receiver}`);
     }
 
     // Persist to PostgreSQL
+    this.logger.log(`[WS send_message] Step 3: Persisting message in database`);
     const message = await this.messagesService.create({
       senderId: client.userId,
       receiverId: receiverId,
@@ -194,16 +196,22 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     };
 
     // Deliver to receiver if online
+    this.logger.log(`[WS send_message] Step 4: Delivering event to receiver if online`);
     if (receiverSocket) {
       this._send(receiverSocket, { event: 'new_message', data: outgoingPayload });
+      this.logger.log(`[WS send_message] Delivered 'new_message' to receiver="${payload.receiver}" online`);
+    } else {
+      this.logger.log(`[WS send_message] Receiver="${payload.receiver}" is offline; message saved for retrieval`);
     }
 
     // ACK to sender (with is_mine: true for their own display)
+    this.logger.log(`[WS send_message] Step 5: Sending ACK back to sender client`);
     this._send(client, {
       event: 'message_sent',
       data: { ...outgoingPayload, is_mine: true },
     });
 
+    this.logger.log(`[WS send_message] Message processed successfully: msgId="${message.id}"`);
     return message;
   }
 
@@ -217,11 +225,13 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() payload: ReactionPayload,
   ) {
+    this.logger.log(`[WS send_reaction] Reaction update by client="${client.username}" for memoryId="${payload?.memory_id}" emoji="${payload?.emoji}" action="${payload?.action}"`);
     if (!client.userId) throw new WsException('Unauthorized');
     if (!payload?.memory_id || !payload?.emoji) {
       throw new WsException('Invalid payload: memory_id and emoji are required');
     }
 
+    this.logger.log(`[WS send_reaction] Step 1: Updating reaction count in Redis`);
     let count: number;
     if (payload.action === 'remove') {
       count = await this.redisService.decrementReaction(payload.memory_id, payload.emoji);
@@ -232,12 +242,14 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const update = { memory_id: payload.memory_id, emoji: payload.emoji, count };
 
     // Broadcast to all connected clients
+    this.logger.log(`[WS send_reaction] Step 2: Broadcasting reaction update to all online clients`);
     this.clients.forEach((socket) => {
       this._send(socket, { event: 'reaction_update', data: update });
     });
 
     // Notify the memory creator of the new reaction (if they are not the reactor)
     if (payload.action !== 'remove') {
+      this.logger.log(`[WS send_reaction] Step 3: Notifying memory creator of new reaction`);
       try {
         const memory = await this.prisma.memory.findUnique({
           where: { id: payload.memory_id },
@@ -249,12 +261,14 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
             emoji: payload.emoji,
             memoryCaption: memory.caption,
           });
+          this.logger.log(`[WS send_reaction] Sent 'new_reaction' notification to memory creatorId="${memory.creatorId}"`);
         }
       } catch (err) {
-        this.logger.error(`Failed to send reaction notification: ${err.message}`);
+        this.logger.error(`[WS send_reaction] Failed to send reaction notification: ${err.message}`);
       }
     }
 
+    this.logger.log(`[WS send_reaction] Reaction update processed successfully: memoryId="${payload.memory_id}" count=${count}`);
     return update;
   }
 

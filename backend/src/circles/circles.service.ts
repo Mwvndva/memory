@@ -3,12 +3,15 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppGateway } from '../gateway/app.gateway';
 
 @Injectable()
 export class CirclesService {
+  private readonly logger = new Logger(CirclesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly gateway: AppGateway,
@@ -22,11 +25,13 @@ export class CirclesService {
    * the target user via WebSocket so their inbox updates in real time.
    */
   async sendRequest(userId: string, memberId: string) {
+    this.logger.log(`[Circle Request] New request from userId="${userId}" to memberId="${memberId}"`);
     if (userId === memberId) {
       throw new BadRequestException('You cannot send a request to yourself');
     }
 
     // Ensure the target user exists
+    this.logger.log(`[Circle Request] Step 1: Checking target user exists and current membership status`);
     const target = await this.prisma.user.findUnique({ where: { id: memberId } });
     if (!target) throw new NotFoundException('User not found');
 
@@ -46,6 +51,7 @@ export class CirclesService {
       select: { id: true, username: true, firstName: true, avatarUrl: true },
     });
 
+    this.logger.log(`[Circle Request] Step 2: Creating pending circle membership in DB`);
     const membership = await this.prisma.circleMembership.create({
       data: { userId, memberId, accepted: false },
       include: {
@@ -54,6 +60,7 @@ export class CirclesService {
     });
 
     // Notify the receiver in real time (so their pending-requests badge updates)
+    this.logger.log(`[Circle Request] Step 3: Sending real-time WebSocket notification 'new_circle_request' to memberId="${memberId}"`);
     this.gateway.sendToUser(memberId, 'new_circle_request', {
       senderId: userId,
       senderUsername: sender?.username ?? '',
@@ -61,6 +68,7 @@ export class CirclesService {
       senderAvatarUrl: sender?.avatarUrl ?? null,
     });
 
+    this.logger.log(`[Circle Request] Circle request sent successfully from userId="${userId}" to memberId="${memberId}"`);
     return { message: 'Circle request sent', membership };
   }
 
@@ -159,6 +167,8 @@ export class CirclesService {
   // ─── Accept a share memories request ───────────────────────────────────────
 
   async acceptRequest(memberId: string, senderId: string) {
+    this.logger.log(`[Accept Circle Request] Request by memberId="${memberId}" to accept from senderId="${senderId}"`);
+    this.logger.log(`[Accept Circle Request] Step 1: Finding and updating pending request to accepted`);
     const membership = await this.prisma.circleMembership.findFirst({
       where: { userId: senderId, memberId, accepted: false },
     });
@@ -170,11 +180,13 @@ export class CirclesService {
     });
 
     // Check and trigger milestone broadcast for the circle owner (senderId)
+    this.logger.log(`[Accept Circle Request] Step 2: Checking and broadcasting circle milestones for senderId="${senderId}"`);
     await this.checkAndBroadcastCircleMilestone(senderId);
 
     // Ensure reciprocal accepted membership exists so both users see each other
     // in their outgoing circle lists. This makes circles effectively mutual
     // after acceptance and simplifies client logic.
+    this.logger.log(`[Accept Circle Request] Step 3: Creating reciprocal accepted membership for mutual connection`);
     try {
       await this.prisma.circleMembership.create({
         data: { userId: memberId, memberId: senderId, accepted: true },
@@ -193,6 +205,7 @@ export class CirclesService {
       }
     }
 
+    this.logger.log(`[Accept Circle Request] Request accepted successfully: userId="${senderId}" <=> memberId="${memberId}"`);
     return updated;
   }
 

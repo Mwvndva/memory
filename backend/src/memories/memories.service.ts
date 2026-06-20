@@ -1,10 +1,12 @@
-import { Injectable, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, forwardRef, Inject, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppGateway } from '../gateway/app.gateway';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class MemoriesService {
+  private readonly logger = new Logger(MemoriesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly gateway: AppGateway,
@@ -17,6 +19,7 @@ export class MemoriesService {
    * Sorted newest-first using the idx_memories_creator_created composite index.
    */
   async getFeed(userId: string, page = 1, limit = 20) {
+    this.logger.log(`[Get Feed] Loading memory feed for userId="${userId}" (page=${page}, limit=${limit})`);
     const skip = (page - 1) * limit;
 
     // Fetch the IDs of all circle members the current user follows
@@ -26,6 +29,7 @@ export class MemoriesService {
     });
 
     const memberIds = memberships.map((m) => m.memberId);
+    this.logger.log(`[Get Feed] Found ${memberIds.length} circle members for userId="${userId}"`);
 
     // Include the user's own memories in the feed as well
     const creatorIds = [userId, ...memberIds];
@@ -45,6 +49,7 @@ export class MemoriesService {
       this.prisma.memory.count({ where: { creatorId: { in: creatorIds } } }),
     ]);
 
+    this.logger.log(`[Get Feed] Successfully loaded ${memories.length} memories (total=${total}) for userId="${userId}"`);
     return {
       data: memories,
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -72,6 +77,8 @@ export class MemoriesService {
     creatorId: string,
     data: { caption: string; videoUrl: string; gradientColors: string[] },
   ) {
+    this.logger.log(`[Create Memory] Request by creatorId="${creatorId}"`);
+    this.logger.log(`[Create Memory] Step 1: Saving memory metadata to database`);
     const memory = await this.prisma.memory.create({
       data: { creatorId, ...data },
       include: {
@@ -82,6 +89,7 @@ export class MemoriesService {
     });
 
     // Notify circle members who have accepted and have this creator in their circle
+    this.logger.log(`[Create Memory] Step 2: Broadcasting 'new_memory' notifications to circle members`);
     try {
       const memberships = await this.prisma.circleMembership.findMany({
         where: { memberId: creatorId, accepted: true },
@@ -94,13 +102,19 @@ export class MemoriesService {
           creatorName,
         });
       }
+      this.logger.log(`[Create Memory] Sent websocket notifications to ${memberships.length} circle members`);
     } catch (err) {
+      this.logger.error(`[Create Memory] WebSocket notification failed: ${err?.message ?? err}`);
       // Safe fallback - don't crash memory creation if notifications fail
     }
 
     // Update the creator's streak and ranking (fire-and-forget — non-blocking)
-    this.usersService.recalculateUserStats(creatorId).catch(() => {});
+    this.logger.log(`[Create Memory] Step 3: Triggering user stats/milestone recalculation for creatorId="${creatorId}"`);
+    this.usersService.recalculateUserStats(creatorId).catch((err) => {
+      this.logger.error(`[Create Memory] User stats recalculation failed for creatorId="${creatorId}": ${err?.message ?? err}`);
+    });
 
+    this.logger.log(`[Create Memory] Memory created successfully: id="${memory.id}"`);
     return memory;
   }
 }
