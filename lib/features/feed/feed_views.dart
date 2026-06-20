@@ -209,6 +209,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     Future.microtask(() {
       if (mounted) {
         ref.read(authProvider.notifier).fetchProfile();
+        ref.read(memoryProvider.notifier).fetchFeed();
       }
     });
   }
@@ -523,13 +524,16 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
           ),
         );
       } else {
-        // Show standard placeholder if they have friends but no active memories shared in the last 24h
-        return Scaffold(
-          backgroundColor: dark ? kCharcoal : kCream,
-          body: const Center(
-            child: Text('No memories shared yet. Capture one!'),
-          ),
-        );
+        // Show standard placeholder only if there are also no archived memories
+        if (archivedMemories.isEmpty) {
+          return Scaffold(
+            backgroundColor: dark ? kCharcoal : kCream,
+            body: const Center(
+              child: Text('No memories shared yet. Capture one!'),
+            ),
+          );
+        }
+        // Otherwise fall through — archived memories will be shown in the grid
       }
     }
 
@@ -552,7 +556,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black, // prevent Material3 theme lavender from bleeding through
+      backgroundColor: const Color(0xFFF4C430), // golden memory screen background
       body: GestureDetector(
         onVerticalDragEnd: isEmptyFeed ? null : (details) {
           if ((details.primaryVelocity ?? 0) < 0) _nextMemory(listToUse.length);
@@ -567,7 +571,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 children: [
                   // Always show black until feed is ready — prevents purple gradient flash
                   if (isEmptyFeed)
-                    Container(color: dark ? kCharcoal : kCream)
+                    Container(color: const Color(0xFFF4C430))
                   else if (!_feedReady)
                     Container(color: Colors.black)
                   else
@@ -736,7 +740,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 bottom: 94 + MediaQuery.paddingOf(context).bottom,
                 child: _messageComposer(m),
               ),
-            if (_gridOpen || (isEmptyFeed && !_fromGrid))
+            if (_gridOpen)
               Positioned.fill(
                 child: TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
