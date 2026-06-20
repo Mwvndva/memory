@@ -528,7 +528,7 @@ class CircleChatListView extends ConsumerWidget {
         gradient: LinearGradient(
           colors: dark
               ? const [kDarkCream, Color(0xFF171717)]
-              : const [Color(0xFFFFFDF8), Color(0xFFFFF7E6)],
+              : const [kYellow, kYellow],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),
