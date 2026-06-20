@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../../core/theme.dart';
 import '../../models/memory_item.dart';
@@ -621,17 +623,15 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
               left: 22,
               child: _roundIcon(
                 _fromGrid && !_gridOpen ? Icons.arrow_back_ios_new_rounded : Icons.grid_view_rounded,
-                () {
-                  if (_fromGrid && !_gridOpen) {
-                    _feedVideoController?.pause();
-                    setState(() {
-                      _fromGrid = false;
-                      _activeMemoryIndex = 0;
-                    });
-                  } else {
-                    _setGridOpen(true);
-                  }
-                },
+                 () {
+                   if (_fromGrid && !_gridOpen) {
+                     // Go back to grid instead of clearing grid state
+                     _feedVideoController?.pause();
+                     _setGridOpen(true);
+                   } else {
+                     _setGridOpen(true);
+                   }
+                 },
               ),
             ),
             if (!isEmptyFeed)
@@ -870,20 +870,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            // Thumbnail: network image from video URL, gradient fallback
+                            // First-frame thumbnail from video, gradient fallback
                             if (m.videoPath != null && m.videoPath!.isNotEmpty)
-                              Image.network(
-                                _formatImageUrl(m.videoPath!),
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: m.colors,
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                  ),
-                                ),
+                              _VideoGridThumbnail(
+                                videoUrl: _formatImageUrl(m.videoPath!),
+                                fallbackColors: m.colors,
                               )
                             else
                               DecoratedBox(
@@ -895,38 +886,26 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                                   ),
                                 ),
                               ),
-                            // Play icon overlay for videos
-                            if (m.videoPath != null && m.videoPath!.isNotEmpty)
-                              Center(
-                                child: Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.45),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.play_arrow_rounded,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                ),
-                              ),
-                            // Avatar badge at bottom-left
+                            // Avatar badge at bottom-left using stored avatar URL
                             Positioned(
                               left: 7,
                               bottom: 7,
                               child: CircleAvatar(
                                 radius: 11,
                                 backgroundColor: m.avatar,
-                                child: Text(
-                                  m.initial,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
+                                backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty
+                                    ? NetworkImage(_formatImageUrl(m.avatarUrl!)) as ImageProvider
+                                    : null,
+                                child: m.avatarUrl == null || m.avatarUrl!.isEmpty
+                                    ? Text(
+                                        m.initial,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      )
+                                    : null,
                               ),
                             ),
                           ],
@@ -1069,4 +1048,62 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
           ),
         ),
       );
+}
+
+// ── First-frame video thumbnail for the memory grid ──────────────────────────
+
+class _VideoGridThumbnail extends StatefulWidget {
+  const _VideoGridThumbnail({
+    required this.videoUrl,
+    required this.fallbackColors,
+  });
+
+  final String videoUrl;
+  final List<Color> fallbackColors;
+
+  @override
+  State<_VideoGridThumbnail> createState() => _VideoGridThumbnailState();
+}
+
+class _VideoGridThumbnailState extends State<_VideoGridThumbnail> {
+  Uint8List? _thumbnail;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await VideoThumbnail.thumbnailData(
+        video: widget.videoUrl,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 200,
+        quality: 75,
+        timeMs: 0, // first frame
+      );
+      if (mounted) setState(() { _thumbnail = data; _loaded = true; });
+    } catch (_) {
+      if (mounted) setState(() { _loaded = true; }); // show fallback gradient
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || _thumbnail == null) {
+      // Show gradient while thumbnail is loading
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: widget.fallbackColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      );
+    }
+    return Image.memory(_thumbnail!, fit: BoxFit.cover);
+  }
 }
