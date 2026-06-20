@@ -22,19 +22,23 @@ import '../core/theme.dart';
 class ChatState {
   const ChatState({
     required this.messagesByContact,
-    required this.unreadNotifications,
+    required this.unreadCounts,
   });
 
   final Map<String, List<Message>> messagesByContact;
-  final int unreadNotifications;
+  final Map<String, int> unreadCounts;
+
+  int get unreadNotifications {
+    return unreadCounts.values.fold(0, (sum, count) => sum + count);
+  }
 
   ChatState copyWith({
     Map<String, List<Message>>? messagesByContact,
-    int? unreadNotifications,
+    Map<String, int>? unreadCounts,
   }) {
     return ChatState(
       messagesByContact: messagesByContact ?? this.messagesByContact,
-      unreadNotifications: unreadNotifications ?? this.unreadNotifications,
+      unreadCounts: unreadCounts ?? this.unreadCounts,
     );
   }
 }
@@ -45,7 +49,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   ChatNotifier(this._ref)
       : super(kUseMockBackend
             ? _initialState
-            : const ChatState(messagesByContact: {}, unreadNotifications: 0)) {
+            : const ChatState(messagesByContact: {}, unreadCounts: {})) {
     // Only initialize websocket when authenticated. Also listen to auth changes to clear/reconnect.
     final user = _ref.read(authProvider);
     if (!kUseMockBackend && user.isAuthenticated) {
@@ -59,7 +63,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           _initWebSocket();
         } else {
           // Clear messages on logout
-          state = const ChatState(messagesByContact: {}, unreadNotifications: 0);
+          state = const ChatState(messagesByContact: {}, unreadCounts: {});
           _connectionGeneration++;
           _closeSocket(manual: true);
         }
@@ -132,7 +136,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
         ),
       ],
     },
-    unreadNotifications: 3,
+    unreadCounts: const {
+      'Amara': 2,
+      'Mum': 1,
+    },
   );
 
   // ─── Live WebSocket connection ────────────────────────────────────────────
@@ -432,7 +439,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
       merged.addAll(existing);
       updatedMap[contactUsername] = merged;
 
-      state = state.copyWith(messagesByContact: updatedMap);
+      final updatedUnread = Map<String, int>.from(state.unreadCounts);
+      updatedUnread[contactUsername] = 0;
+
+      state = state.copyWith(
+        messagesByContact: updatedMap,
+        unreadCounts: updatedUnread,
+      );
     } catch (_) {}
   }
 
@@ -470,23 +483,35 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   // ─── Internal helpers ─────────────────────────────────────────────────────
 
+  String? _activeContact;
+
+  void enterConversation(String contactName) {
+    _activeContact = contactName;
+    final updatedUnread = Map<String, int>.from(state.unreadCounts);
+    updatedUnread[contactName] = 0;
+    state = state.copyWith(unreadCounts: updatedUnread);
+  }
+
+  void exitConversation() {
+    _activeContact = null;
+  }
+
   void _appendMessage(String contactName, Message msg) {
     final currentMessages = state.messagesByContact[contactName] ?? [];
     final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
     updatedMap[contactName] = [...currentMessages, msg];
 
+    final updatedUnread = Map<String, int>.from(state.unreadCounts);
+    if (!msg.isMine && _activeContact != contactName) {
+      updatedUnread[contactName] = (updatedUnread[contactName] ?? 0) + 1;
+    } else {
+      updatedUnread[contactName] = 0;
+    }
+
     state = state.copyWith(
       messagesByContact: updatedMap,
-      unreadNotifications: msg.isMine
-          ? state.unreadNotifications
-          : state.unreadNotifications + 1,
+      unreadCounts: updatedUnread,
     );
-  }
-
-  void decrementNotifications() {
-    if (state.unreadNotifications > 0) {
-      state = state.copyWith(unreadNotifications: state.unreadNotifications - 1);
-    }
   }
 
   void _simulateReply(String contactName) {

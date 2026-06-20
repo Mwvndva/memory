@@ -4,10 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:memory_app/features/circle/circle_views.dart';
 import 'package:memory_app/repositories/circles_repository.dart';
-import 'package:memory_app/repositories/chat_repository.dart';
 
 class FakePendingRequestsNotifier extends PendingRequestsNotifier {
-  FakePendingRequestsNotifier(Ref ref) : super(ref) {
+  FakePendingRequestsNotifier(super.ref) {
     // initialize with a pending entry and avoid network activity by
     // keeping authProvider mocked in the test.
     state = const [CircleMember(id: 'alice-id', username: 'alice', firstName: 'Alice')];

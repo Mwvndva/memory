@@ -50,40 +50,12 @@ class CircleChatListView extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Chats',
-                            style: TextStyle(
-                              color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                          Text(
                             'Your circle',
                             style: TextStyle(
                               color: dark ? kCream : kCharcoal,
                               fontSize: 30,
                               height: 1.05,
                               fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: dark ? kBlack : Colors.white,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
-                              ),
-                            ),
-                            child: Text(
-                              '${pendingRequests.length} requests',
-                              style: TextStyle(
-                                color: dark ? kCream : kCharcoal,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
                             ),
                           ),
                         ],
@@ -113,54 +85,6 @@ class CircleChatListView extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: dark ? kBlack : Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: dark ? 0.18 : 0.05),
-                        blurRadius: 18,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Circle status',
-                              style: TextStyle(
-                                color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.6,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              pendingRequests.isNotEmpty ? 'You have new requests' : 'Everything is quiet',
-                              style: TextStyle(
-                                color: dark ? kCream : kCharcoal,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
@@ -389,7 +313,6 @@ class CircleChatListView extends ConsumerWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
-                ref.read(chatProvider.notifier).decrementNotifications();
                 context.push('/chat/$chatKey');
               },
               child: Row(
@@ -548,6 +471,11 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   void initState() {
     super.initState();
     _loadHistory();
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(chatProvider.notifier).enterConversation(widget.contactName);
+      }
+    });
   }
 
   Future<void> _loadHistory() async {
@@ -569,6 +497,9 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    try {
+      ref.read(chatProvider.notifier).exitConversation();
+    } catch (_) {}
     super.dispose();
   }
 
