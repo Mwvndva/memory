@@ -78,7 +78,7 @@ class CircleChatListView extends ConsumerWidget {
                               ),
                             ),
                             child: Text(
-                              '${circleMembers.length} members  •  ${pendingRequests.length} requests',
+                              '${pendingRequests.length} requests',
                               style: TextStyle(
                                 color: dark ? kCream : kCharcoal,
                                 fontSize: 11,
@@ -155,22 +155,6 @@ class CircleChatListView extends ConsumerWidget {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: dark ? kYellow : kBlack,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          '${circleMembers.length + pendingRequests.length}',
-                          style: TextStyle(
-                            color: dark ? kBlack : Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                          ),
                         ),
                       ),
                     ],
@@ -440,11 +424,20 @@ class CircleChatListView extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          'Sent a memory',
-                          style: _small(
-                            dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
-                          ),
+                        Builder(
+                          builder: (context) {
+                            final chatState = ref.watch(chatProvider);
+                            final messages = chatState.messagesByContact[chatKey] ?? [];
+                            final lastMessage = messages.isNotEmpty ? messages.last.text : 'No messages yet';
+                            return Text(
+                              lastMessage,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _small(
+                                dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
