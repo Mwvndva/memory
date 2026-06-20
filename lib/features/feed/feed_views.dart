@@ -849,7 +849,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                     builder: (context, value, child) => Transform.scale(
                       scale: value,
                       child: Opacity(
-                        opacity: value,
+                        opacity: value.clamp(0.0, 1.0),
                         child: child,
                       ),
                     ),
