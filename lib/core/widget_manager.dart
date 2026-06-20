@@ -21,7 +21,7 @@ Future<String> _renderMemoryCard(MemoryItem memory) async {
       memory.colors,
     );
   } else {
-    paint.color = const Color(0xFFFADA5E); // fallback yellow (#FADA5E)
+    paint.color = const Color(0xFFF4C430); // fallback yellow (#F4C430)
   }
   canvas.drawRect(ui.Rect.fromLTWH(0, 0, 400, 400), paint);
 
