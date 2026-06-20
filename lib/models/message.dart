@@ -5,6 +5,7 @@ class Message {
     required this.text,
     required this.timestamp,
     required this.isMine,
+    this.isRead = true,
   });
 
   final String id;
@@ -12,6 +13,7 @@ class Message {
   final String text;
   final DateTime timestamp;
   final bool isMine;
+  final bool isRead;
 
   Message copyWith({
     String? id,
@@ -19,6 +21,7 @@ class Message {
     String? text,
     DateTime? timestamp,
     bool? isMine,
+    bool? isRead,
   }) {
     return Message(
       id: id ?? this.id,
@@ -26,6 +29,7 @@ class Message {
       text: text ?? this.text,
       timestamp: timestamp ?? this.timestamp,
       isMine: isMine ?? this.isMine,
+      isRead: isRead ?? this.isRead,
     );
   }
 }

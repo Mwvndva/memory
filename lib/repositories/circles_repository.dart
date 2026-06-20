@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_client.dart';
 import '../core/api_config.dart';
 import 'auth_repository.dart';
+import 'chat_repository.dart';
 import '../models/user_profile.dart';
 import '../features/feed/streak_milestones.dart';
 import '../core/theme.dart';
@@ -76,9 +77,15 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
       final dio = _ref.read(apiClientProvider);
       final response = await dio.get('/circles/members');
       final rawList = response.data as List? ?? [];
-      state = rawList
+      final members = rawList
           .map((item) => CircleMember.fromJson(item as Map<String, dynamic>))
           .toList();
+      state = members;
+      
+      // Load conversation history for all circle members in the background to populate message previews and unread badges
+      for (final m in members) {
+        _ref.read(chatProvider.notifier).loadConversation(m.username);
+      }
     } catch (_) {}
   }
 

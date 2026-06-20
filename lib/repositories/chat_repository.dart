@@ -423,6 +423,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           text:      d['text'] as String? ?? '',
           timestamp: DateTime.tryParse(d['timestamp']?.toString() ?? '') ?? DateTime.now(),
           isMine:    isMine,
+          isRead:    d['isRead'] as bool? ?? d['is_read'] as bool? ?? true,
         );
       }).toList();
 
@@ -439,8 +440,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       merged.addAll(existing);
       updatedMap[contactUsername] = merged;
 
+      final unreadCount = fetched.where((msg) => !msg.isMine && !msg.isRead).length;
       final updatedUnread = Map<String, int>.from(state.unreadCounts);
-      updatedUnread[contactUsername] = 0;
+      updatedUnread[contactUsername] = _activeContact == contactUsername ? 0 : unreadCount;
 
       state = state.copyWith(
         messagesByContact: updatedMap,
