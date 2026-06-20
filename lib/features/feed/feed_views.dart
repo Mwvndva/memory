@@ -101,7 +101,7 @@ class MainAppScaffold extends ConsumerWidget {
             Icons.circle_outlined,
             'Circle',
             dark,
-            badge: unread > 1 ? '$unread' : null,
+            badge: unread > 0 ? '$unread' : null,
           ),
         ],
       ),

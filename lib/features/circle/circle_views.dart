@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import '../feed/streak_milestones.dart';
 import '../../models/user_profile.dart';
+import '../../models/message.dart';
 import '../../core/api_config.dart';
 import '../../core/theme.dart';
 import '../../core/error_handler.dart';
@@ -532,81 +533,88 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     final isPendingRequest = pending.any((p) => p.username.toLowerCase() == widget.contactName.toLowerCase() || p.id == widget.contactName);
     final isAccepted = circleMembers.any((m) => m.username.toLowerCase() == widget.contactName.toLowerCase() || m.id == widget.contactName);
 
+    final contactMember = circleMembers.firstWhere(
+      (m) => m.username.toLowerCase() == widget.contactName.toLowerCase() || m.id == widget.contactName,
+      orElse: () => CircleMember(
+        id: widget.contactName,
+        username: widget.contactName,
+        firstName: widget.contactName,
+      ),
+    );
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
         decoration: _softBackground(dark),
         child: Column(
           children: [
-            Container(
-              color: kBlack,
-              padding: EdgeInsets.fromLTRB(
-                12,
-                MediaQuery.paddingOf(context).top + 8,
-                16,
-                12,
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                    tooltip: 'Back',
-                  ),
-                  const SizedBox(width: 4),
-                  Builder(builder: (ctx) {
-                    final members = ref.watch(circlesProvider);
-                    final match = members.firstWhere(
-                      (m) => m.username == widget.contactName,
-                      orElse: () => CircleMember(
-                        id: widget.contactName,
-                        username: widget.contactName,
-                        firstName: widget.contactName,
-                      ),
-                    );
-                    return CircleAvatar(
+            SafeArea(
+              bottom: false,
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                decoration: BoxDecoration(
+                  color: kBlack,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => context.pop(),
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                      tooltip: 'Back',
+                    ),
+                    const SizedBox(width: 4),
+                    CircleAvatar(
                       radius: 18,
                       backgroundColor: kYellow,
-                      backgroundImage: (match.avatarUrl != null && match.avatarUrl!.isNotEmpty)
-                          ? NetworkImage(_formatImageUrl(match.avatarUrl!)) as ImageProvider
+                      backgroundImage: (contactMember.avatarUrl != null && contactMember.avatarUrl!.isNotEmpty)
+                          ? NetworkImage(_formatImageUrl(contactMember.avatarUrl!)) as ImageProvider
                           : null,
-                      child: (match.avatarUrl == null || match.avatarUrl!.isEmpty)
+                      child: (contactMember.avatarUrl == null || contactMember.avatarUrl!.isEmpty)
                           ? Text(
-                              match.firstName.isNotEmpty ? match.firstName[0].toUpperCase() : widget.contactName[0].toUpperCase(),
+                              contactMember.firstName.isNotEmpty ? contactMember.firstName[0].toUpperCase() : widget.contactName[0].toUpperCase(),
                               style: const TextStyle(color: kBlack, fontWeight: FontWeight.w900, fontSize: 13),
                             )
                           : null,
-                    );
-                  }),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.contactName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          isAccepted
-                              ? 'Circle Member'
-                              : (isPendingRequest ? 'Wants to share' : 'Not in Circle'),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.contactName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isAccepted
+                                ? 'Circle Member'
+                                : (isPendingRequest ? 'Wants to share' : 'Not in Circle'),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             Expanded(
@@ -615,14 +623,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Center(
-                      child: Opacity(
-                        opacity: 0.15,
-                        child: Image.asset(
-                          'assets/images/memory-logo.png',
-                          width: MediaQuery.of(context).size.width * 0.45,
-                          height: MediaQuery.of(context).size.width * 0.45,
-                          fit: BoxFit.contain,
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: ChatPatternPainter(
+                          patternColor: (dark ? Colors.white : kBlack).withValues(alpha: 0.04),
                         ),
                       ),
                     ),
@@ -664,7 +668,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         physics: const BouncingScrollPhysics(),
                         itemBuilder: (context, i) {
                           final msg = messages[i];
-                          return _inboxBubble(msg.sender, msg.text, msg.isMine, dark);
+                          return _inboxBubble(msg, contactMember, dark);
                         },
                       ),
                   ],
@@ -939,41 +943,96 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     }
   }
 
-  Widget _inboxBubble(String from, String text, bool mine, bool dark) {
+  Widget _inboxBubble(Message msg, CircleMember member, bool dark) {
+    final mine = msg.isMine;
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-        constraints: const BoxConstraints(maxWidth: 270),
-        decoration: BoxDecoration(
-          color: mine 
-              ? (dark ? kYellow : kBlack) 
-              : (dark ? kBlack : kCream),
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: mine ? const Radius.circular(20) : const Radius.circular(4),
-            bottomRight: mine ? const Radius.circular(4) : const Radius.circular(20),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          mainAxisAlignment: mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!mine) ...[
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: dark ? kYellow : kBlack,
+                backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
+                    ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
+                    : null,
+                child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
+                    ? Text(
+                        member.firstName.isNotEmpty ? member.firstName[0].toUpperCase() : member.username[0].toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              constraints: const BoxConstraints(maxWidth: 240),
+              decoration: BoxDecoration(
+                gradient: mine
+                    ? LinearGradient(
+                        colors: dark
+                            ? const [kYellow, Color(0xFFFFD54F)]
+                            : const [kBlack, Color(0xFF2C2C2C)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : LinearGradient(
+                        colors: dark
+                            ? const [kBlack, Color(0xFF1E1E1E)]
+                            : const [Colors.white, kCream],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(20),
+                  topRight: const Radius.circular(20),
+                  bottomLeft: mine ? const Radius.circular(20) : const Radius.circular(4),
+                  bottomRight: mine ? const Radius.circular(4) : const Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    msg.text,
+                    style: TextStyle(
+                      color: mine
+                          ? (dark ? kBlack : Colors.white)
+                          : (dark ? kCream : kCharcoal),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatTime(msg.timestamp),
+                    style: TextStyle(
+                      color: (mine
+                          ? (dark ? kBlack : Colors.white)
+                          : (dark ? kCream : kCharcoal)).withValues(alpha: 0.5),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: mine 
-                ? (dark ? kBlack : Colors.white) 
-                : (dark ? kCream : kCharcoal),
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            height: 1.3,
-          ),
         ),
       ),
     );
@@ -2228,3 +2287,59 @@ String _formatImageUrl(String url) {
   }
   return url;
 }
+
+class ChatPatternPainter extends CustomPainter {
+  final Color patternColor;
+  ChatPatternPainter({required this.patternColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = patternColor
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    const double spacing = 40.0;
+    
+    // Diagonal lines top-left to bottom-right
+    for (double i = -size.height; i < size.width; i += spacing) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
+    
+    // Diagonal lines top-right to bottom-left
+    for (double i = 0; i < size.width + size.height; i += spacing) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i - size.height, size.height),
+        paint,
+      );
+    }
+
+    // Small intersection dots
+    final dotPaint = Paint()
+      ..color = patternColor.withValues(alpha: patternColor.a * 1.5)
+      ..style = PaintingStyle.fill;
+
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 2.0, dotPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant ChatPatternPainter oldDelegate) {
+    return oldDelegate.patternColor != patternColor;
+  }
+}
+
+String _formatTime(DateTime dt) {
+  final hour = dt.hour.toString().padLeft(2, '0');
+  final minute = dt.minute.toString().padLeft(2, '0');
+  return '$hour:$minute';
+}
+
