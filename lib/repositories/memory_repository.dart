@@ -176,7 +176,9 @@ final memoryProvider = StateNotifierProvider<MemoryNotifier, List<MemoryItem>>((
 
 final feedMemoriesProvider = Provider<List<MemoryItem>>((ref) {
   final list = ref.watch(memoryProvider);
-  return list.where((m) => m.ageHours < 24).toList();
+  final filtered = list.where((m) => m.ageHours < 24).toList();
+  filtered.sort((a, b) => a.ageHours.compareTo(b.ageHours));
+  return filtered;
 });
 
 final archivedMemoriesProvider = Provider<List<MemoryItem>>((ref) {

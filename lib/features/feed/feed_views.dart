@@ -460,65 +460,110 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
       }
     });
 
-    if (feedMemories.isEmpty && archivedMemories.isEmpty) {
-      final circleMembers = ref.watch(circlesProvider);
+    final circleMembers = ref.watch(circlesProvider);
 
-      if (circleMembers.isEmpty) {
-        // Show '+' invite layout only if the user has no friends in their circle
-        return Scaffold(
-          backgroundColor: const Color(0xFFF4C430),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () => _showInviteSheet(context),
-                  child: Container(
-                    width: 76,
-                    height: 76,
-                    decoration: BoxDecoration(
-                      color: dark ? kYellow : kBlack,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: (dark ? kYellow : kBlack).withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.add_rounded,
-                      color: Colors.white,
-                      size: 40,
+    if (circleMembers.isEmpty) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF4C430),
+        body: Stack(
+          children: [
+            Positioned(
+              top: top + 16,
+              left: 22,
+              child: _roundIcon(
+                Icons.arrow_back_ios_new_rounded,
+                () => context.go('/capture'),
+              ),
+            ),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () => _showInviteSheet(context),
+                    child: Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        color: dark ? kYellow : kBlack,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (dark ? kYellow : kBlack).withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        color: Colors.white,
+                        size: 40,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'invite friends to share memories',
-                  style: TextStyle(
+                  const SizedBox(height: 16),
+                  Text(
+                    'invite friends to share memories',
+                    style: TextStyle(
+                      color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (feedMemories.isEmpty && !_gridOpen && !_fromGrid) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF4C430),
+        body: Stack(
+          children: [
+            Positioned(
+              top: top + 16,
+              left: 22,
+              child: _roundIcon(
+                Icons.arrow_back_ios_new_rounded,
+                () => context.go('/capture'),
+              ),
+            ),
+            Positioned(
+              top: top + 16,
+              right: 22,
+              child: _roundIcon(
+                Icons.grid_view_rounded,
+                () => setState(() => _gridOpen = true),
+              ),
+            ),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.history_toggle_off_rounded,
+                    size: 76,
                     color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    'no memories posted in last 24hrs',
+                    style: TextStyle(
+                      color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      } else {
-        // Show standard placeholder only if there are also no archived memories
-        if (archivedMemories.isEmpty) {
-          return Scaffold(
-            backgroundColor: dark ? kCharcoal : kCream,
-            body: const Center(
-              child: Text('No memories shared yet. Capture one!'),
-            ),
-          );
-        }
-        // Otherwise fall through — archived memories will be shown in the grid
-      }
+          ],
+        ),
+      );
     }
 
     // Determine current active memory
@@ -604,32 +649,42 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
               top: top + 16,
               left: 22,
               child: _roundIcon(
-                _fromGrid && !_gridOpen ? Icons.arrow_back_ios_new_rounded : Icons.grid_view_rounded,
-                 () {
-                   if (_fromGrid && !_gridOpen) {
-                     // Go back to grid instead of clearing grid state
-                     _feedVideoController?.pause();
-                     _setGridOpen(true);
-                   } else {
-                     _setGridOpen(true);
-                   }
-                 },
+                Icons.arrow_back_ios_new_rounded,
+                () {
+                  if (_fromGrid && !_gridOpen) {
+                    _feedVideoController?.pause();
+                    _setGridOpen(true);
+                  } else {
+                    _feedVideoController?.pause();
+                    context.go('/capture');
+                  }
+                },
               ),
             ),
-            if (!isEmptyFeed)
+            if (!_gridOpen) ...[
               Positioned(
                 top: top + 16,
                 right: 22,
                 child: _roundIcon(
-                  _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                  () {
-                    setState(() {
-                      _isMuted = !_isMuted;
-                      _feedVideoController?.setVolume(_isMuted ? 0.0 : 1.0);
-                    });
-                  },
+                  Icons.grid_view_rounded,
+                  () => _setGridOpen(true),
                 ),
               ),
+              if (!isEmptyFeed)
+                Positioned(
+                  top: top + 16,
+                  right: 78,
+                  child: _roundIcon(
+                    _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                    () {
+                      setState(() {
+                        _isMuted = !_isMuted;
+                        _feedVideoController?.setVolume(_isMuted ? 0.0 : 1.0);
+                      });
+                    },
+                  ),
+                ),
+            ],
             if (!isEmptyFeed && m != null)
               Positioned(
                 top: top + 34,
