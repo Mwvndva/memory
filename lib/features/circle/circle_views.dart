@@ -1439,7 +1439,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       margin: const EdgeInsets.all(14),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: dark ? kBlack : Colors.white,
+        color: dark ? kBlack : kYellow,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
