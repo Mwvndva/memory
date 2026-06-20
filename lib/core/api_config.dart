@@ -12,14 +12,14 @@
 /// Android emulator maps 10.0.2.2 → host localhost when developing locally.
 const String kBaseUrl = String.fromEnvironment(
 	'API_URL',
-	defaultValue: 'http://10.0.2.2:3000',
+	defaultValue: 'http://80.190.82.31:3000',
 );
 
 /// WebSocket endpoint used by the chat/notification layer. Provide using
 /// --dart-define=WS_URL; default points to local emulator.
 const String kWebSocketUrl = String.fromEnvironment(
 	'WS_URL',
-	defaultValue: 'ws://10.0.2.2:3000/ws',
+	defaultValue: 'ws://80.190.82.31:3000/ws',
 );
 
 // ---------------------------------------------------------------------------
