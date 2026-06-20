@@ -84,7 +84,7 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
       
       // Load conversation history for all circle members in the background to populate message previews and unread badges
       for (final m in members) {
-        _ref.read(chatProvider.notifier).loadConversation(m.username);
+        _ref.read(chatProvider.notifier).loadConversation(m.username, shouldMarkRead: false);
       }
     } catch (_) {}
   }

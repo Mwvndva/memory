@@ -399,7 +399,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   // ─── Load conversation history from REST API ─────────────────────────────
 
-  Future<void> loadConversation(String contactUsername) async {
+  Future<void> loadConversation(String contactUsername, {bool shouldMarkRead = false}) async {
     if (kUseMockBackend) return;
     try {
       // Resolve username → userId via the circles list (already fetched)
@@ -408,7 +408,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       if (member == null) return; // not in circle, skip
 
       final dio = _ref.read(apiClientProvider);
-      final response = await dio.get('/messages/history/${member.id}');
+      // Pass markRead=false during background preview loads; markRead=true when user opens chat
+      final markReadParam = shouldMarkRead ? 'true' : 'false';
+      final response = await dio.get('/messages/history/${member.id}?markRead=$markReadParam');
       final body = response.data as Map<String, dynamic>? ?? {};
       final rawList = body['data'] as List? ?? [];
 
@@ -423,7 +425,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           text:      d['text'] as String? ?? '',
           timestamp: DateTime.tryParse(d['timestamp']?.toString() ?? '') ?? DateTime.now(),
           isMine:    isMine,
-          isRead:    d['isRead'] as bool? ?? d['is_read'] as bool? ?? true,
+          isRead:    d['isRead'] as bool? ?? d['is_read'] as bool? ?? false,
         );
       }).toList();
 

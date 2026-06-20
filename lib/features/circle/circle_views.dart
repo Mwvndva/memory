@@ -318,21 +318,49 @@ class CircleChatListView extends ConsumerWidget {
               },
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: dark ? kYellow : kBlack,
-                    backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-                        ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
-                        : null,
-                    child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
-                        ? Text(
-                            name.isNotEmpty ? name[0].toUpperCase() : '?',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: dark ? kYellow : kBlack,
+                        backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
+                            ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
+                            : null,
+                        child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
+                            ? Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              )
+                            : null,
+                      ),
+                      Builder(
+                        builder: (context) {
+                          final chatState = ref.watch(chatProvider);
+                          final hasUnread = (chatState.unreadCounts[chatKey] ?? 0) > 0;
+                          if (!hasUnread) return const SizedBox.shrink();
+                          return Positioned(
+                            top: -2,
+                            right: -2,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: kYellow,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: dark ? kBlack : Colors.white,
+                                  width: 2,
+                                ),
+                              ),
                             ),
-                          )
-                        : null,
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -359,7 +387,9 @@ class CircleChatListView extends ConsumerWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: _small(
-                                dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                                hasUnread
+                                    ? (dark ? kCream : kCharcoal)
+                                    : (dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62)),
                               ).copyWith(
                                 fontWeight: hasUnread ? FontWeight.w900 : FontWeight.w500,
                               ),
@@ -486,7 +516,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     if (kUseMockBackend) return;
     setState(() => _loadingHistory = true);
     try {
-      await ref.read(chatProvider.notifier).loadConversation(widget.contactName);
+      await ref.read(chatProvider.notifier).loadConversation(widget.contactName, shouldMarkRead: true);
     } catch (_) {}
     if (mounted) setState(() => _loadingHistory = false);
     // scroll to bottom after loading
@@ -798,7 +828,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         ).id,
                       );
                       if (success) {
-                        await ref.read(chatProvider.notifier).loadConversation(widget.contactName);
+                        await ref.read(chatProvider.notifier).loadConversation(widget.contactName, shouldMarkRead: true);
                       }
                     },
                     child: Container(

@@ -78,7 +78,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
   Future<void> fetchFeed() async {
     try {
       final dio = _ref.read(apiClientProvider);
-      final response = await dio.get('/memories/feed');
+      final response = await dio.get('/memories/feed?limit=100');
 
       // Backend returns: { "memories": [...], "meta": {...} }
       final rawList = (response.data['memories'] as List? ?? []);

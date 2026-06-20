@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UseGuards, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MessagesService } from './messages.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -6,6 +6,8 @@ import { PrismaService } from '../prisma/prisma.service';
 @UseGuards(JwtAuthGuard)
 @Controller('messages')
 export class MessagesController {
+  private readonly logger = new Logger(MessagesController.name);
+
   constructor(
     private readonly messagesService: MessagesService,
     private readonly prisma: PrismaService,
@@ -22,6 +24,7 @@ export class MessagesController {
     @Param('userId') userId: string,
     @Query('page') page = '1',
     @Query('limit') limit = '50',
+    @Query('markRead') markRead = 'true',
   ) {
     // Check if the target user is in the caller's circle (accepted) OR the
     // caller is in the target user's circle (accepted). This allows messaging
@@ -45,15 +48,23 @@ export class MessagesController {
       };
     }
 
+    const shouldMarkRead = markRead !== 'false';
+    this.logger.log(`[Get History] Loading conversation: callerId="${req.user.id}" targetId="${userId}" markRead=${shouldMarkRead}`);
+
     return this.messagesService.getConversation(
       req.user.id,
       userId,
       parseInt(page, 10),
       parseInt(limit, 10),
     ).then(async (result) => {
-      // Mark all messages from this sender to the current user as read
-      // (fire-and-forget — don't await so response isn't delayed)
-      this.messagesService.markRead(req.user.id, userId).catch(() => {});
+      if (shouldMarkRead) {
+        // Mark all messages from this sender to the current user as read
+        // (fire-and-forget — don't await so response isn't delayed)
+        this.logger.log(`[Get History] Marking messages as read for callerId="${req.user.id}" from senderId="${userId}"`);
+        this.messagesService.markRead(req.user.id, userId).catch(() => {});
+      } else {
+        this.logger.log(`[Get History] Skipping markRead (background preview load) for callerId="${req.user.id}"`);
+      }
       return result;
     });
   }
