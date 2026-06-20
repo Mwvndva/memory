@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesController } from '../src/messages/messages.controller';
 import { MessagesService } from '../src/messages/messages.service';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 describe('MessagesController', () => {
   let controller: MessagesController;
@@ -14,7 +15,7 @@ describe('MessagesController', () => {
 
     const prismaMock = {
       circleMembership: {
-        findFirst: jest.fn().mockResolvedValue({ id: 'rel', accepted: true }),
+        findUnique: jest.fn().mockResolvedValue({ id: 'rel', accepted: true }),
       },
     };
 
@@ -22,7 +23,7 @@ describe('MessagesController', () => {
       controllers: [MessagesController],
       providers: [
         { provide: MessagesService, useValue: messagesService },
-        { provide: 'PrismaService', useValue: prismaMock },
+        { provide: PrismaService, useValue: prismaMock },
       ],
     }).compile();
 

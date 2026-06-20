@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CirclesService } from '../src/circles/circles.service';
+import { PrismaService } from '../src/prisma/prisma.service';
+import { AppGateway } from '../src/gateway/app.gateway';
 
 describe('CirclesService', () => {
   let service: CirclesService;
@@ -17,8 +19,8 @@ describe('CirclesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CirclesService,
-        { provide: 'PrismaService', useValue: prismaMock },
-        { provide: 'AppGateway', useValue: { sendToUser: jest.fn() } },
+        { provide: PrismaService, useValue: prismaMock },
+        { provide: AppGateway, useValue: { sendToUser: jest.fn() } },
       ],
     }).compile();
 
