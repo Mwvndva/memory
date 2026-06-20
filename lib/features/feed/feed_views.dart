@@ -798,8 +798,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
       );
     }
 
-    // Generate a fixed 12 grid items repeating if archived is short
-    final gridItems = List.generate(12, (i) => archived[i % archived.length]);
+    // Use real archived memories directly
+    final gridItems = archived;
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
@@ -861,7 +861,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                       onTap: () {
                         setState(() {
                           _fromGrid = true;
-                          _activeMemoryIndex = i % archived.length;
+                          _activeMemoryIndex = i;
                         });
                         _setGridOpen(false);
                       },
