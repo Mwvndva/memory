@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/theme.dart';
 import '../../repositories/memory_repository.dart';
+import '../../repositories/chat_repository.dart';
 
 List<CameraDescription>? _globalCameras;
 
@@ -291,6 +292,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     final dark = ref.watch(isDarkProvider);
     final bottomPad = MediaQuery.paddingOf(context).bottom;
     final topPad = MediaQuery.paddingOf(context).top;
+    final chatState = ref.watch(chatProvider);
+    final unreadCount = chatState.unreadNotifications;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -316,9 +319,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                 Row(
                   children: [
                     const Spacer(),
-                    _overlayIconButton(
-                      icon: Icons.person_rounded,
+                    _overlayCircleGroupButton(
                       onTap: () => context.go('/circle'),
+                      unreadCount: unreadCount,
                     ),
                   ],
                 ),
@@ -406,6 +409,77 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
         ),
         child: Icon(icon, color: Colors.white, size: 22),
+      ),
+    );
+  }
+
+  // Stacked user icons button for top-right (navigates to circle) with unread badge overlay
+  Widget _overlayCircleGroupButton({required VoidCallback onTap, required int unreadCount}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Bottom/back user icon (smaller, shifted up/left)
+                Positioned(
+                  left: 6,
+                  top: 6,
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: Colors.white.withValues(alpha: 0.65),
+                    size: 20,
+                  ),
+                ),
+                // Top/front user icon (shifted down/right)
+                Positioned(
+                  right: 6,
+                  bottom: 6,
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              right: -3,
+              top: -3,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 16,
+                  minHeight: 16,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '$unreadCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
