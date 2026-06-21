@@ -496,7 +496,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.maxWidth;
-        final radius = size * 0.30;
+        final radius = size * 0.20;
         final borderRadius = BorderRadius.circular(radius);
 
         return Container(
