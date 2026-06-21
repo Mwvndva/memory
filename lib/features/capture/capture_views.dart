@@ -420,7 +420,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     );
   }
 
-  // Stacked user icons button for top-right (navigates to circle) with unread badge overlay
+  // Friends icon button for top-right (navigates to circle) with unread badge overlay
   Widget _overlayCircleGroupButton({required VoidCallback onTap, required int unreadCount}) {
     return GestureDetector(
       onTap: onTap,
@@ -430,35 +430,16 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           Container(
             width: 46,
             height: 46,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.35),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
             ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Bottom/back user icon (smaller, shifted up/left)
-                Positioned(
-                  left: 6,
-                  top: 6,
-                  child: Icon(
-                    Icons.people_rounded,
-                    color: Colors.white.withValues(alpha: 0.65),
-                    size: 20,
-                  ),
-                ),
-                // Top/front user icon (shifted down/right)
-                Positioned(
-                  right: 6,
-                  bottom: 6,
-                  child: Icon(
-                    Icons.people_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ],
+            child: const Icon(
+              Icons.people_rounded,
+              color: Colors.white,
+              size: 22,
             ),
           ),
           if (unreadCount > 0)
