@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../../core/theme.dart';
 import '../../models/memory_item.dart';
@@ -1103,34 +1102,41 @@ class _VideoGridThumbnail extends StatefulWidget {
 }
 
 class _VideoGridThumbnailState extends State<_VideoGridThumbnail> {
-  Uint8List? _thumbnail;
-  bool _loaded = false;
+  VideoPlayerController? _controller;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _init();
   }
 
-  Future<void> _load() async {
+  Future<void> _init() async {
     try {
-      final data = await VideoThumbnail.thumbnailData(
-        video: widget.videoUrl,
-        imageFormat: ImageFormat.JPEG,
-        maxWidth: 200,
-        quality: 75,
-        timeMs: 0, // first frame
-      );
-      if (mounted) setState(() { _thumbnail = data; _loaded = true; });
+      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      _controller = controller;
+      await controller.initialize();
+      await controller.seekTo(Duration.zero);
+      await controller.setVolume(0.0);
+      if (mounted) {
+        setState(() {
+          _initialized = true;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() { _loaded = true; }); // show fallback gradient
+      // Keep _initialized as false to show gradient fallback on error
     }
   }
 
   @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (!_loaded || _thumbnail == null) {
-      // Show gradient while thumbnail is loading
+    if (!_initialized || _controller == null) {
       return DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -1141,6 +1147,13 @@ class _VideoGridThumbnailState extends State<_VideoGridThumbnail> {
         ),
       );
     }
-    return Image.memory(_thumbnail!, fit: BoxFit.cover);
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: _controller!.value.size.width,
+        height: _controller!.value.size.height,
+        child: VideoPlayer(_controller!),
+      ),
+    );
   }
 }
