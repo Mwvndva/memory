@@ -326,11 +326,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Camera card preview (not full screen) with 1:1 ratio
+                // Camera card preview (not full screen) with 3:4 ratio
                 Expanded(
                   child: Center(
                     child: AspectRatio(
-                      aspectRatio: 1.0,
+                      aspectRatio: 3 / 4,
                       child: _capturePreview(),
                     ),
                   ),
