@@ -93,6 +93,16 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 - Website - [https://nestjs.com](https://nestjs.com/)
 - Twitter - [@nestframework](https://twitter.com/nestframework)
 
+## Security Architecture
+
+### Cookie-based Authentication Exclusion (CSRF Protection)
+This backend is a stateless REST and WebSocket API built specifically to serve mobile clients (Flutter). 
+
+- **Token Storage**: JWTs (JSON Web Tokens) are stored client-side in the mobile app's secure device storage (e.g. Keychain on iOS, Keystore on Android).
+- **Token Transmission**: Client requests transmit the token via the `Authorization: Bearer <token>` HTTP header, rather than through standard browser cookies.
+- **CSRF Immunity**: Because the API does not store or process authentication credentials via browser cookies, it is naturally immune to Cross-Site Request Forgery (CSRF) attacks. Web-based CSRF attacks rely on browsers automatically attaching cookie headers on cross-origin requests, which does not apply to header-based authorization.
+- **Future Considerations**: Cookie-based sessions or cookie-based JWT storage are explicitly excluded from this application's architecture. If web-based clients utilizing session cookies are introduced in the future, a CSRF prevention middleware (such as `@nestjs/csrf` or custom double-submit cookie validation) must be registered in `main.ts` before exposing cookie-based endpoints.
+
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
