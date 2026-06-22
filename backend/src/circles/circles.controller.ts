@@ -11,6 +11,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CirclesService } from './circles.service';
 import { AddMemberDto } from './dto/add-member.dto';
+import { AcceptDeclineRequestDto } from './dto/accept-decline-request.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('circles')
@@ -81,8 +82,8 @@ export class CirclesController {
    * Authenticated — accepts a share memories request.
    */
   @Post('requests/accept')
-  acceptRequest(@Req() req: any, @Body() body: { senderId: string }) {
-    return this.circlesService.acceptRequest(req.user.id, body.senderId);
+  acceptRequest(@Req() req: any, @Body() dto: AcceptDeclineRequestDto) {
+    return this.circlesService.acceptRequest(req.user.id, dto.senderId);
   }
 
   /**
@@ -90,7 +91,7 @@ export class CirclesController {
    * Authenticated — declines a share memories request.
    */
   @Post('requests/decline')
-  declineRequest(@Req() req: any, @Body() body: { senderId: string }) {
-    return this.circlesService.declineRequest(req.user.id, body.senderId);
+  declineRequest(@Req() req: any, @Body() dto: AcceptDeclineRequestDto) {
+    return this.circlesService.declineRequest(req.user.id, dto.senderId);
   }
 }

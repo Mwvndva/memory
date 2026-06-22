@@ -5,16 +5,29 @@ import {
   MaxLength,
   Matches,
   IsBoolean,
+  IsOptional,
 } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
   @MaxLength(50)
-  firstName: string;
+  @IsOptional()
+  firstName?: string;
 
   @IsString()
   @MaxLength(50)
-  lastName: string;
+  @IsOptional()
+  lastName?: string;
+
+  @IsString()
+  @MaxLength(50)
+  @IsOptional()
+  first_name?: string;
+
+  @IsString()
+  @MaxLength(50)
+  @IsOptional()
+  last_name?: string;
 
   @IsString()
   @MinLength(3)
@@ -36,5 +49,10 @@ export class RegisterDto {
   password: string;
 
   @IsBoolean()
-  acceptedTerms: boolean;
+  @IsOptional()
+  acceptedTerms?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  accepted_terms?: boolean;
 }

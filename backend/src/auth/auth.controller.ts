@@ -17,6 +17,8 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshTokenPayload } from './strategies/jwt-refresh.strategy';
 import { RedisService } from '../redis/redis.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 // ─── Helper: camelCase user → snake_case response ──────────────────────────
 
@@ -58,16 +60,8 @@ export class AuthController {
   @UseGuards(RateLimitGuard)
   @RateLimit({ limit: 5, windowSeconds: 3600 })
   @Post('register')
-  async register(@Body() body: any) {
-    const result = await this.authService.register({
-      firstName: body.first_name ?? body.firstName,
-      lastName:  body.last_name  ?? body.lastName,
-      username:  body.username,
-      email:     body.email,
-      phone:     body.phone,
-      password:  body.password,
-      acceptedTerms: body.accepted_terms ?? body.acceptedTerms,
-    });
+  async register(@Body() dto: RegisterDto) {
+    const result = await this.authService.register(dto);
     return {
       tokens: toSnakeTokens(result.tokens),
       user:   toSnakeUser(result.user),
@@ -82,13 +76,8 @@ export class AuthController {
   @RateLimit({ limit: 10, windowSeconds: 900 })
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: any) {
-    // Accept both 'identity' (Flutter) and 'identifier' (legacy) field names
-    const identifier = body.identity ?? body.identifier;
-    const result = await this.authService.login({
-      identifier,
-      password: body.password,
-    });
+  async login(@Body() dto: LoginDto) {
+    const result = await this.authService.login(dto);
     return {
       tokens: toSnakeTokens(result.tokens),
       user:   toSnakeUser(result.user),

@@ -93,7 +93,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: false, // allow snake_case passthrough fields
+      forbidNonWhitelisted: true, // reject any unknown/non-whitelisted parameters
       transform: true,
     }),
   );

@@ -19,6 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { StorageService } from '../storage/storage.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { SyncContactsDto } from './dto/sync-contacts.dto';
 
 @Controller('users')
 export class UsersController {
@@ -96,8 +97,7 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Post('sync-contacts')
-  syncContacts(@Body() body: { phones: string[] }) {
-    const phones = body?.phones ?? [];
-    return this.usersService.findByPhones(phones);
+  syncContacts(@Body() dto: SyncContactsDto) {
+    return this.usersService.findByPhones(dto.phones);
   }
 }

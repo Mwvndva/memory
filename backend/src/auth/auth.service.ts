@@ -96,10 +96,12 @@ export class AuthService {
     // 3. Persist user
     this.logger.log(`[Register] Step 3: Saving user record in database`);
     const flagEmoji = dto.phone.split(' ')[0] || '🇰🇪';
+    const firstName = dto.first_name ?? dto.firstName ?? '';
+    const lastName = dto.last_name ?? dto.lastName ?? '';
     const user = await this.prisma.user.create({
       data: {
-        firstName:    dto.firstName,
-        lastName:     dto.lastName,
+        firstName,
+        lastName,
         username:     dto.username,
         email:        dto.email,
         phone:        dto.phone,
@@ -130,13 +132,14 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     this.logger.log(`[Login] New login request`);
-    // Resolve by email or username
-    const isEmail = dto.identifier.includes('@');
+    // Resolve by email or username (identity or identifier)
+    const identifier = dto.identity ?? dto.identifier ?? '';
+    const isEmail = identifier.includes('@');
     this.logger.log(`[Login] Step 1: Finding user by ${isEmail ? 'email' : 'username'}`);
     const user = await this.prisma.user.findFirst({
       where: isEmail
-        ? { email: dto.identifier }
-        : { username: dto.identifier },
+        ? { email: identifier }
+        : { username: identifier },
     });
 
     // Constant-time: always verify even if user not found (prevents timing attacks).

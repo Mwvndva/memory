@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MemoriesService } from './memories.service';
 import { StorageService } from '../storage/storage.service';
 import { CreateMemoryDto } from './dto/create-memory.dto';
+import { UploadMemoryDto } from './dto/upload-memory.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 // ─── Colour palette seeded from user ID (deterministic, no extra DB field) ───
@@ -138,7 +139,7 @@ export class MemoriesController {
   @UseInterceptors(FileInterceptor('video'))
   async uploadMemory(
     @Req() req: any,
-    @Body() body: any,
+    @Body() dto: UploadMemoryDto,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -152,20 +153,20 @@ export class MemoriesController {
     const videoUrl = await this.storageService.uploadFile(file, 'memories');
 
     let gradientColors: string[] = [];
-    if (body.colors) {
-      if (Array.isArray(body.colors)) {
-        gradientColors = body.colors;
-      } else if (typeof body.colors === 'string') {
-        if (body.colors.startsWith('[')) {
-          try { gradientColors = JSON.parse(body.colors); } catch { gradientColors = [body.colors]; }
+    if (dto.colors) {
+      if (Array.isArray(dto.colors)) {
+        gradientColors = dto.colors;
+      } else if (typeof dto.colors === 'string') {
+        if (dto.colors.startsWith('[')) {
+          try { gradientColors = JSON.parse(dto.colors); } catch { gradientColors = [dto.colors]; }
         } else {
-          gradientColors = body.colors.split(',').map((c: string) => c.trim());
+          gradientColors = dto.colors.split(',').map((c: string) => c.trim());
         }
       }
     }
 
     const m = await this.memoriesService.create(req.user.id, {
-      caption: body.caption || '',
+      caption: dto.caption || '',
       videoUrl,
       gradientColors,
     });

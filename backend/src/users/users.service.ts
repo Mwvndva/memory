@@ -120,13 +120,17 @@ export class UsersService {
 
   // ─── Profile update ────────────────────────────────────────────────────────
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    // Strip undefined fields so we don't accidentally null them in Prisma
-    const data: any = Object.fromEntries(
-      Object.entries(dto).filter(([, v]) => v !== undefined),
-    );
+    const data: any = {};
+    if (dto.firstName !== undefined) data.firstName = dto.firstName;
+    if (dto.first_name !== undefined) data.firstName = dto.first_name;
+    if (dto.lastName !== undefined) data.lastName = dto.lastName;
+    if (dto.last_name !== undefined) data.lastName = dto.last_name;
+    if (dto.phone !== undefined) data.phone = dto.phone;
+    if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl;
+    if (dto.avatar_url !== undefined) data.avatarUrl = dto.avatar_url;
 
-    if (dto.phone) {
-      data.country = dto.phone.split(' ')[0] || '🇰🇪';
+    if (data.phone) {
+      data.country = data.phone.split(' ')[0] || '🇰🇪';
     }
 
     const user = await this.prisma.user.update({

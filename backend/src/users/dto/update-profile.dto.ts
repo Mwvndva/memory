@@ -13,6 +13,16 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(50)
+  first_name?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  last_name?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(20)
   phone?: string;
 
@@ -20,4 +30,9 @@ export class UpdateProfileDto {
   @IsUrl()
   @MaxLength(255)
   avatarUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  @MaxLength(255)
+  avatar_url?: string;
 }
