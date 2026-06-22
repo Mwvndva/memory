@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -18,8 +18,26 @@ const USER_SELECT = {
 } as const;
 
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(private readonly prisma: PrismaService) {}
+
+  onModuleInit() {
+    // Recalculate ranks once at startup after 10 seconds to avoid blocking main thread bootstrap
+    setTimeout(() => {
+      this.recalculateAllUserRanks().catch((err) => {
+        this.logger.error(`[Startup Job] Failed to run initial rankings recalculation: ${err.message}`);
+      });
+    }, 1000 * 10);
+
+    // Periodically run global rankings recalculation every 1 hour
+    setInterval(() => {
+      this.recalculateAllUserRanks().catch((err) => {
+        this.logger.error(`[Background Job] Failed to recalculate all user ranks: ${err.message}`);
+      });
+    }, 1000 * 60 * 60);
+  }
 
   // ─── Username availability ─────────────────────────────────────────────────
 
@@ -63,6 +81,7 @@ export class UsersService {
    * every user on every profile fetch.
    */
   async recalculateUserStats(userId: string) {
+    this.logger.log(`[Recalculate Stats] Updating streak for userId="${userId}"`);
     // 1. Fetch this user's memories for streak calculation
     const memories = await this.prisma.memory.findMany({
       where: { creatorId: userId },
@@ -72,50 +91,23 @@ export class UsersService {
 
     const streak = this.calculateUserStreak(memories);
 
-    // 2. Fetch country of the user
+    // 2. Fetch country flag emoji from phone prefix
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { phone: true },
     });
     const country = user?.phone?.split(' ')[0] || '🇰🇪';
 
-    // 3. Compute global rank by comparing with all stored streakDays (fast — just reads one column)
-    const allUsers = await this.prisma.user.findMany({
-      select: { id: true, streakDays: true, country: true },
-    });
-
-    // Sort globally to find the new user's global rank
-    const sorted = [...allUsers]
-      .map((u) => ({ ...u, streakDays: u.id === userId ? streak : u.streakDays }))
-      .sort((a, b) => b.streakDays - a.streakDays);
-
-    let globalRank = 1;
-    let prev = -1;
-    for (let i = 0; i < sorted.length; i++) {
-      if (sorted[i].streakDays !== prev) { globalRank = i + 1; prev = sorted[i].streakDays; }
-      if (sorted[i].id === userId) break;
-    }
-
-    // Country rank
-    const countryPeers = sorted.filter((u) =>
-      (u.id === userId ? country : u.country) === country,
-    );
-    let countryRank = 1;
-    let prevC = -1;
-    for (let i = 0; i < countryPeers.length; i++) {
-      if (countryPeers[i].streakDays !== prevC) { countryRank = i + 1; prevC = countryPeers[i].streakDays; }
-      if (countryPeers[i].id === userId) break;
-    }
-
+    // 3. Update the user's streakDays and country (ranks will be calculated by the background cron job)
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         streakDays: streak,
         country,
-        countryRank,
-        globalRank: globalRank <= 300000 ? globalRank : null,
       },
     });
+
+    this.logger.log(`[Recalculate Stats] User streak updated: userId="${userId}" streak=${streak} country=${country}`);
   }
 
   // ─── Profile update ────────────────────────────────────────────────────────
@@ -193,100 +185,24 @@ export class UsersService {
 
   // ─── Streak, Rank, and Pulse Stats Calculations ────────────────────────────
   async getUserStats(userId: string) {
-    // 1. Fetch user's country flag from phone prefix
+    // 1. Fetch this user's pre-computed stats directly from database in O(1)
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { phone: true },
-    });
-    const phone = user?.phone || '';
-    const flagEmoji = phone.split(' ')[0] || '🇰🇪';
-
-    // 2. Fetch all users and their memories to compute streaks & ranks
-    const allUsers = await this.prisma.user.findMany({
-      include: {
-        memories: {
-          select: { createdAt: true },
-          orderBy: { createdAt: 'desc' },
-        },
+      select: {
+        phone: true,
+        streakDays: true,
+        countryRank: true,
+        globalRank: true,
       },
     });
 
-    const userStreaks = allUsers.map((u) => {
-      const streak = this.calculateUserStreak(u.memories);
-      const country = u.phone.split(' ')[0] || '🇰🇪';
-      return {
-        userId: u.id,
-        streak,
-        country,
-      };
-    });
+    if (!user) throw new NotFoundException('User not found');
 
-    // Sort globally by streak (descending)
-    userStreaks.sort((a, b) => b.streak - a.streak);
+    const flagEmoji = user.phone.split(' ')[0] || '🇰🇪';
 
-    // Global ranks (equal streaks get same rank)
-    let currentGlobalRank = 1;
-    let prevGlobalStreak = -1;
-    const globalRanksMap = new Map<string, number>();
-
-    for (let i = 0; i < userStreaks.length; i++) {
-      const u = userStreaks[i];
-      if (u.streak !== prevGlobalStreak) {
-        currentGlobalRank = i + 1;
-        prevGlobalStreak = u.streak;
-      }
-      globalRanksMap.set(u.userId, currentGlobalRank);
-    }
-
-    // Country ranks
-    const countryGroups = new Map<string, typeof userStreaks>();
-    for (const u of userStreaks) {
-      if (!countryGroups.has(u.country)) {
-        countryGroups.set(u.country, []);
-      }
-      countryGroups.get(u.country)!.push(u);
-    }
-
-    const countryRanksMap = new Map<string, number>();
-    for (const [country, group] of countryGroups.entries()) {
-      group.sort((a, b) => b.streak - a.streak);
-      let currentCountryRank = 1;
-      let prevCountryStreak = -1;
-      for (let i = 0; i < group.length; i++) {
-        const u = group[i];
-        if (u.streak !== prevCountryStreak) {
-          currentCountryRank = i + 1;
-          prevCountryStreak = u.streak;
-        }
-        countryRanksMap.set(u.userId, currentCountryRank);
-      }
-    }
-
-    // 2.5 Save/Update country, streaks, and ranks in User table for all users
-    for (const u of userStreaks) {
-      const gRank = globalRanksMap.get(u.userId) ?? 1;
-      const cRank = countryRanksMap.get(u.userId) ?? 1;
-      await this.prisma.user.update({
-        where: { id: u.userId },
-        data: {
-          country: u.country,
-          streakDays: u.streak,
-          countryRank: cRank,
-          globalRank: gRank <= 300000 ? gRank : null,
-        },
-      });
-    }
-
-    const userStreak = userStreaks.find((us) => us.userId === userId)?.streak ?? 0;
-    const rawGlobalRank = globalRanksMap.get(userId) ?? 1;
-    const countryRank = countryRanksMap.get(userId) ?? 1;
-
-    // Show global rank only if user is in top 300,000
-    const globalRank = rawGlobalRank <= 300000 ? rawGlobalRank : null;
-
-    // 3. Compute Circle Pulse (consecutive daily posts by anyone in circle)
+    // 2. Compute Circle Pulse (consecutive daily posts by anyone in circle)
     const circleMemberships = await this.prisma.circleMembership.findMany({
-      where: { userId },
+      where: { userId, accepted: true },
       select: { memberId: true },
     });
     const circleUserIds = [userId, ...circleMemberships.map((m) => m.memberId)];
@@ -300,12 +216,106 @@ export class UsersService {
     const circlePulseDays = this.calculateCirclePulse(circleMemories);
 
     return {
-      streakDays: userStreak,
+      streakDays: user.streakDays,
       circlePulseDays,
-      countryRank,
-      globalRank,
+      countryRank: user.countryRank,
+      globalRank: user.globalRank,
       flagEmoji,
     };
+  }
+
+  /**
+   * Periodically recalculates globalRank and countryRank for all users in the system.
+   * Runs in the background (e.g. hourly) to offload heavy calculations from the API request path.
+   */
+  async recalculateAllUserRanks() {
+    this.logger.log(`[Rankings Job] Starting global rankings recalculation...`);
+    const startTime = Date.now();
+
+    // 1. Fetch all users with only necessary fields to minimize memory footprint
+    const allUsers = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        phone: true,
+        streakDays: true,
+      },
+    });
+
+    if (allUsers.length === 0) return;
+
+    // 2. Pre-process countries
+    const userStreaks = allUsers.map((u) => {
+      const country = u.phone?.split(' ')[0] || '🇰🇪';
+      return {
+        userId: u.id,
+        streak: u.streakDays,
+        country,
+      };
+    });
+
+    // 3. Sort globally by streak (descending)
+    userStreaks.sort((a, b) => b.streak - a.streak);
+
+    // 4. Compute global ranks
+    let currentGlobalRank = 1;
+    let prevGlobalStreak = -1;
+    const globalRanksMap = new Map<string, number>();
+
+    for (let i = 0; i < userStreaks.length; i++) {
+      const u = userStreaks[i];
+      if (u.streak !== prevGlobalStreak) {
+        currentGlobalRank = i + 1;
+        prevGlobalStreak = u.streak;
+      }
+      globalRanksMap.set(u.userId, currentGlobalRank);
+    }
+
+    // 5. Compute country ranks
+    const countryGroups = new Map<string, typeof userStreaks>();
+    for (const u of userStreaks) {
+      if (!countryGroups.has(u.country)) {
+        countryGroups.set(u.country, []);
+      }
+      countryGroups.get(u.country)!.push(u);
+    }
+
+    const countryRanksMap = new Map<string, number>();
+    for (const [, group] of countryGroups.entries()) {
+      group.sort((a, b) => b.streak - a.streak);
+      let currentCountryRank = 1;
+      let prevCountryStreak = -1;
+      for (let i = 0; i < group.length; i++) {
+        const u = group[i];
+        if (u.streak !== prevCountryStreak) {
+          currentCountryRank = i + 1;
+          prevCountryStreak = u.streak;
+        }
+        countryRanksMap.set(u.userId, currentCountryRank);
+      }
+    }
+
+    // 6. Update all users in the database using batches to avoid lock escalations
+    const batchSize = 250;
+    for (let i = 0; i < userStreaks.length; i += batchSize) {
+      const batch = userStreaks.slice(i, i + batchSize);
+      await this.prisma.$transaction(
+        batch.map((u) => {
+          const gRank = globalRanksMap.get(u.userId) ?? 1;
+          const cRank = countryRanksMap.get(u.userId) ?? 1;
+          return this.prisma.user.update({
+            where: { id: u.userId },
+            data: {
+              country: u.country,
+              countryRank: cRank,
+              globalRank: gRank <= 300000 ? gRank : null,
+            },
+          });
+        })
+      );
+    }
+
+    const duration = Date.now() - startTime;
+    this.logger.log(`[Rankings Job] Global rankings recalculation complete (processed ${allUsers.length} users in ${duration}ms).`);
   }
 
   // ─── Circle Pulse (private helper) ───────────────────────────────────
