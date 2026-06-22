@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/theme.dart';
 import '../../repositories/memory_repository.dart';
 import '../../repositories/chat_repository.dart';
+import '../circle/circle_views.dart';
 
 List<CameraDescription>? _globalCameras;
 
@@ -287,6 +288,16 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     context.go('/capture');
   }
 
+  void _showProfileSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const ProfilePanel(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
@@ -315,32 +326,41 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top header row: User/Person icon on the right
+                // Top header row: Profile settings button on the right
                 Row(
                   children: [
                     const Spacer(),
-                    _overlayCircleGroupButton(
-                      onTap: () => context.go('/circle'),
-                      unreadCount: unreadCount,
+                    _overlayProfileSettingsButton(
+                      onTap: () => _showProfileSheet(context),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8), // Move camera frame higher: reduced from 16
-                // Camera card preview (not full screen) with 3:4 ratio
+                const SizedBox(height: 8), // Move camera frame higher
+                // Camera card preview (not full screen) with taller 3:4.3 ratio
                 Center(
                   child: AspectRatio(
-                    aspectRatio: 3 / 4,
+                    aspectRatio: 3 / 4.3, // Increased height slightly from 3 / 4
                     child: _capturePreview(),
                   ),
                 ),
                 const Spacer(flex: 2), // Spacing between camera and capture controls (pushed higher)
-                // Bottom controls row: Capture in center, Flip on right
+                // Bottom controls row: Flip camera on left, Capture in center, Message icon on right
                 SizedBox(
                   width: double.infinity,
                   height: 82,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
+                      // Flip camera - bottom left
+                      if (!_hasRecording && !_isRecording && _cameras.length > 1)
+                        Positioned(
+                          left: 8,
+                          child: _overlayIconButton(
+                            icon: Icons.flip_camera_ios_rounded,
+                            onTap: _switchCamera,
+                          ),
+                        ),
+
                       // Centre: capture button or send button
                       _hasRecording
                           ? _pill(
@@ -358,35 +378,42 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                                 height: 82,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _isRecording ? Colors.red : kYellow,
+                                  color: Colors.transparent, // Transparent gap
                                   border: Border.all(
                                     color: Colors.white,
-                                    width: 6, // Thick white border
+                                    width: 4, // 4px white border
                                   ),
                                 ),
+                                padding: const EdgeInsets.all(6), // minimal space/gap between white border and inner button
                                 child: _isRecording
-                                    ? const Icon(
-                                        Icons.stop_rounded,
-                                        color: Colors.white,
-                                        size: 30,
+                                    ? Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(8), // stop recording red square
+                                        ),
                                       )
-                                    : null, // Solid yellow circle with white border when not recording
+                                    : Container(
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: kBlack, // Inner black button
+                                        ),
+                                      ),
                               ),
                             ),
 
-                      // Flip camera - bottom right
-                      if (!_hasRecording && !_isRecording && _cameras.length > 1)
+                      // Message icon button (opens Circle screen) - bottom right
+                      if (!_hasRecording && !_isRecording)
                         Positioned(
                           right: 8,
-                          child: _overlayIconButton(
-                            icon: Icons.flip_camera_ios_rounded,
-                            onTap: _switchCamera,
+                          child: _overlayCircleMessageButton(
+                            onTap: () => context.go('/circle'),
+                            unreadCount: unreadCount,
                           ),
                         ),
                     ],
                   ),
                 ),
-                const Spacer(flex: 1), // Spacing below capture button
+                const Spacer(flex: 3), // Spacing below capture button (increased to move memories pill lower)
                 // Memories button in a pill below the capture button
                 if (!_hasRecording && !_isRecording)
                   Center(
@@ -444,8 +471,30 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     );
   }
 
-  // Friends icon button for top-right (navigates to circle) with unread badge overlay
-  Widget _overlayCircleGroupButton({required VoidCallback onTap, required int unreadCount}) {
+  // Profile settings icon button for top-right (single icon instead of twin user icon)
+  Widget _overlayProfileSettingsButton({required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 46,
+        height: 46,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.35),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+        ),
+        child: const Icon(
+          Icons.person_rounded, // single user icon
+          color: Colors.white,
+          size: 22,
+        ),
+      ),
+    );
+  }
+
+  // Message icon button for bottom-right with unread badge overlay
+  Widget _overlayCircleMessageButton({required VoidCallback onTap, required int unreadCount}) {
     return GestureDetector(
       onTap: onTap,
       child: Stack(
@@ -461,9 +510,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
               border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
             ),
             child: const Icon(
-              Icons.people_rounded,
+              Icons.chat_bubble_rounded, // minimal message icon
               color: Colors.white,
-              size: 22,
+              size: 20,
             ),
           ),
           if (unreadCount > 0)
