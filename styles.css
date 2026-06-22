@@ -1154,24 +1154,50 @@ button {
   width: 82px;
   height: 82px;
   place-items: center;
-  border: 10px solid var(--soft);
+  border: 6px solid #ffffff;
   border-radius: 50%;
-  background: var(--coral);
-  box-shadow: 0 18px 34px rgba(232, 79, 59, 0.28);
+  background: #f4c430;
+  box-shadow: 0 18px 34px rgba(244, 196, 48, 0.28);
 }
 
 .record-button span {
-  display: block;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #fff;
+  display: none;
+}
+
+.record-button.is-recording {
+  background: var(--coral);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 18px 34px rgba(232, 79, 59, 0.28);
 }
 
 .record-button.is-recording span {
+  display: block;
   width: 28px;
   height: 28px;
   border-radius: 9px;
+  background: #fff;
+}
+
+.memories-pill-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  text-transform: lowercase;
+  margin-top: 12px;
+  transition: all 0.2s ease;
+}
+
+.memories-pill-button:hover {
+  background: rgba(0, 0, 0, 0.45);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .send-memory-button {
@@ -1194,6 +1220,10 @@ button {
 }
 
 .capture-view.has-recording .record-button {
+  display: none;
+}
+
+.capture-view.has-recording .memories-pill-button {
   display: none;
 }
 

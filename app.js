@@ -84,6 +84,7 @@ const tabs = Array.from(document.querySelectorAll(".tab"));
 const views = Array.from(document.querySelectorAll("[data-view-panel]"));
 const circleTab = document.querySelector('.tab[data-tab="circle"]');
 const recordButton = document.querySelector("#recordButton");
+const webMemoriesButton = document.querySelector("#webMemoriesButton");
 const sendMemoryButton = document.querySelector("#sendMemoryButton");
 const timerChip = document.querySelector("#timerChip");
 const captureView = document.querySelector(".capture-view");
@@ -1134,6 +1135,12 @@ recordButton.addEventListener("click", () => {
   sendMemoryButton.textContent = hasRecorded ? "Send to circle" : "Send to circle";
   setCaptionEditor(hasRecorded);
 });
+
+if (webMemoriesButton) {
+  webMemoriesButton.addEventListener("click", () => {
+    setView("memory");
+  });
+}
 
 sendMemoryButton.addEventListener("click", () => {
   if (!hasRecorded) return;

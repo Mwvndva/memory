@@ -308,9 +308,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           child: Padding(
             padding: EdgeInsets.fromLTRB(
               28,
-              16,
+              12, // Tighter top padding
               28,
-              16 + bottomPad,
+              12 + bottomPad, // Tighter bottom padding
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,33 +325,22 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8), // Move camera frame higher: reduced from 16
                 // Camera card preview (not full screen) with 3:4 ratio
-                Expanded(
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 3 / 4,
-                      child: _capturePreview(),
-                    ),
+                Center(
+                  child: AspectRatio(
+                    aspectRatio: 3 / 4,
+                    child: _capturePreview(),
                   ),
                 ),
-                const SizedBox(height: 16),
-                // Bottom controls row: Grid on left, Capture in center, Flip on right
+                const Spacer(flex: 2), // Spacing between camera and capture controls (pushed higher)
+                // Bottom controls row: Capture in center, Flip on right
                 SizedBox(
                   width: double.infinity,
                   height: 82,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Grid button - bottom left
-                      Positioned(
-                        left: 8,
-                        child: _overlayIconButton(
-                          icon: Icons.grid_view_rounded,
-                          onTap: () => context.go('/feed'),
-                        ),
-                      ),
-
                       // Centre: capture button or send button
                       _hasRecording
                           ? _pill(
@@ -369,17 +358,19 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                                 height: 82,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _isRecording ? Colors.red : Colors.white,
+                                  color: _isRecording ? Colors.red : kYellow,
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.5),
-                                    width: 4,
+                                    color: Colors.white,
+                                    width: 6, // Thick white border
                                   ),
                                 ),
-                                child: Icon(
-                                  _isRecording ? Icons.stop_rounded : Icons.circle,
-                                  color: _isRecording ? Colors.white : Colors.red,
-                                  size: 30,
-                                ),
+                                child: _isRecording
+                                    ? const Icon(
+                                        Icons.stop_rounded,
+                                        color: Colors.white,
+                                        size: 30,
+                                      )
+                                    : null, // Solid yellow circle with white border when not recording
                               ),
                             ),
 
@@ -395,8 +386,41 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                     ],
                   ),
                 ),
+                const Spacer(flex: 1), // Spacing below capture button
+                // Memories button in a pill below the capture button
+                if (!_hasRecording && !_isRecording)
+                  Center(
+                    child: _memoriesPillButton(
+                      onTap: () => context.go('/feed'),
+                    ),
+                  ),
+                const Spacer(flex: 1),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Helper for memories pill button below capture button
+  Widget _memoriesPillButton({required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+        ),
+        child: const Text(
+          'memories',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.8,
           ),
         ),
       ),
