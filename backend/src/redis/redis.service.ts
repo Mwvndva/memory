@@ -8,17 +8,22 @@ import Redis from 'ioredis';
  *  - WebSocket session state  (userId ↔ socketId mapping)
  *  - Rate-limiting buckets    (sliding-window counters per user/IP)
  *  - Emoji reaction counts    (fast atomic increments per memory)
+ *  - Refresh token allowlist  (per-user SET of active JTIs for revocation)
  */
+
+/** 30 days in seconds — matches refresh token JWT expiry. */
+const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   private client: Redis;
 
   // ─── Key prefixes ──────────────────────────────────────────────────────────
-  private readonly PREFIX_SOCKET = 'ws:socket:';   // ws:socket:<userId>  → socketId
-  private readonly PREFIX_USER   = 'ws:user:';     // ws:user:<socketId>  → userId
-  private readonly PREFIX_RL     = 'rl:';          // rl:<userId|ip>      → hit count
-  private readonly PREFIX_REACT  = 'react:';       // react:<memoryId>:<emoji> → count
+  private readonly PREFIX_SOCKET   = 'ws:socket:';   // ws:socket:<userId>   → socketId
+  private readonly PREFIX_USER     = 'ws:user:';     // ws:user:<socketId>   → userId
+  private readonly PREFIX_RL       = 'rl:';          // rl:<userId|ip>       → hit count
+  private readonly PREFIX_REACT    = 'react:';       // react:<memoryId>:<emoji> → count
+  private readonly PREFIX_RT       = 'rt:';          // rt:<userId>          → SET of active JTIs
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -143,6 +148,51 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async clearReactions(memoryId: string): Promise<void> {
     const keys = await this.client.keys(`${this.PREFIX_REACT}${memoryId}:*`);
     if (keys.length > 0) await this.client.del(...keys);
+  }
+
+  // ─── Refresh token allowlist ───────────────────────────────────────────────
+  //
+  // Each user has a Redis SET keyed `rt:<userId>` containing the JTIs (JWT IDs)
+  // of all currently-valid refresh tokens.  On /auth/refresh the incoming JTI
+  // is validated against this SET before a new pair is issued; the old JTI is
+  // removed and the new one is added (token rotation).  On /auth/logout the
+  // single JTI (or the whole SET for "logout everywhere") is deleted.
+
+  /**
+   * Add a refresh token JTI to the user's active-token allowlist.
+   * The SET TTL is refreshed to 30 days on every write so idle accounts
+   * are automatically evicted from Redis.
+   */
+  async storeRefreshToken(userId: string, jti: string): Promise<void> {
+    const key = `${this.PREFIX_RT}${userId}`;
+    await this.client
+      .pipeline()
+      .sadd(key, jti)
+      .expire(key, REFRESH_TOKEN_TTL_SECONDS)
+      .exec();
+  }
+
+  /**
+   * Returns true if the JTI is present in the user's allowlist
+   * (i.e. the refresh token is still valid and not yet revoked).
+   */
+  async validateRefreshToken(userId: string, jti: string): Promise<boolean> {
+    const isMember = await this.client.sismember(`${this.PREFIX_RT}${userId}`, jti);
+    return isMember === 1;
+  }
+
+  /**
+   * Remove a single JTI from the allowlist (single-device logout / token rotation).
+   */
+  async revokeRefreshToken(userId: string, jti: string): Promise<void> {
+    await this.client.srem(`${this.PREFIX_RT}${userId}`, jti);
+  }
+
+  /**
+   * Delete the entire allowlist SET for a user (logout everywhere / account lock).
+   */
+  async revokeAllUserTokens(userId: string): Promise<void> {
+    await this.client.del(`${this.PREFIX_RT}${userId}`);
   }
 
   // ─── Generic helpers ───────────────────────────────────────────────────────

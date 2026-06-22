@@ -35,13 +35,18 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // Ensure critical secrets are set in production
-  const jwtSecret = configService.get<string>('JWT_SECRET');
+  const jwtSecret     = configService.get<string>('JWT_SECRET');
+  const refreshSecret = configService.get<string>('REFRESH_TOKEN_SECRET');
   const nodeEnv = configService.get<string>('NODE_ENV', process.env.NODE_ENV || 'development');
-  if (nodeEnv === 'production' && (!jwtSecret || jwtSecret.trim() === '')) {
-    // Fail fast: don't start the server with an insecure/default secret.
-    // This prevents accidental deployments with the placeholder secret.
-    console.error('FATAL: JWT_SECRET is not set. Aborting startup in production mode.');
-    process.exit(1);
+  if (nodeEnv === 'production') {
+    if (!jwtSecret || jwtSecret.trim() === '') {
+      console.error('FATAL: JWT_SECRET is not set. Aborting startup in production mode.');
+      process.exit(1);
+    }
+    if (!refreshSecret || refreshSecret.trim() === '') {
+      console.error('FATAL: REFRESH_TOKEN_SECRET is not set. Aborting startup in production mode.');
+      process.exit(1);
+    }
   }
 
   // ── 1. Security headers (Helmet) ─────────────────────────────────────────
