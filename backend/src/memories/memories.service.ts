@@ -2,6 +2,7 @@ import { Injectable, forwardRef, Inject, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppGateway } from '../gateway/app.gateway';
 import { UsersService } from '../users/users.service';
+import sanitizeHtml from 'sanitize-html';
 
 @Injectable()
 export class MemoriesService {
@@ -79,8 +80,19 @@ export class MemoriesService {
   ) {
     this.logger.log(`[Create Memory] Request by creatorId="${creatorId}"`);
     this.logger.log(`[Create Memory] Step 1: Saving memory metadata to database`);
+
+    // Sanitize caption to prevent stored XSS (strip all HTML tags)
+    const sanitizedCaption = sanitizeHtml(data.caption, {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
+
     const memory = await this.prisma.memory.create({
-      data: { creatorId, ...data },
+      data: {
+        creatorId,
+        ...data,
+        caption: sanitizedCaption,
+      },
       include: {
         creator: {
           select: { id: true, username: true, firstName: true, avatarUrl: true },
