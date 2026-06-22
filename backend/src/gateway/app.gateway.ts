@@ -131,8 +131,23 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.logger.log(`[WS send_message] Message from client="${client.username}" to receiver="${payload?.receiver}"`);
     if (!client.userId) throw new WsException('Unauthorized');
-    if (!payload?.receiver || !payload?.text?.trim()) {
-      throw new WsException('Invalid payload: receiver and text are required');
+
+    // Rate limit check: max 30 WebSocket events per user per minute
+    const rlKey = `ws:actions:${client.userId}`;
+    const rl = await this.redisService.rateLimit(rlKey, 60);
+    if (rl.count > 30) {
+      this.logger.warn(`[WS send_message] Rate limit exceeded for user "${client.username}"`);
+      throw new WsException('Rate limit exceeded. Please wait a minute.');
+    }
+
+    if (!payload?.receiver || typeof payload.receiver !== 'string' || !payload.receiver.trim()) {
+      throw new WsException('Invalid payload: receiver is required and must be a non-empty string');
+    }
+    if (!payload?.text || typeof payload.text !== 'string' || !payload.text.trim()) {
+      throw new WsException('Invalid payload: text is required and must be a non-empty string');
+    }
+    if (payload.text.length > 2000) {
+      throw new WsException('Message is too long (max 2000 characters)');
     }
 
     // Resolve receiver by username → userId from Redis/DB
@@ -218,8 +233,26 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.logger.log(`[WS send_reaction] Reaction update by client="${client.username}" for memoryId="${payload?.memory_id}" emoji="${payload?.emoji}" action="${payload?.action}"`);
     if (!client.userId) throw new WsException('Unauthorized');
-    if (!payload?.memory_id || !payload?.emoji) {
-      throw new WsException('Invalid payload: memory_id and emoji are required');
+
+    // Rate limit check: max 30 WebSocket events per user per minute
+    const rlKey = `ws:actions:${client.userId}`;
+    const rl = await this.redisService.rateLimit(rlKey, 60);
+    if (rl.count > 30) {
+      this.logger.warn(`[WS send_reaction] Rate limit exceeded for user "${client.username}"`);
+      throw new WsException('Rate limit exceeded. Please wait a minute.');
+    }
+
+    if (!payload?.memory_id || typeof payload.memory_id !== 'string') {
+      throw new WsException('Invalid payload: memory_id is required and must be a string');
+    }
+    if (!payload?.emoji || typeof payload.emoji !== 'string') {
+      throw new WsException('Invalid payload: emoji is required and must be a string');
+    }
+    if (payload.emoji.length > 8) {
+      throw new WsException('Emoji is too long (max 8 characters)');
+    }
+    if (payload.action !== 'add' && payload.action !== 'remove') {
+      throw new WsException("Invalid action: action must be 'add' or 'remove'");
     }
 
     this.logger.log(`[WS send_reaction] Step 1: Updating reaction count in Redis`);

@@ -164,6 +164,8 @@ export class AuthController {
   // Flutter calls: /auth/username-check?username=<handle>
   // Returns:       { ok: boolean, message: string }
 
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ limit: 20, windowSeconds: 60 })
   @Get('username-check')
   async checkUsername(@Query('username') username: string) {
     if (!username?.trim()) {
