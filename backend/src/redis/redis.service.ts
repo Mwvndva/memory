@@ -5,10 +5,11 @@ import Redis from 'ioredis';
  * Low-level Redis client wrapper.
  *
  * Responsibilities:
- *  - WebSocket session state  (userId ↔ socketId mapping)
- *  - Rate-limiting buckets    (sliding-window counters per user/IP)
- *  - Emoji reaction counts    (fast atomic increments per memory)
- *  - Refresh token allowlist  (per-user SET of active JTIs for revocation)
+ *  - WebSocket session state       (userId ↔ socketId mapping)
+ *  - Rate-limiting buckets         (sliding-window counters per user/IP)
+ *  - Emoji reaction counts         (fast atomic increments per memory)
+ *  - Refresh token allowlist       (per-user SET of active JTIs for revocation)
+ *  - One-time WebSocket tickets    (short-lived opaque upgrade credentials)
  */
 
 /** 30 days in seconds — matches refresh token JWT expiry. */
@@ -19,11 +20,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private client: Redis;
 
   // ─── Key prefixes ──────────────────────────────────────────────────────────
-  private readonly PREFIX_SOCKET   = 'ws:socket:';   // ws:socket:<userId>   → socketId
-  private readonly PREFIX_USER     = 'ws:user:';     // ws:user:<socketId>   → userId
-  private readonly PREFIX_RL       = 'rl:';          // rl:<userId|ip>       → hit count
+  private readonly PREFIX_SOCKET   = 'ws:socket:';   // ws:socket:<userId>      → socketId
+  private readonly PREFIX_USER     = 'ws:user:';     // ws:user:<socketId>      → userId
+  private readonly PREFIX_RL       = 'rl:';          // rl:<userId|ip>          → hit count
   private readonly PREFIX_REACT    = 'react:';       // react:<memoryId>:<emoji> → count
-  private readonly PREFIX_RT       = 'rt:';          // rt:<userId>          → SET of active JTIs
+  private readonly PREFIX_RT       = 'rt:';          // rt:<userId>             → SET of active JTIs
+  private readonly PREFIX_TICKET   = 'ws:ticket:';   // ws:ticket:<ticket>      → {userId,username} (TTL 30s)
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -193,6 +195,61 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    */
   async revokeAllUserTokens(userId: string): Promise<void> {
     await this.client.del(`${this.PREFIX_RT}${userId}`);
+  }
+
+  // ─── One-time WebSocket upgrade tickets ───────────────────────────────────────
+  //
+  // Flow:
+  //  1. Authenticated client calls POST /auth/ws-ticket (JwtAuthGuard).
+  //  2. Server generates a cryptographically random 32-byte hex ticket,
+  //     stores `ws:ticket:<ticket>` = JSON{userId,username} with 30s TTL.
+  //  3. Client opens ws://.../ws?ticket=<ticket>.
+  //  4. Gateway reads ?ticket=, calls redeemWsTicket (GET+DEL in a pipeline).
+  //     - If found  → parse payload, attach userId/username to socket, continue.
+  //     - If missing → ticket expired / already used / forged → terminate.
+  //
+  // The ticket never touches a JWT header, is single-use, and expires in 30s
+  // so replay attacks after successful connection are impossible.
+
+  /** Issue a 30-second single-use opaque ticket for WS upgrade. */
+  async issueWsTicket(
+    userId: string,
+    username: string,
+    ticket: string,
+  ): Promise<void> {
+    const key = `${this.PREFIX_TICKET}${ticket}`;
+    const value = JSON.stringify({ userId, username });
+    // SETEX: atomic set + 30-second expiry
+    await this.client.setex(key, 30, value);
+  }
+
+  /**
+   * Redeem (consume) a ticket.  Atomically GETs and DELetes the key so the
+   * ticket is one-time-use even under concurrent connection attempts.
+   * Returns the stored payload or null if expired / not found.
+   */
+  async redeemWsTicket(
+    ticket: string,
+  ): Promise<{ userId: string; username: string } | null> {
+    const key = `${this.PREFIX_TICKET}${ticket}`;
+
+    // Lua script: atomic GETDEL (available natively in Redis 6.2+;
+    // the script provides the same guarantee on older versions).
+    const raw = await this.client.eval(
+      `local v = redis.call('GET', KEYS[1])
+       if v then redis.call('DEL', KEYS[1]) end
+       return v`,
+      1,
+      key,
+    ) as string | null;
+
+    if (!raw) return null;
+
+    try {
+      return JSON.parse(raw) as { userId: string; username: string };
+    } catch {
+      return null;
+    }
   }
 
   // ─── Generic helpers ───────────────────────────────────────────────────────

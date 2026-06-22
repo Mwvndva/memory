@@ -9,8 +9,8 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { IncomingMessage } from 'http';
+import { URL } from 'url';
 import { WebSocket, WebSocketServer as WsServer } from 'ws';
-import { JwtService } from '@nestjs/jwt';
 import { Logger } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { MessagesService } from '../messages/messages.service';
@@ -47,71 +47,62 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly clients = new Map<string, AuthenticatedSocket>();
 
   constructor(
-    private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
     private readonly messagesService: MessagesService,
     private readonly prisma: PrismaService,
   ) {}
 
-  // ─── Connection: validate JWT from query param ─────────────────────────────
+  // ─── Connection: validate one-time WS ticket from URL query param ────────────
+  //
+  // Clients MUST call POST /auth/ws-ticket first (JwtAuthGuard protected),
+  // receive a 30-second opaque ticket, then connect as:
+  //   ws://<host>/ws?ticket=<hex-ticket>
+  //
+  // The ticket is atomically consumed on first use (Redis GETDEL) so replay
+  // attacks after a successful upgrade handshake are impossible.
+  // No JWT ever appears in Sec-WebSocket-Protocol or any loggable header.
 
   async handleConnection(client: AuthenticatedSocket, req: IncomingMessage) {
     try {
-      // Prefer Authorization header (Bearer <token>). If not present,
-      // fall back to Sec-WebSocket-Protocol (useful for browser clients
-      // which cannot set arbitrary headers during the WebSocket upgrade).
-      const headers = (req.headers || {}) as Record<string, unknown>;
-      let token: string | undefined;
+      // Parse the ticket from the upgrade request URL (?ticket=<hex>).
+      // req.url is the raw path+query of the WebSocket upgrade request.
+      const reqUrl = req.url ?? '';
+      const base = 'ws://placeholder'; // URL requires an absolute base to parse relative paths
+      const parsedUrl = new URL(reqUrl, base);
+      const ticket = parsedUrl.searchParams.get('ticket')?.trim();
 
-      const authHeader = (headers['authorization'] || headers['Authorization']) as string | undefined;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.slice(7).trim();
+      if (!ticket || ticket.length !== 64) {
+        // 64 hex chars = 32 bytes = 256 bits.  Wrong length means forged/missing.
+        throw new Error('Missing or malformed ticket');
       }
 
-      // Fallback: some clients pass the token inside Sec-WebSocket-Protocol
-      if (!token && headers['sec-websocket-protocol']) {
-        const proto = String(headers['sec-websocket-protocol']);
-        // May be comma-separated list; pick the first entry that looks like a JWT
-        const candidates = proto.split(',').map((s) => s.trim()).filter(Boolean);
-        for (const p of candidates) {
-          if (p.startsWith('Bearer ')) {
-            token = p.slice(7).trim();
-            break;
-          }
-          // crude JWT shape check: contains two dots
-          if (p.split('.').length === 3) {
-            token = p;
-            break;
-          }
-        }
+      // Atomically redeem the ticket (GET + DEL in a single Lua script).
+      // Returns null if expired, already consumed, or not found.
+      const identity = await this.redisService.redeemWsTicket(ticket);
+      if (!identity) {
+        throw new Error('Ticket expired or already used');
       }
 
-      if (!token) throw new Error('No token provided');
+      const { userId, username } = identity;
+      client.userId   = userId;
+      client.username = username;
 
-      // Use the application's JwtService (configured via JwtModule). Avoid
-      // supplying a silent fallback secret here so missing secrets fail fast.
-      const payload = this.jwtService.verify<{ sub: string; username: string }>(token);
-
-      client.userId = payload.sub;
-      client.username = payload.username;
-
-      // Track in memory-map and Redis
-      this.clients.set(payload.sub, client);
-      await this.redisService.setSocketSession(payload.sub, payload.sub);
+      // Track in the in-process map and Redis (for cross-instance awareness)
+      this.clients.set(userId, client);
+      await this.redisService.setSocketSession(userId, userId);
 
       client.on('close', (code: number, reason: Buffer) => {
         this.logger.warn(
-          `🔌 Socket closed for ${client.username || payload.username} code=${code} reason=${reason?.toString?.() ?? ''}`,
+          `🔌 Socket closed for ${username} code=${code} reason=${reason?.toString?.() ?? ''}`,
         );
       });
 
-      this.logger.log(`✅ Connected: ${payload.username} (${payload.sub})`);
-
-      this._send(client, { event: 'connected', data: { userId: payload.sub, username: payload.username } });
+      this.logger.log(`✅ Connected: ${username} (${userId})`);
+      this._send(client, { event: 'connected', data: { userId, username } });
     } catch (err) {
-      this.logger.warn(`❌ Rejected unauthenticated connection: ${err?.message ?? err}`);
+      this.logger.warn(`❌ Rejected WS connection: ${err?.message ?? err}`);
       try {
-        this._send(client, { event: 'auth_error', data: { message: 'Invalid or missing token' } });
+        this._send(client, { event: 'auth_error', data: { message: 'Invalid or expired ticket' } });
       } catch (_) {}
       client.terminate();
     }

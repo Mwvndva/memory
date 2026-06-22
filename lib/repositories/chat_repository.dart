@@ -169,14 +169,36 @@ class ChatNotifier extends StateNotifier<ChatState> {
         return;
       }
 
-      final uri = Uri.parse(kWebSocketUrl);
-      final headers = <String, dynamic>{'Authorization': 'Bearer $token'};
+      // Request a short-lived single-use WebSocket connection ticket from the backend.
+      // The HTTP call automatically attaches the Bearer token via apiClientProvider.
+      final dio = _ref.read(apiClientProvider);
+      final response = await dio.post('/auth/ws-ticket');
+      final ticket = response.data['ticket'] as String?;
+
+      if (connectionId != _connectionGeneration) {
+        // A newer connection attempt started while we were awaiting the ticket.
+        // Discard this ticket and return.
+        return;
+      }
+
+      if (ticket == null || ticket.isEmpty) {
+        _scheduleReconnect();
+        return;
+      }
+
+      // Append the opaque ticket as a query parameter.
+      // This prevents the JWT from being exposed in URL query logs or
+      // header logs (e.g. Sec-WebSocket-Protocol) of proxies, load balancers, or CDNs.
+      final baseUri = Uri.parse(kWebSocketUrl);
+      final wsUri = baseUri.replace(
+        queryParameters: {
+          ...baseUri.queryParameters,
+          'ticket': ticket,
+        },
+      );
 
       _manualClose = false;
-      _channel = IOWebSocketChannel.connect(
-        uri,
-        headers: headers,
-      );
+      _channel = IOWebSocketChannel.connect(wsUri);
 
       _reconnectAttempt = 0;
       _keepAliveTimer = Timer.periodic(const Duration(seconds: 25), (_) {

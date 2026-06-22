@@ -9,11 +9,14 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { AuthService } from './auth.service';
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { RateLimit } from './decorators/rate-limit.decorator';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshTokenPayload } from './strategies/jwt-refresh.strategy';
+import { RedisService } from '../redis/redis.service';
 
 // ─── Helper: camelCase user → snake_case response ──────────────────────────
 
@@ -43,7 +46,10 @@ function toSnakeTokens(tokens: { accessToken: string; refreshToken: string; expi
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly redis: RedisService,
+  ) {}
 
   // ─── POST /auth/register ─────────────────────────────────────────────────
   // Flutter sends: { first_name, last_name, username, email, phone, password }
@@ -125,6 +131,33 @@ export class AuthController {
   async logout(@Req() req: { user: RefreshTokenPayload }) {
     const { sub: userId, jti } = req.user;
     return this.authService.logout(userId, jti);
+  }
+
+  // ─── POST /auth/ws-ticket ───────────────────────────────────────────────
+  // Flutter calls this right before opening a WebSocket connection.
+  // Returns a short-lived opaque ticket (32-byte hex, 30-second TTL)
+  // that the client passes as:  ws://<host>/ws?ticket=<ticket>
+  //
+  // This prevents the JWT from ever appearing in:
+  //   - Sec-WebSocket-Protocol headers (logged by every proxy/CDN)
+  //   - WebSocket upgrade request URLs (committed to access logs)
+  //
+  // The ticket is single-use (atomically consumed on first WS connection)
+  // and expires in 30 seconds, making replay attacks impossible.
+
+  @UseGuards(JwtAuthGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ limit: 10, windowSeconds: 60 })
+  @Post('ws-ticket')
+  @HttpCode(HttpStatus.OK)
+  async issueWsTicket(@Req() req: any) {
+    const { id: userId, username } = req.user as { id: string; username: string };
+    const ticket = crypto.randomBytes(32).toString('hex'); // 256 bits of entropy
+    await this.redis.issueWsTicket(userId, username, ticket);
+    return {
+      ticket,
+      expires_in: 30, // seconds
+    };
   }
 
   // ─── GET /auth/username-check?username=xyz ───────────────────────────────
