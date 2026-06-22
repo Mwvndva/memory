@@ -72,10 +72,28 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     await this.client.del(...keys);
   }
 
-  /** Return all currently connected user IDs (scans active ws:socket:* keys). */
+  /** Return all currently connected user IDs (scans active ws:socket:* keys using SCAN cursor iteration). */
   async getOnlineUserIds(): Promise<string[]> {
-    const keys = await this.client.keys(`${this.PREFIX_SOCKET}*`);
-    return keys.map((k) => k.replace(this.PREFIX_SOCKET, ''));
+    const stream = this.client.scanStream({
+      match: `${this.PREFIX_SOCKET}*`,
+      count: 100,
+    });
+
+    const userIds = new Set<string>();
+
+    return new Promise<string[]>((resolve, reject) => {
+      stream.on('data', (keys: string[]) => {
+        for (const key of keys) {
+          userIds.add(key.replace(this.PREFIX_SOCKET, ''));
+        }
+      });
+      stream.on('end', () => {
+        resolve(Array.from(userIds));
+      });
+      stream.on('error', (err) => {
+        reject(err);
+      });
+    });
   }
 
   // ─── Rate-limiting buckets ─────────────────────────────────────────────────
@@ -113,43 +131,52 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   // ─── Emoji reaction counts ─────────────────────────────────────────────────
+  //
+  // Emoji reaction counts are stored inside a Redis HASH per memory:
+  //   react:<memoryId> → { <emoji>: <count> }
+  //
+  // This layout makes retrieval (HGETALL) and clearing (DEL) O(1) operations,
+  // completely avoiding any performance-killing KEYS scan.
 
   /** Atomically increment an emoji reaction count for a memory. */
   async incrementReaction(memoryId: string, emoji: string): Promise<number> {
-    const key = `${this.PREFIX_REACT}${memoryId}:${emoji}`;
-    return this.client.incr(key);
+    const key = `${this.PREFIX_REACT}${memoryId}`;
+    return this.client.hincrby(key, emoji, 1);
   }
 
-  /** Decrement (remove one reaction) — floors at 0. */
+  /** Decrement (remove one reaction) — floors at 0 atomically via Lua. */
   async decrementReaction(memoryId: string, emoji: string): Promise<number> {
-    const key = `${this.PREFIX_REACT}${memoryId}:${emoji}`;
-    const val = await this.client.decr(key);
-    if (val < 0) {
-      await this.client.set(key, 0);
-      return 0;
-    }
+    const key = `${this.PREFIX_REACT}${memoryId}`;
+    const val = await this.client.eval(
+      `local v = redis.call('HINCRBY', KEYS[1], ARGV[1], -1)
+       if v < 0 then
+         redis.call('HSET', KEYS[1], ARGV[1], 0)
+         return 0
+       end
+       return v`,
+      1,
+      key,
+      emoji,
+    ) as number;
     return val;
   }
 
   /** Fetch all emoji → count pairs for a memory. */
   async getReactions(memoryId: string): Promise<Record<string, number>> {
-    const pattern = `${this.PREFIX_REACT}${memoryId}:*`;
-    const keys = await this.client.keys(pattern);
-    if (keys.length === 0) return {};
+    const key = `${this.PREFIX_REACT}${memoryId}`;
+    const raw = await this.client.hgetall(key);
 
-    const values = await this.client.mget(...keys);
     const result: Record<string, number> = {};
-    keys.forEach((key, i) => {
-      const emoji = key.replace(`${this.PREFIX_REACT}${memoryId}:`, '');
-      result[emoji] = parseInt(values[i] ?? '0', 10);
-    });
+    for (const [emoji, val] of Object.entries(raw)) {
+      result[emoji] = parseInt(val ?? '0', 10);
+    }
     return result;
   }
 
   /** Remove all reaction counts for a deleted memory. */
   async clearReactions(memoryId: string): Promise<void> {
-    const keys = await this.client.keys(`${this.PREFIX_REACT}${memoryId}:*`);
-    if (keys.length > 0) await this.client.del(...keys);
+    const key = `${this.PREFIX_REACT}${memoryId}`;
+    await this.client.del(key);
   }
 
   // ─── Refresh token allowlist ───────────────────────────────────────────────
