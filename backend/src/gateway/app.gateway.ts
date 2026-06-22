@@ -297,8 +297,16 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('ping')
-  handlePing(@ConnectedSocket() client: AuthenticatedSocket) {
+  async handlePing(@ConnectedSocket() client: AuthenticatedSocket) {
     if (!client.userId) throw new WsException('Unauthorized');
+
+    // Ping rate limit check: max 120 per minute
+    const rlKey = `ws:ping:${client.userId}`;
+    const rl = await this.redisService.rateLimit(rlKey, 60);
+    if (rl.count > 120) {
+      throw new WsException('Rate limit exceeded');
+    }
+
     this._send(client, { event: 'pong', data: { ts: Date.now() } });
     return { ok: true };
   }
@@ -316,6 +324,14 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('get_online_users')
   async handleGetOnlineUsers(@ConnectedSocket() client: AuthenticatedSocket) {
     if (!client.userId) throw new WsException('Unauthorized');
+
+    // Rate limit check: max 30 WebSocket events per user per minute
+    const rlKey = `ws:actions:${client.userId}`;
+    const rl = await this.redisService.rateLimit(rlKey, 60);
+    if (rl.count > 30) {
+      throw new WsException('Rate limit exceeded. Please wait a minute.');
+    }
+
     const onlineUsers = await this.redisService.getOnlineUserIds();
     this._send(client, { event: 'online_users', data: { onlineUsers } });
   }
