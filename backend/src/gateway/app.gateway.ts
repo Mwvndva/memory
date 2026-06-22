@@ -11,10 +11,11 @@ import {
 import { IncomingMessage } from 'http';
 import { URL } from 'url';
 import { WebSocket, WebSocketServer as WsServer } from 'ws';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { MessagesService } from '../messages/messages.service';
 import { PrismaService } from '../prisma/prisma.service';
+import Redis from 'ioredis';
 
 // ─── Socket data attached per connection ───────────────────────────────────
 interface AuthenticatedSocket extends WebSocket {
@@ -37,7 +38,7 @@ interface ReactionPayload {
 // ─── Gateway ───────────────────────────────────────────────────────────────
 
 @WebSocketGateway({ path: '/ws' })
-export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit, OnModuleDestroy {
   @WebSocketServer()
   server: WsServer;
 
@@ -46,11 +47,54 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Map userId → AuthenticatedSocket for targeted delivery
   private readonly clients = new Map<string, AuthenticatedSocket>();
 
+  private subClient: Redis;
+
   constructor(
     private readonly redisService: RedisService,
     private readonly messagesService: MessagesService,
     private readonly prisma: PrismaService,
   ) {}
+
+  // ─── Redis Pub/Sub horizontal scale message bus ────────────────────────────
+
+  async onModuleInit() {
+    this.logger.log('[Redis Pub/Sub] Initializing WebSocket message bus subscriber...');
+    const redisClient = this.redisService.getClient();
+    this.subClient = redisClient.duplicate();
+
+    await this.subClient.subscribe('ws:message_bus');
+
+    this.subClient.on('message', (channel, message) => {
+      if (channel === 'ws:message_bus') {
+        try {
+          const payload = JSON.parse(message) as { userId: string; event: string; data: any };
+          
+          if (payload.userId === '*') {
+            // Broadcast to all clients connected to this server instance
+            this.clients.forEach((socket) => {
+              this._send(socket, { event: payload.event, data: payload.data });
+            });
+          } else {
+            // Unicast to a specific client connected to this server instance
+            const socket = this.clients.get(payload.userId);
+            if (socket) {
+              this._send(socket, { event: payload.event, data: payload.data });
+            }
+          }
+        } catch (err) {
+          this.logger.error(`[Redis Pub/Sub] Failed to process message bus event: ${err.message}`);
+        }
+      }
+    });
+    this.logger.log('[Redis Pub/Sub] WebSocket message bus successfully subscribed.');
+  }
+
+  async onModuleDestroy() {
+    this.logger.log('[Redis Pub/Sub] Disconnecting WebSocket message bus subscriber...');
+    if (this.subClient) {
+      await this.subClient.quit();
+    }
+  }
 
   // ─── Connection: validate one-time WS ticket from URL query param ────────────
   //
@@ -201,14 +245,9 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       is_mine: false,
     };
 
-    // Deliver to receiver if online
-    this.logger.log(`[WS send_message] Step 4: Delivering event to receiver if online`);
-    if (receiverSocket) {
-      this._send(receiverSocket, { event: 'new_message', data: outgoingPayload });
-      this.logger.log(`[WS send_message] Delivered 'new_message' to receiver="${payload.receiver}" online`);
-    } else {
-      this.logger.log(`[WS send_message] Receiver="${payload.receiver}" is offline; message saved for retrieval`);
-    }
+    // Deliver to receiver if online (via the Redis message bus to support multi-instance)
+    this.logger.log(`[WS send_message] Step 4: Dispatching event to receiver via Redis message bus`);
+    await this.sendToUser(receiverId, 'new_message', outgoingPayload);
 
     // ACK to sender (with is_mine: true for their own display)
     this.logger.log(`[WS send_message] Step 5: Sending ACK back to sender client`);
@@ -265,11 +304,9 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const update = { memory_id: payload.memory_id, emoji: payload.emoji, count };
 
-    // Broadcast to all connected clients
-    this.logger.log(`[WS send_reaction] Step 2: Broadcasting reaction update to all online clients`);
-    this.clients.forEach((socket) => {
-      this._send(socket, { event: 'reaction_update', data: update });
-    });
+    // Broadcast to all connected clients across all server instances
+    this.logger.log(`[WS send_reaction] Step 2: Broadcasting reaction update to all online clients via Redis bus`);
+    await this.broadcast('reaction_update', update);
 
     // Notify the memory creator of the new reaction (if they are not the reactor)
     if (payload.action !== 'remove') {
@@ -303,11 +340,23 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { ok: true };
   }
 
-  /** Send an event to a specific user if they are online. */
-  sendToUser(userId: string, event: string, data: unknown) {
-    const socket = this.clients.get(userId);
-    if (socket) {
-      this._send(socket, { event, data });
+  /** Send an event to a specific user across any server instance via Redis Pub/Sub. */
+  async sendToUser(userId: string, event: string, data: unknown) {
+    try {
+      const payload = JSON.stringify({ userId, event, data });
+      await this.redisService.getClient().publish('ws:message_bus', payload);
+    } catch (err) {
+      this.logger.error(`[Redis Pub/Sub] Failed to publish event to user "${userId}": ${err.message}`);
+    }
+  }
+
+  /** Broadcast an event to all users across all server instances via Redis Pub/Sub. */
+  async broadcast(event: string, data: unknown) {
+    try {
+      const payload = JSON.stringify({ userId: '*', event, data });
+      await this.redisService.getClient().publish('ws:message_bus', payload);
+    } catch (err) {
+      this.logger.error(`[Redis Pub/Sub] Failed to publish broadcast event: ${err.message}`);
     }
   }
 
