@@ -15,7 +15,9 @@ import { Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { MessagesService } from '../messages/messages.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushNotificationService } from '../notifications/push-notification.service';
 import Redis from 'ioredis';
+
 
 // ─── Socket data attached per connection ───────────────────────────────────
 interface AuthenticatedSocket extends WebSocket {
@@ -53,6 +55,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnM
     private readonly redisService: RedisService,
     private readonly messagesService: MessagesService,
     private readonly prisma: PrismaService,
+    private readonly pushNotificationService: PushNotificationService,
   ) {}
 
   // ─── Redis Pub/Sub horizontal scale message bus ────────────────────────────
@@ -246,8 +249,16 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnM
     };
 
     // Deliver to receiver if online (via the Redis message bus to support multi-instance)
-    this.logger.log(`[WS send_message] Step 4: Dispatching event to receiver via Redis message bus`);
-    await this.sendToUser(receiverId, 'new_message', outgoingPayload);
+    this.logger.log(`[WS send_message] Step 4: Dispatching event to receiver`);
+    const receiverSocketId = await this.redisService.getSocketId(receiverId);
+    if (receiverSocketId) {
+      this.logger.log(`[WS send_message] Receiver is online. Sending real-time message via Redis bus.`);
+      await this.sendToUser(receiverId, 'new_message', outgoingPayload);
+    } else {
+      this.logger.log(`[WS send_message] Receiver is offline. Falling back to FCM push notification.`);
+      this.pushNotificationService.sendNotification(receiverId, 'new_message', outgoingPayload)
+        .catch((err) => this.logger.error(`Failed to send offline push notification: ${err.message}`));
+    }
 
     // ACK to sender (with is_mine: true for their own display)
     this.logger.log(`[WS send_message] Step 5: Sending ACK back to sender client`);

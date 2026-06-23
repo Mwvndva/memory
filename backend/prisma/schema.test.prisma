@@ -15,6 +15,7 @@ model User {
   username     String   @unique @db.VarChar(30)
   email        String   @unique @db.VarChar(100)
   phone        String   @db.VarChar(20)
+  phoneNormalized String @unique @default("") @map("phone_normalized") @db.VarChar(20)
   passwordHash String   @map("password_hash") @db.VarChar(255)
   avatarUrl    String?  @map("avatar_url") @db.VarChar(255)
   country      String   @default("") @db.VarChar(50)
@@ -23,6 +24,9 @@ model User {
   globalRank   Int?     @map("global_rank")
   acceptedTermsAt DateTime? @map("accepted_terms_at")
   createdAt    DateTime @default(now()) @map("created_at")
+  deletedAt    DateTime? @map("deleted_at")
+  fcmToken     String?  @map("fcm_token") @db.VarChar(255)
+
 
   memories            Memory[]
   sentMessages        Message[]          @relation("SentMessages")
@@ -41,6 +45,7 @@ model CircleMembership {
   memberId  String   @map("member_id")
   accepted  Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
 
   user   User @relation("UserMemberships", fields: [userId], references: [id], onDelete: Cascade)
   member User @relation("MemberMemberships", fields: [memberId], references: [id], onDelete: Cascade)
@@ -55,28 +60,45 @@ model Memory {
   id             String   @id @default(uuid())
   creatorId      String   @map("creator_id")
   caption        String   @db.Text
-  videoUrl       String   @map("video_url") @db.VarChar(255)
+  videoUrl       String   @map("video_url") @db.Text
   gradientColors String[] @map("gradient_colors")
   createdAt      DateTime @default(now()) @map("created_at")
+  deletedAt      DateTime? @map("deleted_at")
 
-  creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator   User       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  reactions Reaction[]
 
   @@index([creatorId, createdAt(sort: Desc)], name: "idx_memories_creator_created")
   @@map("memories")
 }
 
 model Message {
-  id         String   @id @default(uuid())
+  id         String   @default(uuid())
   senderId   String   @map("sender_id")
   receiverId String   @map("receiver_id")
   timestamp  DateTime @default(now())
   text       String   @db.Text
   isRead     Boolean  @default(false) @map("is_read")
+  deletedAt  DateTime? @map("deleted_at")
 
   sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 
+  @@id([id, timestamp])
   @@index([senderId, receiverId, timestamp(sort: Desc)], name: "idx_messages_conversation")
   @@index([receiverId, isRead], name: "idx_messages_unread")
   @@map("messages")
+}
+
+model Reaction {
+  id       String @id @default(uuid())
+  memoryId String @map("memory_id")
+  emoji    String @db.VarChar(10)
+  count    Int    @default(0)
+
+  // Relations
+  memory Memory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@unique([memoryId, emoji], name: "unique_memory_emoji")
+  @@map("reactions")
 }

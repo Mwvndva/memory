@@ -1,0 +1,84 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  ci:
+    name: Continuous Integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Run Linter
+        run: npm run lint
+        working-directory: backend
+
+      - name: Run Prisma Client Generation
+        run: npx prisma generate
+        working-directory: backend
+
+      - name: Run Unit Tests
+        run: npx jest test/soft-delete.spec.ts test/circles.service.spec.ts test/message-archival.spec.ts test/users.service.spec.ts test/storage.service.spec.ts test/messages.controller.spec.ts --rootDir=.
+        working-directory: backend
+
+      - name: Build Application
+        run: npm run build
+        working-directory: backend
+
+  cd:
+    name: Continuous Deployment
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Secrets management configuration (Doppler CLI setup example)
+      - name: Install Doppler CLI
+        run: |
+          (curl -Ls https://cli.doppler.com/install.sh || wget -qO- https://cli.doppler.com/install.sh) | sudo sh
+
+      # Build and push Docker container steps
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        run: |
+          docker build -t memory-backend:latest ./backend
+
+      # Example deployment steps (GCP Cloud Run deployment configuration):
+      # - name: Authenticate to Cloud Provider
+      #   uses: google-github-actions/auth@v2
+      #   with:
+      #     credentials_json: ${{ secrets.GCP_SA_KEY }}
+      #
+      # - name: Tag and Push Docker Image
+      #   run: |
+      #     docker tag memory-backend:latest gcr.io/my-project/memory-backend:latest
+      #     docker push gcr.io/my-project/memory-backend:latest
+      #
+      # - name: Deploy to Cloud Run
+      #   run: |
+      #     gcloud run deploy memory-backend \
+      #       --image gcr.io/my-project/memory-backend:latest \
+      #       --platform managed \
+      #       --region us-central1

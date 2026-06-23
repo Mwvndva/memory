@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppGateway } from '../gateway/app.gateway';
+import { JobsService } from '../jobs/jobs.service';
 
 @Injectable()
 export class CirclesService {
@@ -15,6 +16,7 @@ export class CirclesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gateway: AppGateway,
+    private readonly jobsService: JobsService,
   ) {}
 
   // ─── Send a friend request (creates pending membership) ─────────────────
@@ -59,9 +61,9 @@ export class CirclesService {
       },
     });
 
-    // Notify the receiver in real time (so their pending-requests badge updates)
-    this.logger.log(`[Circle Request] Step 3: Sending real-time WebSocket notification 'new_circle_request' to memberId="${memberId}"`);
-    this.gateway.sendToUser(memberId, 'new_circle_request', {
+    // Notify the receiver in real time (so their pending-requests badge updates) via background queue
+    this.logger.log(`[Circle Request] Step 3: Queueing real-time WebSocket notification 'new_circle_request' for memberId="${memberId}"`);
+    await this.jobsService.queueNotification(memberId, 'new_circle_request', {
       senderId: userId,
       senderUsername: sender?.username ?? '',
       senderFirstName: sender?.firstName ?? '',
@@ -179,9 +181,9 @@ export class CirclesService {
       data: { accepted: true },
     });
 
-    // Check and trigger milestone broadcast for the circle owner (senderId)
-    this.logger.log(`[Accept Circle Request] Step 2: Checking and broadcasting circle milestones for senderId="${senderId}"`);
-    await this.checkAndBroadcastCircleMilestone(senderId);
+    // Check and trigger milestone broadcast for the circle owner (senderId) via queue
+    this.logger.log(`[Accept Circle Request] Step 2: Queueing circle milestones evaluation for senderId="${senderId}"`);
+    await this.jobsService.queueCircleMilestone(senderId);
 
     // Ensure reciprocal accepted membership exists so both users see each other
     // in their outgoing circle lists. This makes circles effectively mutual
@@ -282,11 +284,11 @@ export class CirclesService {
           }))
         ];
 
-        // Broadcast to all members of the circle (including the owner userId)
+        // Broadcast to all members of the circle (including the owner userId) via background queue
         const allUserIds = [userId, ...members.map(m => m.id)];
 
         for (const id of allUserIds) {
-          this.gateway.sendToUser(id, 'new_circle_milestone', {
+          await this.jobsService.queueNotification(id, 'new_circle_milestone', {
             circleOwnerId: userId,
             circleOwnerUsername: owner.username,
             milestone: count,

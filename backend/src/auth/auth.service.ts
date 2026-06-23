@@ -13,6 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { normalizePhone } from '../users/users.service';
 
 /**
  * Argon2id configuration — OWASP recommended minimums:
@@ -67,7 +68,15 @@ export class AuthService {
   // ─── Registration ──────────────────────────────────────────────────────────
 
   async register(dto: RegisterDto) {
-    this.logger.log(`[Register] New registration request for username="${dto.username}" email="${dto.email.slice(0, 3)}***"`);
+    const maskEmail = (emailStr: string) => {
+      const parts = emailStr.split('@');
+      if (parts.length !== 2) return '***';
+      const name = parts[0];
+      const domain = parts[1];
+      const maskedName = name.length > 2 ? `${name.slice(0, 2)}***` : '***';
+      return `${maskedName}@${domain}`;
+    };
+    this.logger.log(`[Register] New registration request for username="${dto.username}" email="${maskEmail(dto.email)}"`);
     if (!dto.acceptedTerms) {
       this.logger.warn(`[Register] Registration failed: Terms and Conditions not accepted`);
       throw new BadRequestException('You must accept the Terms and Conditions to register.');
@@ -105,6 +114,7 @@ export class AuthService {
         username:     dto.username,
         email:        dto.email,
         phone:        dto.phone,
+        phoneNormalized: normalizePhone(dto.phone),
         country:      flagEmoji,
         passwordHash,
         acceptedTermsAt: new Date(),

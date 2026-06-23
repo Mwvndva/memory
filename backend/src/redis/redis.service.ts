@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Low-level Redis client wrapper.
@@ -19,6 +20,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   private client: Redis;
 
+  constructor(private readonly prisma: PrismaService) {}
+
   // ─── Key prefixes ──────────────────────────────────────────────────────────
   private readonly PREFIX_SOCKET   = 'ws:socket:';   // ws:socket:<userId>      → socketId
   private readonly PREFIX_USER     = 'ws:user:';     // ws:user:<socketId>      → userId
@@ -37,10 +40,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     this.client.on('connect', () => this.logger.log('Redis connected'));
     this.client.on('error',   (err) => this.logger.error('Redis error', err));
+
+    // Periodically flush reactions to database every 15 minutes
+    setInterval(() => {
+      this.flushReactionsToDb().catch((err) => {
+        this.logger.error(`[Background Job] Failed to flush reactions to DB: ${err.message}`);
+      });
+    }, 1000 * 60 * 15);
   }
 
   async onModuleDestroy() {
-    await this.client.quit();
+    if (this.client) {
+      await this.client.quit();
+    }
   }
 
   // ─── WebSocket session state ───────────────────────────────────────────────
@@ -141,12 +153,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   /** Atomically increment an emoji reaction count for a memory. */
   async incrementReaction(memoryId: string, emoji: string): Promise<number> {
     const key = `${this.PREFIX_REACT}${memoryId}`;
+    await this.ensureReactionsLoaded(memoryId);
     return this.client.hincrby(key, emoji, 1);
   }
 
   /** Decrement (remove one reaction) — floors at 0 atomically via Lua. */
   async decrementReaction(memoryId: string, emoji: string): Promise<number> {
     const key = `${this.PREFIX_REACT}${memoryId}`;
+    await this.ensureReactionsLoaded(memoryId);
     const val = await this.client.eval(
       `local v = redis.call('HINCRBY', KEYS[1], ARGV[1], -1)
        if v < 0 then
@@ -164,10 +178,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   /** Fetch all emoji → count pairs for a memory. */
   async getReactions(memoryId: string): Promise<Record<string, number>> {
     const key = `${this.PREFIX_REACT}${memoryId}`;
+    await this.ensureReactionsLoaded(memoryId);
     const raw = await this.client.hgetall(key);
 
     const result: Record<string, number> = {};
     for (const [emoji, val] of Object.entries(raw)) {
+      if (emoji === '_loaded') continue;
       result[emoji] = parseInt(val ?? '0', 10);
     }
     return result;
@@ -176,7 +192,112 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   /** Remove all reaction counts for a deleted memory. */
   async clearReactions(memoryId: string): Promise<void> {
     const key = `${this.PREFIX_REACT}${memoryId}`;
-    await this.client.del(key);
+    await Promise.all([
+      this.client.del(key),
+      this.prisma.reaction.deleteMany({ where: { memoryId } }),
+    ]);
+  }
+
+  /** Helper to load reaction counts from PostgreSQL if not present in Redis */
+  private async ensureReactionsLoaded(memoryId: string): Promise<void> {
+    const key = `${this.PREFIX_REACT}${memoryId}`;
+    const exists = await this.client.exists(key);
+    if (exists === 0) {
+      // Load from DB
+      const dbReactions = await this.prisma.reaction.findMany({
+        where: { memoryId },
+      });
+
+      if (dbReactions.length > 0) {
+        const pipeline = this.client.pipeline();
+        for (const r of dbReactions) {
+          pipeline.hset(key, r.emoji, r.count);
+        }
+        pipeline.hset(key, '_loaded', '1');
+        // Set a TTL so inactive memories aren't cached in Redis forever
+        pipeline.expire(key, 60 * 60 * 24 * 7); // 7 days
+        await pipeline.exec();
+      } else {
+        // If not in DB, set a loaded flag with short TTL so we don't spam DB checks
+        await this.client.hset(key, '_loaded', '1');
+        await this.client.expire(key, 60 * 60 * 24); // 24 hours
+      }
+    }
+  }
+
+  /** Periodically flushes reactions to DB */
+  async flushReactionsToDb(): Promise<void> {
+    this.logger.log(`[Reactions Sync] Starting periodic sync from Redis to PostgreSQL...`);
+    const startTime = Date.now();
+
+    const keys = await this.getReactionKeys();
+    if (keys.length === 0) {
+      this.logger.log(`[Reactions Sync] No reaction keys found in Redis.`);
+      return;
+    }
+
+    this.logger.log(`[Reactions Sync] Found ${keys.length} reaction keys. Syncing to DB...`);
+
+    for (const key of keys) {
+      const memoryId = key.replace(this.PREFIX_REACT, '');
+      
+      try {
+        // Verify memory exists to avoid FK constraint error
+        const memoryExists = await this.prisma.memory.findUnique({
+          where: { id: memoryId },
+          select: { id: true },
+        });
+        if (!memoryExists) {
+          await this.client.del(key);
+          continue;
+        }
+
+        const raw = await this.client.hgetall(key);
+        for (const [emoji, val] of Object.entries(raw)) {
+          if (emoji === '_loaded') continue;
+          const count = parseInt(val ?? '0', 10);
+
+          await this.prisma.reaction.upsert({
+            where: {
+              unique_memory_emoji: {
+                memoryId,
+                emoji,
+              },
+            },
+            update: { count },
+            create: {
+              memoryId,
+              emoji,
+              count,
+            },
+          });
+        }
+      } catch (err) {
+        this.logger.error(`[Reactions Sync] Failed to sync reactions for memoryId="${memoryId}": ${err.message}`);
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    this.logger.log(`[Reactions Sync] Sync completed in ${duration}ms.`);
+  }
+
+  private async getReactionKeys(): Promise<string[]> {
+    const stream = this.client.scanStream({
+      match: `${this.PREFIX_REACT}*`,
+      count: 100,
+    });
+
+    const keys = new Set<string>();
+
+    return new Promise<string[]>((resolve, reject) => {
+      stream.on('data', (chunk: string[]) => {
+        for (const k of chunk) {
+          keys.add(k);
+        }
+      });
+      stream.on('end', () => resolve(Array.from(keys)));
+      stream.on('error', (err) => reject(err));
+    });
   }
 
   // ─── Refresh token allowlist ───────────────────────────────────────────────

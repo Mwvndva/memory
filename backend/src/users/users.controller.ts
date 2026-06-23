@@ -13,6 +13,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -99,5 +100,25 @@ export class UsersController {
   @Post('sync-contacts')
   syncContacts(@Body() dto: SyncContactsDto) {
     return this.usersService.findByPhones(dto.phones);
+  }
+
+  /**
+   * DELETE /users/me
+   * Authenticated — GDPR Right to Erasure user account deletion.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Delete('me')
+  deleteMe(@Req() req: any) {
+    return this.usersService.deleteAccount(req.user.id);
+  }
+
+  /**
+   * GET /users/me/export
+   * Authenticated — GDPR Right to Data Portability personal data export.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('me/export')
+  exportMe(@Req() req: any) {
+    return this.usersService.exportUserData(req.user.id);
   }
 }

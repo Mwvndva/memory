@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/theme.dart';
+import '../../core/error_handler.dart';
 import '../../repositories/memory_repository.dart';
 import '../../repositories/chat_repository.dart';
 import '../circle/circle_views.dart';
@@ -256,6 +257,19 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   void _sendToCircle() {
     final captionText = _captureCaption.text.trim();
+
+    // Pre-validate video size client-side (max 50MB)
+    if (_recordedVideoPath != null && _recordedVideoPath!.isNotEmpty) {
+      final file = File(_recordedVideoPath!);
+      if (file.existsSync()) {
+        final size = file.lengthSync();
+        const maxSizeBytes = 50 * 1024 * 1024; // 50MB
+        if (size > maxSizeBytes) {
+          showAppError(context, 'Video exceeds 50MB limit. Please record a shorter memory.');
+          return;
+        }
+      }
+    }
 
     // Capture dynamic memory
     ref.read(memoryProvider.notifier).addMemory(

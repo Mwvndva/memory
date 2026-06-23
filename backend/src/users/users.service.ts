@@ -1,6 +1,28 @@
 import { Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
+
+export function normalizePhone(phone: string): string {
+  if (!phone) return '';
+  let parsed = parsePhoneNumberFromString(phone);
+  if (!parsed && !phone.startsWith('+')) {
+    const parsedKE = parsePhoneNumberFromString(phone, 'KE');
+    if (parsedKE && parsedKE.isValid()) {
+      parsed = parsedKE;
+    } else {
+      const parsedUS = parsePhoneNumberFromString(phone, 'US');
+      if (parsedUS && parsedUS.isValid()) {
+        parsed = parsedUS;
+      }
+    }
+  }
+  if (parsed && parsed.isValid()) {
+    return parsed.format('E.164');
+  }
+  const digits = phone.replace(/\D/g, '');
+  return phone.startsWith('+') ? `+${digits}` : digits;
+}
 
 const USER_SELECT = {
   id: true,
@@ -37,6 +59,40 @@ export class UsersService implements OnModuleInit {
         this.logger.error(`[Background Job] Failed to recalculate all user ranks: ${err.message}`);
       });
     }, 1000 * 60 * 60);
+
+    // Backfill normalized phones for legacy users
+    this.backfillNormalizedPhones().catch((err) => {
+      this.logger.error(`[Startup Job] Failed to backfill normalized phone numbers: ${err.message}`);
+    });
+  }
+
+  async backfillNormalizedPhones() {
+    this.logger.log(`[Backfill Job] Checking for users missing normalized phone numbers...`);
+    const missing = await this.prisma.user.findMany({
+      where: { phoneNormalized: "" },
+      select: { id: true, phone: true }
+    });
+
+    if (missing.length === 0) {
+      this.logger.log(`[Backfill Job] No users require phone normalization backfill.`);
+      return;
+    }
+
+    this.logger.log(`[Backfill Job] Found ${missing.length} users needing phone normalization.`);
+
+    const batchSize = 250;
+    for (let i = 0; i < missing.length; i += batchSize) {
+      const batch = missing.slice(i, i + batchSize);
+      await this.prisma.$transaction(
+        batch.map((u) => {
+          return this.prisma.user.update({
+            where: { id: u.id },
+            data: { phoneNormalized: normalizePhone(u.phone) }
+          });
+        })
+      );
+    }
+    this.logger.log(`[Backfill Job] Completed phone normalization backfill.`);
   }
 
   // ─── Username availability ─────────────────────────────────────────────────
@@ -117,7 +173,10 @@ export class UsersService implements OnModuleInit {
     if (dto.first_name !== undefined) data.firstName = dto.first_name;
     if (dto.lastName !== undefined) data.lastName = dto.lastName;
     if (dto.last_name !== undefined) data.lastName = dto.last_name;
-    if (dto.phone !== undefined) data.phone = dto.phone;
+    if (dto.phone !== undefined) {
+      data.phone = dto.phone;
+      data.phoneNormalized = normalizePhone(dto.phone);
+    }
     if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl;
     if (dto.avatar_url !== undefined) data.avatarUrl = dto.avatar_url;
 
@@ -148,37 +207,36 @@ export class UsersService implements OnModuleInit {
 
   // ─── Search by phone numbers (contact sync) ────────────────────────────────
   async findByPhones(phones: string[]): Promise<{ id: string; username: string; firstName: string; lastName: string; phone: string; avatarUrl: string | null }[]> {
-    // 1. Sanitize input phone numbers (digits only)
+    // 1. Sanitize input phone numbers (digits only) and normalize them
     const cleanInputs = phones
-      .map((p) => p.replace(/\D/g, ''))
+      .map((p) => normalizePhone(p))
       .filter((p) => p.length >= 7); // Ignore very short numbers
 
     if (cleanInputs.length === 0) return [];
 
-    // 2. Fetch all users from database
-    const users = await this.prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        avatarUrl: true,
-      },
-    });
+    // 2. Fetch users in chunks of 500 to keep the IN query size bounded
+    const chunkSize = 500;
+    const matched: { id: string; username: string; firstName: string; lastName: string; phone: string; avatarUrl: string | null }[] = [];
 
-    // 3. Match using suffix comparison (e.g., comparing last 9 digits or full match if shorter)
-    const matched = users.filter((u) => {
-      const cleanDbPhone = u.phone.replace(/\D/g, '');
-      if (cleanDbPhone.length < 7) return false;
-
-      return cleanInputs.some((input) => {
-        const minLen = Math.min(cleanDbPhone.length, input.length, 9);
-        const suffixDb = cleanDbPhone.substring(cleanDbPhone.length - minLen);
-        const suffixInput = input.substring(input.length - minLen);
-        return suffixDb === suffixInput;
+    for (let i = 0; i < cleanInputs.length; i += chunkSize) {
+      const chunk = cleanInputs.slice(i, i + chunkSize);
+      const chunkUsers = await this.prisma.user.findMany({
+        where: {
+          phoneNormalized: {
+            in: chunk,
+          },
+        },
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          avatarUrl: true,
+        },
       });
-    });
+      matched.push(...chunkUsers);
+    }
 
     return matched;
   }
@@ -431,4 +489,127 @@ export class UsersService implements OnModuleInit {
 
     return streak;
   }
+
+  async deleteAccount(userId: string) {
+    this.logger.log(`[GDPR Delete] Request to delete account for userId="${userId}"`);
+    
+    // 1. Verify user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // 2. Anonymize/wipe sensitive fields
+    const anonymizedEmail = `deleted-${userId}@erasure.example.com`;
+    const anonymizedPhone = `deleted-${userId}`;
+    
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName: 'Deleted',
+        lastName: 'User',
+        username: `deleted_${userId.slice(0, 8)}`,
+        email: anonymizedEmail,
+        phone: anonymizedPhone,
+        phoneNormalized: anonymizedPhone,
+        avatarUrl: null,
+        deletedAt: new Date(),
+      },
+    });
+
+    // 3. Soft-delete associated user data
+    // Soft-delete memories
+    await this.prisma.memory.updateMany({
+      where: { creatorId: userId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+
+    // Soft-delete messages sent or received by this user
+    await this.prisma.message.updateMany({
+      where: {
+        OR: [{ senderId: userId }, { receiverId: userId }],
+        deletedAt: null,
+      },
+      data: { deletedAt: new Date() },
+    });
+
+    // Soft-delete circle memberships
+    await this.prisma.circleMembership.updateMany({
+      where: {
+        OR: [{ userId }, { memberId: userId }],
+        deletedAt: null,
+      },
+      data: { deletedAt: new Date() },
+    });
+
+    this.logger.log(`[GDPR Delete] User userId="${userId}" successfully anonymized and soft-deleted.`);
+    return { success: true, message: 'Account deleted and PII anonymized.' };
+  }
+
+  async exportUserData(userId: string) {
+    this.logger.log(`[GDPR Export] Data export request for userId="${userId}"`);
+    
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        memories: {
+          where: { deletedAt: null },
+        },
+        sentMessages: {
+          where: { deletedAt: null },
+        },
+        receivedMessages: {
+          where: { deletedAt: null },
+        },
+        userMemberships: {
+          where: { deletedAt: null },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Build a clean portable JSON payload of user's personal data
+    return {
+      profile: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        createdAt: user.createdAt,
+      },
+      memories: user.memories.map(m => ({
+        id: m.id,
+        caption: m.caption,
+        videoUrl: m.videoUrl,
+        gradientColors: m.gradientColors,
+        createdAt: m.createdAt,
+      })),
+      sentMessages: user.sentMessages.map(msg => ({
+        id: msg.id,
+        receiverId: msg.receiverId,
+        text: msg.text,
+        timestamp: msg.timestamp,
+      })),
+      receivedMessages: user.receivedMessages.map(msg => ({
+        id: msg.id,
+        senderId: msg.senderId,
+        text: msg.text,
+        timestamp: msg.timestamp,
+      })),
+      circleMemberships: user.userMemberships.map(cm => ({
+        id: cm.id,
+        memberId: cm.memberId,
+        accepted: cm.accepted,
+        createdAt: cm.createdAt,
+      })),
+    };
+  }
 }
+

@@ -1,0 +1,11 @@
+name = "memory-edge-proxy"
+main = "index.ts"
+compatibility_date = "2026-06-23"
+
+[vars]
+ORIGIN_URL = "https://api.memoryapp.com"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "xxxx_your_kv_namespace_id_xxxx"
+preview_id = "xxxx_your_kv_namespace_preview_id_xxxx"

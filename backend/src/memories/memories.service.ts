@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AppGateway } from '../gateway/app.gateway';
 import { UsersService } from '../users/users.service';
 import sanitizeHtml from 'sanitize-html';
+import { JobsService } from '../jobs/jobs.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class MemoriesService {
@@ -13,17 +15,30 @@ export class MemoriesService {
     private readonly gateway: AppGateway,
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
+    private readonly jobsService: JobsService,
+    private readonly redisService: RedisService,
   ) {}
 
   /**
    * Paginated feed of memories posted by users inside the caller's circle.
    * Sorted newest-first using the idx_memories_creator_created composite index.
    */
-  async getFeed(userId: string, page = 1, limit = 20) {
-    this.logger.log(`[Get Feed] Loading memory feed for userId="${userId}" (page=${page}, limit=${limit})`);
-    const skip = (page - 1) * limit;
+  async getFeed(userId: string, cursor?: string, limit = 20) {
+    this.logger.log(`[Get Feed] Loading memory feed for userId="${userId}" (cursor=${cursor}, limit=${limit})`);
 
-    // Fetch the IDs of all circle members the current user follows
+    // 1. Check Redis Cache
+    const cacheKey = `feed:${userId}:${cursor || 'start'}:${limit}`;
+    try {
+      const cached = await this.redisService.getClient().get(cacheKey);
+      if (cached) {
+        this.logger.log(`[Get Feed] Cache hit for userId="${userId}"`);
+        return JSON.parse(cached);
+      }
+    } catch (err) {
+      this.logger.error(`[Get Feed] Redis cache read failed: ${err.message}`);
+    }
+
+    // 2. Fetch the IDs of all circle members the current user follows
     const memberships = await this.prisma.circleMembership.findMany({
       where: { userId, accepted: true },
       select: { memberId: true },
@@ -35,26 +50,53 @@ export class MemoriesService {
     // Include the user's own memories in the feed as well
     const creatorIds = [userId, ...memberIds];
 
-    const [memories, total] = await Promise.all([
-      this.prisma.memory.findMany({
-        where: { creatorId: { in: creatorIds } },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        include: {
-          creator: {
-            select: { id: true, username: true, firstName: true, avatarUrl: true },
-          },
-        },
-      }),
-      this.prisma.memory.count({ where: { creatorId: { in: creatorIds } } }),
-    ]);
-
-    this.logger.log(`[Get Feed] Successfully loaded ${memories.length} memories (total=${total}) for userId="${userId}"`);
-    return {
-      data: memories,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    // 3. Build Prisma where clause
+    const whereClause: any = {
+      creatorId: { in: creatorIds },
     };
+
+    if (cursor) {
+      whereClause.createdAt = {
+        lt: new Date(cursor),
+      };
+    }
+
+    // 4. Query memories (take limit + 1 to check for next page)
+    const memories = await this.prisma.memory.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      include: {
+        creator: {
+          select: { id: true, username: true, firstName: true, avatarUrl: true },
+        },
+      },
+    });
+
+    const hasNextPage = memories.length > limit;
+    const data = hasNextPage ? memories.slice(0, limit) : memories;
+
+    const nextCursor = hasNextPage && data.length > 0
+      ? data[data.length - 1].createdAt.toISOString()
+      : null;
+
+    const result = {
+      data,
+      meta: {
+        nextCursor,
+        limit,
+      },
+    };
+
+    // 5. Cache result in Redis for 30s
+    try {
+      await this.redisService.getClient().setex(cacheKey, 30, JSON.stringify(result));
+    } catch (err) {
+      this.logger.error(`[Get Feed] Redis cache write failed: ${err.message}`);
+    }
+
+    this.logger.log(`[Get Feed] Successfully loaded ${data.length} memories for userId="${userId}"`);
+    return result;
   }
 
   /**
@@ -101,7 +143,7 @@ export class MemoriesService {
     });
 
     // Notify circle members who have accepted and have this creator in their circle
-    this.logger.log(`[Create Memory] Step 2: Broadcasting 'new_memory' notifications to circle members`);
+    this.logger.log(`[Create Memory] Step 2: Queueing 'new_memory' notifications for circle members`);
     try {
       const memberships = await this.prisma.circleMembership.findMany({
         where: { memberId: creatorId, accepted: true },
@@ -110,21 +152,18 @@ export class MemoriesService {
       
       const creatorName = memory.creator?.firstName || memory.creator?.username || 'A friend';
       for (const m of memberships) {
-        this.gateway.sendToUser(m.userId, 'new_memory', {
+        await this.jobsService.queueNotification(m.userId, 'new_memory', {
           creatorName,
         });
       }
-      this.logger.log(`[Create Memory] Sent websocket notifications to ${memberships.length} circle members`);
+      this.logger.log(`[Create Memory] Queued websocket notifications for ${memberships.length} circle members`);
     } catch (err) {
-      this.logger.error(`[Create Memory] WebSocket notification failed: ${err?.message ?? err}`);
-      // Safe fallback - don't crash memory creation if notifications fail
+      this.logger.error(`[Create Memory] Queueing WebSocket notification failed: ${err?.message ?? err}`);
     }
 
-    // Update the creator's streak and ranking (fire-and-forget — non-blocking)
-    this.logger.log(`[Create Memory] Step 3: Triggering user stats/milestone recalculation for creatorId="${creatorId}"`);
-    this.usersService.recalculateUserStats(creatorId).catch((err) => {
-      this.logger.error(`[Create Memory] User stats recalculation failed for creatorId="${creatorId}": ${err?.message ?? err}`);
-    });
+    // Update the creator's streak and ranking (via background queue)
+    this.logger.log(`[Create Memory] Step 3: Queueing user stats/milestone recalculation for creatorId="${creatorId}"`);
+    await this.jobsService.queueStatsRecalculation(creatorId);
 
     this.logger.log(`[Create Memory] Memory created successfully: id="${memory.id}"`);
     return memory;

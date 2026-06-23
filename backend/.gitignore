@@ -14,4 +14,6 @@ uploads/
 
 # build cache
 tsconfig.build.tsbuildinfo
+*.tsbuildinfo
+
 

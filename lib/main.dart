@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/router.dart';
 import 'core/theme.dart';
@@ -13,6 +14,9 @@ void main() async {
 
   // Pre-cache hardware cameras asynchronously
   preloadCameras();
+
+  await Hive.initFlutter();
+  await Hive.openBox('feed_cache');
 
   final sharedPreferences = await SharedPreferences.getInstance();
 

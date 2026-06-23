@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 
 import '../core/api_client.dart';
 import '../core/api_config.dart';
@@ -24,6 +27,7 @@ Color parseHexColor(String hexStr) {
 class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
   MemoryNotifier(this._ref) : super(kUseMockBackend ? _defaultMemories : const []) {
     if (!kUseMockBackend) {
+      _loadCachedFeed();
       fetchFeed();
     } else {
       // Sync mock memories on startup in mock mode
@@ -32,6 +36,46 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
         WidgetManager.syncLatestMemory(feedItems);
       });
     }
+  }
+
+  void _loadCachedFeed() {
+    try {
+      final box = Hive.box('feed_cache');
+      final cachedJson = box.get('feed') as String?;
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> rawList = jsonDecode(cachedJson);
+        final list = _parseJsonFeed(rawList);
+        state = list;
+      }
+    } catch (_) {
+      // Ignore cache loading errors
+    }
+  }
+
+  List<MemoryItem> _parseJsonFeed(List<dynamic> rawList) {
+    return rawList.map((item) {
+      final List<Color> colors = (item['gradient_colors'] as List? ?? []).map((colorStr) {
+        return parseHexColor(colorStr as String);
+      }).toList();
+
+      final avatarStr = item['avatar'] as String? ?? '';
+      final avatarColor = parseHexColor(avatarStr);
+
+      final creatorObj = item['creator'] as Map<String, dynamic>?;
+      final avatarUrl = creatorObj?['avatar_url'] as String?;
+
+      return MemoryItem(
+        person:    item['person']    as String? ?? '',
+        initial:   item['initial']   as String? ?? '',
+        time:      item['time']      as String? ?? '',
+        caption:   item['caption']   as String? ?? '',
+        avatar:    avatarColor,
+        colors:    colors.isEmpty ? [avatarColor] : colors,
+        ageHours:  (item['age_hours'] as num?)?.toDouble() ?? 0.0,
+        videoPath: item['video_url'] as String?,
+        avatarUrl: avatarUrl,
+      );
+    }).toList();
   }
 
   final Ref _ref;
@@ -83,35 +127,19 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       // Backend returns: { "memories": [...], "meta": {...} }
       final rawList = (response.data['memories'] as List? ?? []);
 
-      final list = rawList.map((item) {
-        // gradient_colors is a list of hex strings like "#FF6B57"
-        final List<Color> colors = (item['gradient_colors'] as List? ?? []).map((colorStr) {
-          return parseHexColor(colorStr as String);
-        }).toList();
-
-        // avatar is a single deterministic hex string from the backend
-        final avatarStr = item['avatar'] as String? ?? '';
-        final avatarColor = parseHexColor(avatarStr);
-
-        final creatorObj = item['creator'] as Map<String, dynamic>?;
-        final avatarUrl = creatorObj?['avatar_url'] as String?;
-
-        return MemoryItem(
-          person:    item['person']    as String? ?? '',
-          initial:   item['initial']   as String? ?? '',
-          time:      item['time']      as String? ?? '',
-          caption:   item['caption']   as String? ?? '',
-          avatar:    avatarColor,
-          colors:    colors.isEmpty ? [avatarColor] : colors,
-          ageHours:  (item['age_hours'] as num?)?.toDouble() ?? 0.0,
-          videoPath: item['video_url'] as String?,
-          avatarUrl: avatarUrl,
-        );
-      }).toList();
+      final list = _parseJsonFeed(rawList);
 
       state = list;
       final feedItems = list.where((m) => m.ageHours < 24).toList();
       WidgetManager.syncLatestMemory(feedItems);
+
+      // Save to Hive cache
+      try {
+        final box = Hive.box('feed_cache');
+        box.put('feed', jsonEncode(rawList));
+      } catch (_) {
+        // Ignore cache saving errors
+      }
     } catch (_) {
       // Keep existing state (fallback or empty) on error
     }
@@ -144,6 +172,18 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       );
     } else {
       try {
+        // Pre-validate video size client-side (max 50MB)
+        if (videoPath != null && videoPath.isNotEmpty) {
+          final file = File(videoPath);
+          if (await file.exists()) {
+            final size = await file.length();
+            const maxSizeBytes = 50 * 1024 * 1024; // 50MB
+            if (size > maxSizeBytes) {
+              throw Exception('Video file size exceeds the 50MB limit.');
+            }
+          }
+        }
+
         final dio = _ref.read(apiClientProvider);
         final List<String> colorsHex = colors.map((c) {
           return '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';

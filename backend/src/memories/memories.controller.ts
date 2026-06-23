@@ -87,18 +87,18 @@ export class MemoriesController {
     private readonly prisma: PrismaService,
   ) {}
 
-  // ─── GET /memories/feed?page=1&limit=20 ──────────────────────────────────
-  // Returns: { memories: [...], meta: { page, limit, total, totalPages } }
+  // ─── GET /memories/feed?cursor=...&limit=20 ──────────────────────────────
+  // Returns: { memories: [...], meta: { nextCursor, limit } }
 
   @Get('feed')
   async getFeed(
     @Req() req: any,
-    @Query('page')  page  = '1',
-    @Query('limit') limit = '20',
+    @Query('cursor') cursor?: string,
+    @Query('limit')  limit = '20',
   ) {
     const result = await this.memoriesService.getFeed(
       req.user.id,
-      parseInt(page, 10),
+      cursor,
       parseInt(limit, 10),
     );
     return {

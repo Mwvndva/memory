@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CirclesService } from '../src/circles/circles.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AppGateway } from '../src/gateway/app.gateway';
+import { JobsService } from '../src/jobs/jobs.service';
 
 describe('CirclesService', () => {
   let service: CirclesService;
@@ -21,6 +22,13 @@ describe('CirclesService', () => {
         CirclesService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: AppGateway, useValue: { sendToUser: jest.fn() } },
+        {
+          provide: JobsService,
+          useValue: {
+            queueNotification: jest.fn(),
+            queueCircleMilestone: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

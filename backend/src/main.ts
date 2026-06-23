@@ -1,37 +1,20 @@
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe, ConsoleLogger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import helmet from 'helmet';
 import * as express from 'express';
 import * as path from 'path';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 
-class CleanLogger extends ConsoleLogger {
-  private readonly ignoredContexts = new Set([
-    'InstanceLoader',
-    'RoutesResolver',
-    'RouterExplorer',
-    'NestFactory',
-    'NestApplication',
-    'WebSocketsController',
-  ]);
-
-  log(message: any, context?: string) {
-    if (context && this.ignoredContexts.has(context)) return;
-    super.log(message, context);
-  }
-
-  warn(message: any, context?: string) {
-    if (context && this.ignoredContexts.has(context)) return;
-    super.warn(message, context);
-  }
-}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: new CleanLogger(),
+    bufferLogs: true,
   });
+  app.useLogger(app.get(Logger));
   const configService = app.get(ConfigService);
 
   // Ensure critical secrets are set in production

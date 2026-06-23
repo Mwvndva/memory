@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '../../src/prisma/prisma.service';
 import * as path from 'path';
 import WebSocket from 'ws';
 
@@ -10,28 +10,25 @@ const TEST_DB = path.join(__dirname, '..', '..', 'test.sqlite');
 
 describe('Circles E2E (sqlite)', () => {
   let app: INestApplication;
-  let prisma: PrismaClient;
+  let prisma: PrismaService;
   let server: any;
 
   beforeAll(async () => {
-    // This E2E test expects you to provide a real DATABASE_URL in the environment
-    // when running on your VPS. The test will connect to that DB. Do NOT run the
-    // prisma db push here; prepare your DB beforehand (migrations or prisma db push).
-
-    prisma = new PrismaClient();
-    await prisma.$connect();
-
     const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = module.createNestApplication();
     await app.init();
+    
+    prisma = app.get(PrismaService);
+
     // Start listening on an ephemeral port so WebSocket clients can connect
     await app.listen(0);
     server = app.getHttpServer();
   }, 20000);
 
   afterAll(async () => {
-    await app.close();
-    await prisma.$disconnect();
+    if (app) {
+      await app.close();
+    }
   });
 
   it('A sends request -> B accepts -> both see members and can message', async () => {

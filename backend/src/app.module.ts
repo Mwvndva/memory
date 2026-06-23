@@ -12,6 +12,13 @@ import { MessagesModule } from './messages/messages.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { StorageModule } from './storage/storage.module';
 import { LoggingMiddleware } from './logging.middleware';
+import { BullModule } from '@nestjs/bullmq';
+import { JobsModule } from './jobs/jobs.module';
+import { HealthModule } from './health/health.module';
+import { LoggerModule } from 'nestjs-pino';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { APP_FILTER } from '@nestjs/core';
+import { SentryGlobalFilter } from '@sentry/nestjs/setup';
 
 @Module({
   imports: [
@@ -20,6 +27,25 @@ import { LoggingMiddleware } from './logging.middleware';
     PrismaModule,   // @Global — PrismaService available everywhere
     RedisModule,    // @Global — RedisService available everywhere
     StorageModule,  // @Global — StorageService available everywhere
+    BullModule.forRoot({
+      connection: {
+        url: process.env.REDIS_URL || 'redis://localhost:6379',
+      },
+    }),
+    JobsModule,
+
+    LoggerModule.forRoot({
+      pinoHttp: {
+        autoLogging: false, // Disable automatic request logging to avoid duplication with LoggingMiddleware
+        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+      },
+    }),
+
+    PrometheusModule.register({
+      defaultMetrics: {
+        enabled: true,
+      },
+    }),
 
     // ── Feature modules ───────────────────────────────────
     AuthModule,
@@ -28,11 +54,20 @@ import { LoggingMiddleware } from './logging.middleware';
     CirclesModule,
     MessagesModule,
     GatewayModule,
+    HealthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+  ],
 })
 export class AppModule implements NestModule {
+
+
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggingMiddleware).forRoutes('*');
   }
