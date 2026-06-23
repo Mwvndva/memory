@@ -15,7 +15,8 @@ model User {
   username     String   @unique @db.VarChar(30)
   email        String   @unique @db.VarChar(100)
   phone        String   @db.VarChar(20)
-  phoneNormalized String @unique @default("") @map("phone_normalized") @db.VarChar(20)
+  phoneNormalized String @default("") @map("phone_normalized") @db.VarChar(20)
+
   passwordHash String   @map("password_hash") @db.VarChar(255)
   avatarUrl    String?  @map("avatar_url") @db.VarChar(255)
   country      String   @default("") @db.VarChar(50)
