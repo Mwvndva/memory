@@ -96,9 +96,11 @@ export class UsersService implements OnModuleInit {
       const batch = missing.slice(i, i + batchSize);
       await this.prisma.$transaction(
         batch.map((u) => {
+          const normalized = normalizePhone(u.phone);
+          this.logger.log(`[Backfill Debug] u.id="${u.id}" rawPhone="${u.phone}" normalized="${normalized}"`);
           return this.prisma.user.update({
             where: { id: u.id },
-            data: { phoneNormalized: normalizePhone(u.phone) }
+            data: { phoneNormalized: normalized }
           });
         })
       );
