@@ -5,6 +5,9 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 export function normalizePhone(phone: string): string {
   if (!phone) return '';
+  if (phone.startsWith('deleted-') || phone.startsWith('del-')) {
+    return 'deleted';
+  }
   let parsed = parsePhoneNumberFromString(phone);
   if (!parsed && !phone.startsWith('+')) {
     const parsedKE = parsePhoneNumberFromString(phone, 'KE');
@@ -503,7 +506,7 @@ export class UsersService implements OnModuleInit {
 
     // 2. Anonymize/wipe sensitive fields
     const anonymizedEmail = `deleted-${userId}@erasure.example.com`;
-    const anonymizedPhone = `deleted-${userId}`;
+    const anonymizedPhone = `del-${userId.slice(0, 12)}`;
     
     await this.prisma.user.update({
       where: { id: userId },
