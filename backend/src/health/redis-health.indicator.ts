@@ -1,12 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { HealthCheckError, HealthIndicator, HealthIndicatorResult } from '@nestjs/terminus';
+import { HealthCheckError, HealthIndicatorResult } from '@nestjs/terminus';
 import { RedisService } from '../redis/redis.service';
 
 @Injectable()
-export class RedisHealthIndicator extends HealthIndicator {
-  constructor(private readonly redisService: RedisService) {
-    super();
-  }
+export class RedisHealthIndicator {
+  constructor(private readonly redisService: RedisService) {}
 
   async isHealthy(key: string): Promise<HealthIndicatorResult> {
     try {
@@ -14,9 +12,10 @@ export class RedisHealthIndicator extends HealthIndicator {
       if (pong !== 'PONG') {
         throw new Error(`Unexpected Redis ping response: ${pong}`);
       }
-      return this.getStatus(key, true);
+      return { [key]: { status: 'up' } };
     } catch (e) {
       throw new HealthCheckError('Redis check failed', e);
     }
   }
 }
+
