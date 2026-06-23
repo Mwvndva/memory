@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:crypto/crypto.dart';
 import 'api_config.dart';
 import 'secure_storage.dart';
 
@@ -23,7 +24,7 @@ final apiClientProvider = Provider<Dio>((ref) {
         // Fall back to standard OS-level CA certification verification if no custom fingerprint is pinned
         return false;
       }
-      final fingerprint = cert.sha256.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+      final fingerprint = sha256.convert(cert.der).bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
       return fingerprint == expectedFingerprint;
     };
     return client;

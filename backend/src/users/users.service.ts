@@ -190,6 +190,8 @@ export class UsersService implements OnModuleInit {
     }
     if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl;
     if (dto.avatar_url !== undefined) data.avatarUrl = dto.avatar_url;
+    if (dto.fcmToken !== undefined) data.fcmToken = dto.fcmToken;
+    if (dto.fcm_token !== undefined) data.fcmToken = dto.fcm_token;
 
     if (data.phone) {
       data.country = data.phone.split(' ')[0] || '🇰🇪';

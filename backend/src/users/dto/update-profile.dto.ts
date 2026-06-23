@@ -35,4 +35,14 @@ export class UpdateProfileDto {
   @IsUrl()
   @MaxLength(255)
   avatar_url?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  fcmToken?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  fcm_token?: string;
 }

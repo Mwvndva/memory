@@ -4,13 +4,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'core/router.dart';
 import 'core/theme.dart';
 import 'features/capture/capture_views.dart';
+import 'firebase_options.dart';
+import 'repositories/push_notification_repository.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+  }
 
   // Pre-cache hardware cameras asynchronously
   preloadCameras();
@@ -35,6 +46,7 @@ class MemoryApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(pushNotificationRepositoryProvider);
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
