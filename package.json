@@ -2,10 +2,12 @@
   "name": "memory-app-root",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "backend"
+  ],
   "scripts": {
-    "postinstall": "cd backend && npm ci",
-    "build": "cd backend && npm run build",
+    "build": "npm run build -w backend",
     "prestart:prod": "npm run build && npx -y kill-port 3000",
-    "start:prod": "cd backend && npm run start:prod"
+    "start:prod": "npm run start:prod -w backend"
   }
 }
