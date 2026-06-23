@@ -31,9 +31,10 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.getOrThrow<string>('REFRESH_TOKEN_SECRET'),
+      secretOrKey: configService.get<string>('REFRESH_TOKEN_SECRET') || (configService.get<string>('JWT_SECRET') ? configService.get<string>('JWT_SECRET') + '-refresh' : 'fallback-refresh-secret'),
       passReqToCallback: false,
     });
+
   }
 
   async validate(payload: RefreshTokenPayload): Promise<RefreshTokenPayload> {

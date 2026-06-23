@@ -240,11 +240,12 @@ export class AuthService {
       { expiresIn: '5m' },
     );
 
-    const refreshSecret = this.config.getOrThrow<string>('REFRESH_TOKEN_SECRET');
+    const refreshSecret = this.config.get<string>('REFRESH_TOKEN_SECRET') || (this.config.get<string>('JWT_SECRET') ? this.config.get<string>('JWT_SECRET') + '-refresh' : 'fallback-refresh-secret');
     const refreshToken = this.jwt.sign(
       { sub: userId, username, jti, tokenType: 'refresh' },
       { secret: refreshSecret, expiresIn: '30d' },
     );
+
 
     // Persist JTI in Redis allowlist (enables per-device revocation)
     await this.redis.storeRefreshToken(userId, jti);
