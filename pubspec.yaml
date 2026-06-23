@@ -50,8 +50,8 @@ dependencies:
   share_plus: ^13.1.0
   flutter_contacts: ^2.2.0
   home_widget: ^0.7.0
-  firebase_core: ^2.27.0
-  firebase_messaging: ^14.7.10
+  firebase_core: ^4.11.0
+  firebase_messaging: ^16.4.1
   crypto: ^3.0.3
 
 dev_dependencies:
