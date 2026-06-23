@@ -132,7 +132,8 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           'accepted_terms': acceptedTerms,
         });
 
-        final token = response.data['token'];
+        final tokens = response.data['tokens'] as Map<String, dynamic>?;
+        final token = tokens != null ? tokens['access_token'] as String? : null;
         final userJson = response.data['user'] as Map<String, dynamic>? ?? {};
         if (token != null) {
           final storage = _ref.read(secureStorageProvider);
@@ -230,7 +231,8 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           'password': password,
         });
 
-        final token = response.data['token'] as String?;
+        final tokens = response.data['tokens'] as Map<String, dynamic>?;
+        final token = tokens != null ? tokens['access_token'] as String? : null;
         final userJson = response.data['user'] as Map<String, dynamic>?;
 
         if (token != null && userJson != null) {
