@@ -20,11 +20,19 @@ export function normalizePhone(phone: string): string {
       }
     }
   }
+  let result: string;
   if (parsed && parsed.isValid()) {
-    return parsed.format('E.164');
+    result = parsed.format('E.164');
+  } else {
+    const digits = phone.replace(/\D/g, '');
+    result = phone.startsWith('+') ? `+${digits}` : digits;
   }
-  const digits = phone.replace(/\D/g, '');
-  return phone.startsWith('+') ? `+${digits}` : digits;
+  
+  if (result.length > 20) {
+    console.warn(`[normalizePhone] Phone number "${phone}" normalized to "${result}" which exceeds 20 characters. Truncating to 20 characters.`);
+    return result.slice(0, 20);
+  }
+  return result;
 }
 
 const USER_SELECT = {
