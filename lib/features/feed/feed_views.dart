@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../repositories/circles_repository.dart';
 import '../../models/user_profile.dart';
 import 'streak_milestones.dart';
+
+const Color _brandYellow = Color(0xFFFFEA00);
 
 String _formatImageUrl(String url) {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
@@ -584,7 +587,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4C430), // golden memory screen background
+      backgroundColor: Colors.black,
       body: GestureDetector(
         onVerticalDragEnd: isEmptyFeed ? null : (details) {
           if ((details.primaryVelocity ?? 0) < 0) _nextMemory(listToUse.length);
@@ -594,56 +597,36 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Always show black until feed is ready — prevents purple gradient flash
-                  if (isEmptyFeed)
-                    Container(color: const Color(0xFFF4C430))
-                  else if (!_feedReady)
-                    Container(color: Colors.black)
-                  else
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: m!.colors,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                    ),
-                  if (!isEmptyFeed && m != null && m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized))
-                    Container(
-                      color: Colors.black,
-                      child: Center(
-                        child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
-                      ),
-                    ),
-                  if (!isEmptyFeed && _feedVideoController != null && _feedVideoController!.value.isInitialized)
-                    FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: _feedVideoController!.value.size.width,
-                        height: _feedVideoController!.value.size.height,
-                        child: VideoPlayer(_feedVideoController!),
-                      ),
-                    ),
-                  if (isEmptyFeed)
-                    Center(
-                      child: Text(
-                        'No active memories in the last 24h.\nTap the grid icon to view history.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              child: isEmptyFeed || m == null
+                  ? Container(color: _brandYellow)
+                  : _memoryReflectionBackground(m, dark),
             ),
+            if (!isEmptyFeed && m != null)
+              Positioned.fill(
+                top: top + 92,
+                bottom: 146 + MediaQuery.paddingOf(context).bottom,
+                left: 28,
+                right: 28,
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: 3 / 4.3,
+                    child: _memoryFrame(m, dark, showCaption),
+                  ),
+                ),
+              ),
+            if (isEmptyFeed)
+              Center(
+                child: Text(
+                  'No active memories in the last 24h.\nTap the grid icon to view history.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    height: 1.4,
+                  ),
+                ),
+              ),
             Positioned(
               top: top + 16,
               left: 22,
@@ -740,10 +723,75 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                   ),
                 ),
               ),
-            if (!isEmptyFeed && showCaption)
+            if (!isEmptyFeed && _composerOpen && m != null)
+              Positioned(
+                left: 28,
+                right: 28,
+                bottom: 78 + MediaQuery.paddingOf(context).bottom,
+                child: _reactionCarousel(m),
+              ),
+            if (_gridOpen)
+              Positioned.fill(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 50 * (1 - value)),
+                      child: child,
+                    ),
+                  ),
+                  child: _memoryGrid(archivedMemories, dark),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _memoryReflectionBackground(MemoryItem m, bool dark) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: m.colors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: Container(color: Colors.black.withValues(alpha: 0.38)),
+        ),
+      ],
+    );
+  }
+
+  Widget _memoryFrame(MemoryItem m, bool dark, bool showCaption) {
+    const radius = 74.0;
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: _brandYellow, width: 3),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius - 8),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _memoryMedia(m, dark),
+            if (showCaption)
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 56),
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: TweenAnimationBuilder<double>(
                     key: ValueKey('caption_${m.person}_${m.caption}'),
                     tween: Tween(begin: 0.0, end: 1.0),
@@ -769,30 +817,47 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                   ),
                 ),
               ),
-            if (!isEmptyFeed && _composerOpen && m != null)
+            if (_composerOpen)
               Positioned(
-                left: 44,
-                right: 16,
-                bottom: 94 + MediaQuery.paddingOf(context).bottom,
-                child: _messageComposer(m),
-              ),
-            if (_gridOpen)
-              Positioned.fill(
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) => Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, 50 * (1 - value)),
-                      child: child,
-                    ),
-                  ),
-                  child: _memoryGrid(archivedMemories, dark),
-                ),
+                left: 18,
+                right: 18,
+                bottom: 18,
+                child: _messageInput(m, dark),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _memoryMedia(MemoryItem m, bool dark) {
+    if (!_feedReady) {
+      return Container(color: Colors.black);
+    }
+    if (m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized)) {
+      return Container(
+        color: Colors.black,
+        child: Center(
+          child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
+        ),
+      );
+    }
+    if (_feedVideoController != null && _feedVideoController!.value.isInitialized) {
+      return FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: _feedVideoController!.value.size.width,
+          height: _feedVideoController!.value.size.height,
+          child: VideoPlayer(_feedVideoController!),
+        ),
+      );
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: m.colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
     );
@@ -875,7 +940,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
               child: GridView.builder(
                 itemCount: gridItems.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
+                  crossAxisCount: 3,
                   mainAxisSpacing: 7,
                   crossAxisSpacing: 7,
                   childAspectRatio: .74,
@@ -958,7 +1023,45 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     );
   }
 
-  Widget _messageComposer(MemoryItem m) {
+  Widget _messageInput(MemoryItem m, bool dark) {
+    return GestureDetector(
+      onTap: () => context.push('/chat/${m.person}'),
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.only(left: 16, right: 6),
+        decoration: BoxDecoration(
+          color: (dark ? kBlack : Colors.white).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Send ${m.person} a message',
+                style: TextStyle(
+                  color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Container(
+              width: 42,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _brandYellow,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Icon(Icons.send_rounded, color: kBlack, size: 18),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _reactionCarousel(MemoryItem m) {
     final dark = ref.read(isDarkProvider);
 
     void sendQuickReaction(String emoji) {
@@ -969,74 +1072,26 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
       );
     }
 
-    return SizedBox(
-      height: 210,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                // Open direct message with person
-                context.push('/chat/${m.person}');
-              },
-              child: Container(
-                height: 50,
-                padding: const EdgeInsets.only(left: 16, right: 6),
-                decoration: BoxDecoration(
-                  color: dark ? kBlack : Colors.white,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Send ${m.person} a message',
-                        style: TextStyle(
-                          color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 54,
-                      height: 38,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: dark ? kYellow : kBlack,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: const Text(
-                        'Send',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 44,
-            height: 210,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _emojiButton('❤️', sendQuickReaction),
-                _emojiButton('😂', sendQuickReaction),
-                _emojiButton('🔥', sendQuickReaction),
-                _emojiButton('😭', sendQuickReaction),
-                _emojiButton('✨', sendQuickReaction),
-              ],
-            ),
-          ),
-        ],
+    return Center(
+      child: Container(
+        height: 64,
+        constraints: const BoxConstraints(maxWidth: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: (dark ? kBlack : Colors.white).withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          shrinkWrap: true,
+          children: [
+            _emojiButton('❤️', sendQuickReaction),
+            _emojiButton('😂', sendQuickReaction),
+            _emojiButton('🔥', sendQuickReaction),
+            _emojiButton('😭', sendQuickReaction),
+            _emojiButton('✨', sendQuickReaction),
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,8 @@ import '../../core/error_handler.dart';
 import '../../repositories/memory_repository.dart';
 import '../../repositories/chat_repository.dart';
 import '../circle/circle_views.dart';
+
+const Color _brandYellow = Color(0xFFFFEA00);
 
 List<CameraDescription>? _globalCameras;
 
@@ -326,20 +329,24 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         if ((details.primaryVelocity ?? 0) < -300) context.go('/feed');
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF4C430),
+        backgroundColor: Colors.black,
         resizeToAvoidBottomInset: false,
-        body: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              28,
-              12, // Tighter top padding
-              28,
-              12 + bottomPad, // Tighter bottom padding
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            _captureReflectionBackground(),
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  28,
+                  12, // Tighter top padding
+                  28,
+                  12 + bottomPad, // Tighter bottom padding
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                 // Top header row: Profile settings button on the right
                 Row(
                   children: [
@@ -377,14 +384,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
                       // Centre: capture button or send button
                       _hasRecording
-                          ? _pill(
-                              'Send to circle',
-                              _sendToCircle,
-                              dark,
-                              color: dark ? kYellow : Colors.white,
-                              foreground: dark ? Colors.black : Colors.black,
-                              width: 200,
-                            )
+                          ? _sendToCircleButton(dark)
                           : GestureDetector(
                               onTap: _toggleRecording,
                               child: Container(
@@ -394,7 +394,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                                   shape: BoxShape.circle,
                                   color: Colors.transparent, // Transparent gap
                                   border: Border.all(
-                                    color: Colors.white,
+                                    color: Colors.white.withValues(alpha: 0.82),
                                     width: 4, // 4px white border
                                   ),
                                 ),
@@ -407,9 +407,16 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                                         ),
                                       )
                                     : Container(
+                                        alignment: Alignment.center,
                                         decoration: const BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: kBlack, // Inner black button
+                                          color: _brandYellow,
+                                        ),
+                                        child: Image.asset(
+                                          'assets/images/memory-logo.png',
+                                          width: 38,
+                                          height: 38,
+                                          fit: BoxFit.contain,
                                         ),
                                       ),
                               ),
@@ -436,9 +443,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                     ),
                   ),
                 const Spacer(flex: 1),
-              ],
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -559,6 +568,49 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     );
   }
 
+  Widget _sendToCircleButton(bool dark) {
+    return GestureDetector(
+      onTap: _sendToCircle,
+      child: Container(
+        width: 76,
+        height: 76,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: dark ? kYellow : _brandYellow,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.22),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.send_rounded,
+          color: kBlack,
+          size: 32,
+        ),
+      ),
+    );
+  }
+
+  Widget _captureReflectionBackground() {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF151515), Color(0xFF2B2618), Color(0xFF0E0E0E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(color: Colors.black.withValues(alpha: 0.28)),
+      ),
+    );
+  }
+
   Widget _capturePreview() {
     final dark = ref.watch(isDarkProvider);
     return LayoutBuilder(
@@ -570,14 +622,14 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         return Container(
           width: double.infinity,
           height: double.infinity,
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             borderRadius: borderRadius,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF4A2B27), Color(0xFFA84538)],
-            ),
+            border: Border.all(color: _brandYellow, width: 3),
+            color: Colors.white.withValues(alpha: 0.12),
           ),
           child: ClipRRect(
-            borderRadius: borderRadius,
+            borderRadius: BorderRadius.circular(radius - 8),
             child: GestureDetector(
               onTap: _hasRecording ? () => setState(() => _captureCaptionOpen = true) : null,
               child: Stack(
