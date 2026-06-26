@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,26 +67,23 @@ class CircleChatListView extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => _showProfileSheet(context),
-                      child: CircleAvatar(
-                        radius: 22,
-                        backgroundColor: dark ? kYellow : kBlack,
-                        backgroundImage: user.avatarBytes != null
-                            ? MemoryImage(user.avatarBytes!)
-                            : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-                                ? NetworkImage(_formatImageUrl(user.avatarUrl!)) as ImageProvider
-                                : null),
-                        child: (user.avatarBytes == null && (user.avatarUrl == null || user.avatarUrl!.isEmpty))
-                            ? Text(
-                                user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : 'R',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              )
-                            : null,
-                      ),
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: dark ? kYellow : kBlack,
+                      backgroundImage: user.avatarBytes != null
+                          ? MemoryImage(user.avatarBytes!)
+                          : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                              ? NetworkImage(_formatImageUrl(user.avatarUrl!)) as ImageProvider
+                              : null),
+                      child: (user.avatarBytes == null && (user.avatarUrl == null || user.avatarUrl!.isEmpty))
+                          ? Text(
+                              user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : 'R',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            )
+                          : null,
                     ),
                   ],
                 ),
@@ -1224,20 +1223,20 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
 
   void _showShareCard(BuildContext context, String title, String value, String channel, List<Color> colors, bool dark) {
     final isInstagram = channel == 'Instagram';
-    final channelGradient = isInstagram
-        ? const [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)]
-        : const [Color(0xFF25D366), Color(0xFF128C7E)];
     final channelIcon = isInstagram ? Icons.camera_alt_rounded : Icons.chat_bubble_rounded;
-    final channelTagline = isInstagram ? 'Share to your story ✨' : 'Send to a chat 💬';
-
-    // Platform-specific card colors
-    final cardColors = isInstagram
-  ? const [Color(0xFFE1306C), Color(0xFFF77737), Color(0xFFFADA5E)]
-        : const [Color(0xFF25D366), Color(0xFF128C7E), Color(0xFF075E54)];
+    final channelTagline = isInstagram ? 'Share to your story' : 'Share to status';
 
     final user = ref.read(authProvider);
     final avatarUrl = user.avatarUrl;
     final avatarInitial = user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?';
+    final displayUsername = user.username.isNotEmpty ? user.username : 'user';
+    String flag = 'KE';
+    if (user.phone.isNotEmpty) {
+      final runes = user.phone.runes.toList();
+      if (runes.length >= 2 && runes[0] >= 127462 && runes[0] <= 127487) {
+        flag = String.fromCharCodes(runes.take(2));
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -1248,24 +1247,28 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Rich share card preview with platform colors
             _funCard(
               title: title,
               value: value,
               label: 'Memory is alive',
-              colors: cardColors,
+              colors: const [kYellow, kYellow],
               icon: channelIcon,
               avatarUrl: avatarUrl,
+              avatarBytes: user.avatarBytes,
               avatarInitial: avatarInitial,
+              username: displayUsername,
+              ringColor: isInstagram ? const Color(0xFFE1306C) : const Color(0xFF25D366),
+              countryFlag: flag,
+              countryRank: user.countryRank,
+              globalRank: user.globalRank,
             ),
             const SizedBox(height: 14),
-            // Platform-branded send button
             GestureDetector(
               onTap: () async {
                 Navigator.pop(context);
                 await SharePlus.instance.share(
                   ShareParams(
-                    text: 'My Memory stats for $title: $value 🔥\n\nJoin Memory — keep your circle alive! memory.app',
+                    text: 'My Memory stats for $title: $value\n\nJoin Memory - keep your circle alive! memory.app',
                   ),
                 );
               },
@@ -1273,11 +1276,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 width: double.infinity,
                 height: 52,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: channelGradient),
+                  color: kYellow,
                   borderRadius: BorderRadius.circular(999),
                   boxShadow: [
                     BoxShadow(
-                      color: channelGradient.first.withValues(alpha: 0.45),
+                      color: kYellow.withValues(alpha: 0.45),
                       blurRadius: 18,
                       offset: const Offset(0, 6),
                     ),
@@ -1286,7 +1289,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(channelIcon, color: Colors.white, size: 18),
+                    Icon(channelIcon, color: kBlack, size: 18),
                     const SizedBox(width: 8),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1294,11 +1297,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       children: [
                         Text(
                           'Send to $channel',
-                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, height: 1.1),
+                          style: const TextStyle(color: kBlack, fontSize: 14, fontWeight: FontWeight.w900, height: 1.1),
                         ),
                         Text(
                           channelTagline,
-                          style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2),
+                          style: TextStyle(color: kBlack.withValues(alpha: 0.62), fontSize: 10, fontWeight: FontWeight.w600, height: 1.2),
                         ),
                       ],
                     ),
@@ -1321,7 +1324,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           child: Text(
             title,
             style: TextStyle(
-              color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+              color: kCream.withValues(alpha: 0.76),
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
@@ -1331,10 +1334,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
           decoration: BoxDecoration(
-            color: dark ? kBlack : Colors.white,
+            color: kBlack,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
+              color: Colors.white.withValues(alpha: 0.08),
               width: 1,
             ),
             boxShadow: [
@@ -1361,7 +1364,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           : BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                  color: Colors.white.withValues(alpha: 0.1),
                   width: 0.8,
                 ),
               ),
@@ -1371,7 +1374,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           Text(
             label,
             style: TextStyle(
-              color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+              color: kCream.withValues(alpha: 0.68),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -1380,7 +1383,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           Text(
             value,
             style: TextStyle(
-              color: dark ? kCream : kCharcoal,
+              color: kCream,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -1400,7 +1403,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             : BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                    color: Colors.white.withValues(alpha: 0.1),
                     width: 0.8,
                   ),
                 ),
@@ -1410,7 +1413,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             Text(
               title,
               style: TextStyle(
-                color: dark ? kCream : kCharcoal,
+                color: kCream,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -1418,7 +1421,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             const Spacer(),
             Icon(
               Icons.arrow_forward_ios_rounded,
-              color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+              color: kCream.withValues(alpha: 0.68),
               size: 11,
             ),
           ],
@@ -1559,7 +1562,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: dark ? kBlack : const Color(0xFFFFFCF6),
+                      color: kBlack,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
@@ -1605,7 +1608,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                       ? Text(
                                           displayFirstName.isNotEmpty ? displayFirstName[0].toUpperCase() : '?',
                                           style: TextStyle(
-                                            color: dark ? kYellow : kBlack,
+                                            color: kYellow,
                                             fontSize: 26,
                                             fontWeight: FontWeight.w900,
                                           ),
@@ -1640,7 +1643,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         Text(
                           '$displayFirstName $displayLastName',
                           style: TextStyle(
-                            color: dark ? kCream : kCharcoal,
+                            color: kCream,
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                           ),
@@ -1649,7 +1652,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         Text(
                           '@$displayUsername',
                           style: TextStyle(
-                            color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                            color: kCream.withValues(alpha: 0.66),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1658,13 +1661,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.05),
+                            color: Colors.white.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             'Tap your photo to update it',
                             style: TextStyle(
-                              color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                              color: kCream.withValues(alpha: 0.66),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1723,22 +1726,18 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     height: 48,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.transparent,
+                      color: Colors.red,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.redAccent.withValues(alpha: 0.35),
-                        width: 1.2,
-                      ),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
+                        Icon(Icons.logout_rounded, color: Colors.white, size: 18),
                         SizedBox(width: 8),
                         Text(
                           'Log Out',
                           style: TextStyle(
-                            color: Colors.redAccent,
+                            color: Colors.white,
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
@@ -1789,7 +1788,6 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
 
   Widget _statCard(BuildContext context, String title, String value, List<Color> colors, bool dark) {
     final isStreak = title == 'Memories';
-    final emoji = isStreak ? '🔥' : '💫';
     final subtitle = isStreak ? 'Day streak' : 'Circle active';
     final accent = colors.first;
 
@@ -1815,7 +1813,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         children: [
           Row(
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 20)),
+              _shareIcon(isStreak ? Icons.camera_alt_rounded : Icons.chat_bubble_rounded, accent),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1858,7 +1856,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             children: [
               Expanded(
                 child: _sharePill(
-                  '📸 Instagram',
+                  Icons.camera_alt_rounded,
                   const Color(0xFFE1306C),
                   () => _showShareCard(context, title, value, 'Instagram', colors, dark),
                 ),
@@ -1866,7 +1864,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               const SizedBox(width: 6),
               Expanded(
                 child: _sharePill(
-                  '💬 WhatsApp',
+                  Icons.chat_bubble_rounded,
                   const Color(0xFF25D366),
                   () => _showShareCard(context, title, value, 'WhatsApp', colors, dark),
                 ),
@@ -1878,7 +1876,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     );
   }
 
-  Widget _sharePill(String text, Color bg, VoidCallback onTap) {
+  Widget _sharePill(IconData icon, Color bg, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1895,18 +1893,23 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             ),
           ],
         ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 9,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
+        child: Icon(icon, color: Colors.white, size: 16),
       ),
     );
   }
 
+  Widget _shareIcon(IconData icon, Color accent) {
+    return Container(
+      width: 28,
+      height: 28,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, color: accent, size: 16),
+    );
+  }
   Widget _actionSheet(bool dark, {required Widget child}) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
@@ -1914,7 +1917,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         margin: const EdgeInsets.fromLTRB(18, 18, 18, 18),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: dark ? kBlack : Colors.white,
+          color: kBlack,
           borderRadius: BorderRadius.circular(26),
           border: Border.all(color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06)),
         ),
@@ -1930,26 +1933,26 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     required List<Color> colors,
     required IconData icon,
     String? avatarUrl,
+    Uint8List? avatarBytes,
     String avatarInitial = '?',
+    String username = 'user',
+    Color ringColor = kBlack,
+    String countryFlag = 'KE',
+    int countryRank = 1,
+    int? globalRank,
   }) {
-    final resolvedAvatar = avatarUrl != null && avatarUrl.isNotEmpty
-        ? avatarUrl
-        : null;
+    final resolvedAvatar = avatarUrl != null && avatarUrl.isNotEmpty ? avatarUrl : null;
 
     return Container(
       width: double.infinity,
-      height: 240,
+      height: 260,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: kYellow,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: colors.first.withValues(alpha: 0.4),
+            color: kYellow.withValues(alpha: 0.36),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -1957,137 +1960,90 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       ),
       child: Stack(
         children: [
-          // Decorative background circles for depth
           Positioned(
-            right: -36,
-            top: -36,
+            top: 16,
+            right: 16,
             child: Container(
-              width: 140,
-              height: 140,
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.12),
+                color: kBlack.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(13),
               ),
+              child: Icon(icon, color: kBlack, size: 19),
             ),
           ),
-          Positioned(
-            right: 30,
-            bottom: -50,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.07),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -20,
-            bottom: 20,
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
-          // Sparkle dots
-          const Positioned(right: 22, top: 55, child: Text('✦', style: TextStyle(color: Colors.white54, fontSize: 10))),
-          const Positioned(right: 55, top: 28, child: Text('✦', style: TextStyle(color: Colors.white38, fontSize: 6))),
-          const Positioned(left: 120, top: 18, child: Text('✦', style: TextStyle(color: Colors.white38, fontSize: 7))),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: Colors.white, size: 18),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 92,
+                    height: 92,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: ringColor, width: 4),
                     ),
-                    const Spacer(),
-                    // User avatar (top-right)
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 2),
-                        color: Colors.white.withValues(alpha: 0.25),
-                      ),
-                      child: ClipOval(
-                        child: resolvedAvatar != null
-                            ? Image.network(
-                                resolvedAvatar,
-                                fit: BoxFit.cover,
-                                errorBuilder: (ctx, err, st) => Center(
+                    child: ClipOval(
+                      child: avatarBytes != null
+                          ? Image.memory(avatarBytes, fit: BoxFit.cover)
+                          : resolvedAvatar != null
+                              ? Image.network(
+                                  resolvedAvatar,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (ctx, err, st) => Center(
+                                    child: Text(
+                                      avatarInitial,
+                                      style: const TextStyle(color: kBlack, fontSize: 28, fontWeight: FontWeight.w900),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  color: kBlack,
+                                  alignment: Alignment.center,
                                   child: Text(
                                     avatarInitial,
-                                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                                    style: const TextStyle(color: kYellow, fontSize: 28, fontWeight: FontWeight.w900),
                                   ),
                                 ),
-                              )
-                            : Center(
-                                child: Text(
-                                  avatarInitial,
-                                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
-                                ),
-                              ),
-                      ),
                     ),
-                  ],
-                ),
-                const Spacer(),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 44,
-                    fontWeight: FontWeight.w900,
-                    height: 1,
-                    letterSpacing: -1,
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        label,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '@$username',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: kBlack,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$value $title',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: kBlack.withValues(alpha: 0.76),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _rankChip('$countryFlag #$countryRank'),
+                      if (globalRank != null) _rankChip('Global #$globalRank'),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -2095,13 +2051,30 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     );
   }
 
+  Widget _rankChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: kBlack.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: kBlack,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
   Widget _addPersonCard(BuildContext context, int circleCount, bool dark) => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: dark ? kBlack : Colors.white,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
+            color: Colors.white.withValues(alpha: 0.08),
             width: 1,
           ),
           boxShadow: [
@@ -2120,7 +2093,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 Text(
                   '$circleCount / 30',
                   style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
+                    color: kCream,
                     fontSize: 19,
                     fontWeight: FontWeight.w900,
                   ),
@@ -2128,7 +2101,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 Text(
                   'in your circle',
                   style: TextStyle(
-                    color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                    color: kCream.withValues(alpha: 0.68),
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),

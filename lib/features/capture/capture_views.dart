@@ -436,8 +436,19 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                 // Memories button in a pill below the capture button
                 if (!_hasRecording && !_isRecording)
                   Center(
-                    child: _memoriesPillButton(
-                      onTap: () => context.go('/feed'),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _memoriesPillButton(
+                          onTap: () => context.go('/feed'),
+                        ),
+                        const SizedBox(height: 5),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: Colors.white.withValues(alpha: 0.82),
+                          size: 18,
+                        ),
+                      ],
                     ),
                   ),
                 const Spacer(flex: 1),
@@ -456,7 +467,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(999),
@@ -466,7 +477,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           'memories',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 13,
+            fontSize: 11,
             fontWeight: FontWeight.w900,
             letterSpacing: 0.8,
           ),
@@ -484,7 +495,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         height: 46,
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.35),
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
         ),
         child: Icon(icon, color: Colors.white, size: 22),
@@ -527,7 +538,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.35),
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
             ),
             child: const Icon(

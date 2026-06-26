@@ -602,15 +602,6 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
-                                        SizedBox(width: 5),
-                                        Text(
-                                          'Instagram',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
                                       ],
                                     ),
                             ),
@@ -643,15 +634,6 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
-                                        SizedBox(width: 5),
-                                        Text(
-                                          'WhatsApp',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
                                       ],
                                     ),
                             ),
@@ -1164,15 +1146,6 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
-                                        SizedBox(width: 5),
-                                        Text(
-                                          'Instagram',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
                                       ],
                                     ),
                             ),
@@ -1205,15 +1178,6 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
-                                        SizedBox(width: 5),
-                                        Text(
-                                          'WhatsApp',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
                                       ],
                                     ),
                             ),
