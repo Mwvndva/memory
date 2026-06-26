@@ -1,4 +1,3 @@
-// ignore_for_file: avoid_print
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -232,14 +231,9 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           'password': password,
         });
 
-        print('DEBUG Login Response Data: ${response.data}');
-
         final tokens = response.data['tokens'] as Map<String, dynamic>?;
         final token = tokens != null ? tokens['access_token'] as String? : null;
         final userJson = response.data['user'] as Map<String, dynamic>?;
-
-        print('DEBUG Parsed Token: $token');
-        print('DEBUG Parsed User: $userJson');
 
         if (token != null && userJson != null) {
           final storage = _ref.read(secureStorageProvider);
@@ -257,10 +251,8 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           _saveSession();
           return true;
         }
-        print('DEBUG Login failed: token or userJson is null');
         return false;
       } catch (e) {
-        print('DEBUG Login exception caught: $e');
         return false;
       }
     }

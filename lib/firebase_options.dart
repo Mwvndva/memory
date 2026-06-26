@@ -41,7 +41,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_WEB', defaultValue: 'AIzaSy' 'BY5ZUA0WjR_GXGm6EqzpKPpiwPxRUdUU4'),
+    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_WEB'),
     appId: '1:140230990994:web:a07bc24e66093e640a9a4b',
     messagingSenderId: '140230990994',
     projectId: 'memory-5be9f',
@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_ANDROID', defaultValue: 'AIzaSy' 'Aj33CKqHxUmDwyE0PseqvHIXkmGodrKhc'),
+    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_ANDROID'),
     appId: '1:140230990994:android:7019ca9d14a4e5830a9a4b',
     messagingSenderId: '140230990994',
     projectId: 'memory-5be9f',
@@ -59,7 +59,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_IOS', defaultValue: 'AIzaSy' 'BEaZjm9Q0VSexEcFl8B2_NfdyJaL3MjXg'),
+    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_IOS'),
     appId: '1:140230990994:ios:68ad1ea48734cf650a9a4b',
     messagingSenderId: '140230990994',
     projectId: 'memory-5be9f',
@@ -68,7 +68,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_MACOS', defaultValue: 'AIzaSy' 'BEaZjm9Q0VSexEcFl8B2_NfdyJaL3MjXg'),
+    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_MACOS'),
     appId: '1:140230990994:ios:68ad1ea48734cf650a9a4b',
     messagingSenderId: '140230990994',
     projectId: 'memory-5be9f',
@@ -77,7 +77,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_WINDOWS', defaultValue: 'AIzaSy' 'BY5ZUA0WjR_GXGm6EqzpKPpiwPxRUdUU4'),
+    apiKey: const String.fromEnvironment('FIREBASE_API_KEY_WINDOWS'),
     appId: '1:140230990994:web:27e895c824d2ec8d0a9a4b',
     messagingSenderId: '140230990994',
     projectId: 'memory-5be9f',
