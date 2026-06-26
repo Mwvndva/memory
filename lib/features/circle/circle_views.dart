@@ -67,24 +67,7 @@ class CircleChatListView extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: dark ? kYellow : kBlack,
-                      backgroundImage: user.avatarBytes != null
-                          ? MemoryImage(user.avatarBytes!)
-                          : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-                              ? NetworkImage(_formatImageUrl(user.avatarUrl!)) as ImageProvider
-                              : null),
-                      child: (user.avatarBytes == null && (user.avatarUrl == null || user.avatarUrl!.isEmpty))
-                          ? Text(
-                              user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : 'R',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            )
-                          : null,
-                    ),
+                    const SizedBox(width: 40),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -1461,7 +1444,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       margin: const EdgeInsets.all(14),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: dark ? kBlack : kYellow,
+        color: kBlack,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
@@ -1622,7 +1605,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: dark ? kBlack : kYellow,
+                      color: kBlack,
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: dark ? kYellow : kBlack,
@@ -1856,7 +1839,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             children: [
               Expanded(
                 child: _sharePill(
-                  Icons.camera_alt_rounded,
+                  _InstagramMark(color: Colors.white),
                   const Color(0xFFE1306C),
                   () => _showShareCard(context, title, value, 'Instagram', colors, dark),
                 ),
@@ -1864,7 +1847,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               const SizedBox(width: 6),
               Expanded(
                 child: _sharePill(
-                  Icons.chat_bubble_rounded,
+                  _WhatsAppMark(color: Colors.white),
                   const Color(0xFF25D366),
                   () => _showShareCard(context, title, value, 'WhatsApp', colors, dark),
                 ),
@@ -1876,7 +1859,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     );
   }
 
-  Widget _sharePill(IconData icon, Color bg, VoidCallback onTap) {
+  Widget _sharePill(Widget logo, Color bg, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1893,7 +1876,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             ),
           ],
         ),
-        child: Icon(icon, color: Colors.white, size: 16),
+        child: SizedBox(width: 17, height: 17, child: logo),
       ),
     );
   }
@@ -1948,11 +1931,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       height: 260,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: kYellow,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: kYellow.withValues(alpha: 0.36),
+                color: kBlack,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: kYellow, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: kYellow.withValues(alpha: 0.28),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -1960,20 +1944,6 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       ),
       child: Stack(
         children: [
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Container(
-              width: 38,
-              height: 38,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: kBlack.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Icon(icon, color: kBlack, size: 19),
-            ),
-          ),
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22),
@@ -1998,16 +1968,16 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                   errorBuilder: (ctx, err, st) => Center(
                                     child: Text(
                                       avatarInitial,
-                                      style: const TextStyle(color: kBlack, fontSize: 28, fontWeight: FontWeight.w900),
+                                      style: const TextStyle(color: kCream, fontSize: 28, fontWeight: FontWeight.w900),
                                     ),
                                   ),
                                 )
                               : Container(
-                                  color: kBlack,
+                                  color: kYellow,
                                   alignment: Alignment.center,
                                   child: Text(
                                     avatarInitial,
-                                    style: const TextStyle(color: kYellow, fontSize: 28, fontWeight: FontWeight.w900),
+                                    style: const TextStyle(color: kBlack, fontSize: 28, fontWeight: FontWeight.w900),
                                   ),
                                 ),
                     ),
@@ -2017,7 +1987,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     '@$username',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: kBlack,
+                      color: kCream,
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
                     ),
@@ -2027,7 +1997,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     '$value $title',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: kBlack.withValues(alpha: 0.76),
+                      color: kCream.withValues(alpha: 0.76),
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
@@ -2055,13 +2025,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: kBlack.withValues(alpha: 0.1),
+        color: kYellow.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         text,
         style: const TextStyle(
-          color: kBlack,
+          color: kYellow,
           fontSize: 11,
           fontWeight: FontWeight.w900,
         ),
@@ -2116,8 +2086,8 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 circleCount < 30 ? () => _showInviteOptions(context, dark) : () {},
                 dark,
                 compact: true,
-                color: dark ? kYellow : kBlack,
-                foreground: Colors.white,
+                color: Colors.white,
+                foreground: kBlack,
               ),
             ),
           ],
@@ -2344,6 +2314,82 @@ class ChatPatternPainter extends CustomPainter {
   bool shouldRepaint(covariant ChatPatternPainter oldDelegate) {
     return oldDelegate.patternColor != patternColor;
   }
+}
+
+class _InstagramMark extends StatelessWidget {
+  const _InstagramMark({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(painter: _InstagramMarkPainter(color));
+}
+
+class _InstagramMarkPainter extends CustomPainter {
+  const _InstagramMarkPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.12
+      ..strokeCap = StrokeCap.round;
+    final rect = Offset.zero & size;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect.deflate(size.width * 0.12), Radius.circular(size.width * 0.26)),
+      stroke,
+    );
+    canvas.drawCircle(size.center(Offset.zero), size.width * 0.18, stroke);
+    canvas.drawCircle(Offset(size.width * 0.72, size.height * 0.28), size.width * 0.045, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _InstagramMarkPainter oldDelegate) => oldDelegate.color != color;
+}
+
+class _WhatsAppMark extends StatelessWidget {
+  const _WhatsAppMark({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(painter: _WhatsAppMarkPainter(color));
+}
+
+class _WhatsAppMarkPainter extends CustomPainter {
+  const _WhatsAppMarkPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.12
+      ..strokeCap = StrokeCap.round;
+    final fill = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final center = Offset(size.width * 0.5, size.height * 0.45);
+    canvas.drawCircle(center, size.width * 0.35, stroke);
+    final tail = Path()
+      ..moveTo(size.width * 0.28, size.height * 0.68)
+      ..lineTo(size.width * 0.18, size.height * 0.88)
+      ..lineTo(size.width * 0.40, size.height * 0.76)
+      ..close();
+    canvas.drawPath(tail, fill);
+    final phone = Path()
+      ..moveTo(size.width * 0.38, size.height * 0.35)
+      ..quadraticBezierTo(size.width * 0.48, size.height * 0.62, size.width * 0.67, size.height * 0.56);
+    canvas.drawPath(phone, stroke);
+  }
+
+  @override
+  bool shouldRepaint(covariant _WhatsAppMarkPainter oldDelegate) => oldDelegate.color != color;
 }
 
 String _formatTime(DateTime dt) {

@@ -375,7 +375,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                         Positioned(
                           left: 8,
                           child: _overlayIconButton(
-                            icon: Icons.flip_camera_ios_rounded,
+                            icon: Icons.flip_camera_android_rounded,
                             onTap: _switchCamera,
                           ),
                         ),
@@ -490,16 +490,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   Widget _overlayIconButton({required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 46,
-        height: 46,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
-        ),
-        child: Icon(icon, color: Colors.white, size: 22),
-      ),
+      child: Icon(icon, color: Colors.white, size: 28),
     );
   }
 
@@ -507,20 +498,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   Widget _overlayProfileSettingsButton({required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 46,
-        height: 46,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.35),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
-        ),
-        child: const Icon(
-          Icons.person_rounded, // single user icon
-          color: Colors.white,
-          size: 22,
-        ),
+      child: const Icon(
+        Icons.person_rounded,
+        color: Colors.white,
+        size: 28,
       ),
     );
   }
@@ -532,20 +513,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
-            ),
-            child: const Icon(
-              Icons.chat_bubble_rounded, // minimal message icon
-              color: Colors.white,
-              size: 20,
-            ),
+          const Icon(
+            Icons.mark_unread_chat_alt_rounded,
+            color: Colors.white,
+            size: 28,
           ),
           if (unreadCount > 0)
             Positioned(
