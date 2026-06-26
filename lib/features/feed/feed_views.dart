@@ -18,8 +18,6 @@ import '../../repositories/circles_repository.dart';
 import '../../models/user_profile.dart';
 import 'streak_milestones.dart';
 
-const Color _brandYellow = Color(0xFFFFEA00);
-
 String _formatImageUrl(String url) {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
     final uri = Uri.parse(url);
@@ -598,7 +596,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
           children: [
             Positioned.fill(
               child: isEmptyFeed || m == null
-                  ? Container(color: _brandYellow)
+                  ? Container(color: kYellow)
                   : _memoryReflectionBackground(m, dark),
             ),
             if (!isEmptyFeed && m != null)
@@ -780,7 +778,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: _brandYellow, width: 3),
+        border: Border.all(color: kYellow, width: 3),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius - 8),
@@ -1050,7 +1048,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
               height: 38,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: _brandYellow,
+                color: kYellow,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: const Icon(Icons.send_rounded, color: kBlack, size: 18),

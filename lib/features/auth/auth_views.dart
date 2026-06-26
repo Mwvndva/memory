@@ -15,8 +15,6 @@ import '../../repositories/auth_repository.dart';
 import '../../repositories/circles_repository.dart';
 import '../../core/error_handler.dart';
 
-const Color _brandYellow = Color(0xFFFFEA00);
-
 String _formatImageUrl(String url) {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
     final uri = Uri.parse(url);
@@ -55,7 +53,7 @@ class _LoadingViewState extends ConsumerState<LoadingView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _brandYellow,
+      backgroundColor: kYellow,
       body: Center(
         child: Image.asset(
           'assets/images/memory-logo.png',
@@ -110,7 +108,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    const bg = _brandYellow;
+    const bg = kYellow;
     final fg = dark ? kCream : kCharcoal;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
@@ -303,7 +301,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    const bg = _brandYellow;
+    const bg = kYellow;
     final fg = dark ? kCream : kCharcoal;
 
     return Scaffold(

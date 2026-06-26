@@ -13,8 +13,6 @@ import '../../repositories/memory_repository.dart';
 import '../../repositories/chat_repository.dart';
 import '../circle/circle_views.dart';
 
-const Color _brandYellow = Color(0xFFFFEA00);
-
 List<CameraDescription>? _globalCameras;
 
 Future<void> preloadCameras() async {
@@ -410,7 +408,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                                         alignment: Alignment.center,
                                         decoration: const BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: _brandYellow,
+                                          color: kYellow,
                                         ),
                                         child: Image.asset(
                                           'assets/images/memory-logo.png',
@@ -576,7 +574,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         height: 76,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: dark ? kYellow : _brandYellow,
+          color: kYellow,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
@@ -625,7 +623,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             borderRadius: borderRadius,
-            border: Border.all(color: _brandYellow, width: 3),
+            border: Border.all(color: kYellow, width: 3),
             color: Colors.white.withValues(alpha: 0.12),
           ),
           child: ClipRRect(
