@@ -9,6 +9,7 @@ import '../core/secure_storage.dart';
 import '../models/user_profile.dart';
 import '../core/error_handler.dart';
 import '../core/router.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthNotifier extends StateNotifier<UserProfile> {
   AuthNotifier(this._ref) : super(UserProfile.empty()) {
@@ -33,8 +34,8 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           isAuthenticated: true,
         );
       }
-    } catch (_) {
-      // SharedPreferences might not be ready in testing/fallback
+    } catch (e) {
+      debugPrint('Failed to load session from SharedPreferences: $e');
     }
   }
 
@@ -62,8 +63,9 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           'message': response.data['message'] ?? 'Username checked.',
           'ok': response.data['ok'] ?? false,
         };
-      } catch (e) {
-        return {'message': 'Error checking username availability.', 'ok': false};
+      } catch (e, stack) {
+        final mapped = mapException(e, stack);
+        return {'message': mapped.message, 'ok': false};
       }
     }
   }
@@ -156,35 +158,13 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           isAuthenticated: false, // still needs avatar step
         );
         return {'ok': true, 'message': response.data['message'] ?? 'Registered'};
-      } on DioException catch (e) {
-        // Parse common backend error responses and return friendly messages.
-        final status = e.response?.statusCode;
-        String msg = 'Registration failed.';
-        if (status == 409) {
-          // Conflict (e.g., username or email already exists)
-          try {
-            final data = e.response?.data;
-            if (data is Map && data['message'] != null) {
-              msg = data['message'].toString();
-            } else if (data is String && data.isNotEmpty) {
-              msg = data;
-            } else {
-              msg = 'Username or email already exists.';
-            }
-          } catch (_) {
-            msg = 'Username or email already exists.';
-          }
-        } else if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
-          msg = 'Network timeout. Please try again.';
-        } else if (e.response != null && e.response?.data != null) {
-          final data = e.response!.data;
-          if (data is Map && data['message'] != null) msg = data['message'].toString();
-        } else {
-          msg = e.message ?? 'An unexpected error occurred.';
-        }
-        return {'ok': false, 'message': msg, 'status': status};
-      } catch (e) {
-        return {'ok': false, 'message': e.toString()};
+      } catch (e, stack) {
+        final mapped = mapException(e, stack);
+        return {
+          'ok': false,
+          'message': mapped.message,
+          'status': e is DioException ? e.response?.statusCode : null,
+        };
       }
     }
   }
@@ -202,7 +182,10 @@ class AuthNotifier extends StateNotifier<UserProfile> {
       });
       await dio.post('/users/me/avatar', data: formData);
       await fetchProfile();
-    } catch (_) {}
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      throw mapped;
+    }
   }
 
   Future<bool> login(String id, String password) async {
@@ -263,8 +246,9 @@ class AuthNotifier extends StateNotifier<UserProfile> {
           return true;
         }
         return false;
-      } catch (e) {
-        return false;
+      } catch (e, stack) {
+        final mapped = mapException(e, stack);
+        throw mapped;
       }
     }
   }
@@ -292,7 +276,10 @@ class AuthNotifier extends StateNotifier<UserProfile> {
         globalRank: stats['globalRank'] as int?,
       );
       _saveSession();
-    } catch (_) {}
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      debugPrint('Failed to fetch profile: $mapped');
+    }
   }
 
   void authenticate() {
@@ -314,7 +301,9 @@ class AuthNotifier extends StateNotifier<UserProfile> {
       await prefs.remove('user_email');
       await prefs.remove('user_phone');
       await prefs.remove('user_avatar_url');
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error clearing secure storage/shared preferences: $e');
+    }
   }
 
   Future<void> handleSessionExpired() async {
@@ -339,7 +328,9 @@ class AuthNotifier extends StateNotifier<UserProfile> {
       } else {
         prefs.remove('user_avatar_url');
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to save session to SharedPreferences: $e');
+    }
   }
 }
 

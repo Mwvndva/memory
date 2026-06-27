@@ -48,6 +48,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   int _selectedCameraIndex = 0;
   bool _isInitializing = false;
   int _lastInitMs = 0;
+  bool _uploading = false;
 
   @override
   void initState() {
@@ -161,10 +162,14 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     // best-effort dispose; we don't await here because dispose() cannot be async
     try {
       _cameraController?.dispose();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error disposing camera controller: $e');
+    }
     try {
       _videoPlayerController?.dispose();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error disposing video player: $e');
+    }
     super.dispose();
   }
 
@@ -256,7 +261,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     }
   }
 
-  void _sendToCircle() {
+  Future<void> _sendToCircle() async {
+    if (_uploading) return;
     final captionText = _captureCaption.text.trim();
 
     // Pre-validate video size client-side (max 50MB)
@@ -272,35 +278,48 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
       }
     }
 
-    // Capture dynamic memory
-    ref.read(memoryProvider.notifier).addMemory(
-          captionText,
-          const [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Beautiful violet/purple gradient for dynamic captures
-          videoPath: _recordedVideoPath,
+    setState(() => _uploading = true);
+
+    try {
+      // Capture dynamic memory
+      await ref.read(memoryProvider.notifier).addMemory(
+            captionText,
+            const [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Beautiful violet/purple gradient for dynamic captures
+            videoPath: _recordedVideoPath,
+          );
+
+      // Stop and dispose preview player
+      _videoPlayerController?.pause();
+      _videoPlayerController?.dispose();
+      _videoPlayerController = null;
+
+      // Reset states
+      setState(() {
+        _hasRecording = false;
+        _isRecording = false;
+        _recordedVideoPath = null;
+        _captureCaptionOpen = false;
+        _captureCaption.clear();
+        _captureCaptionOffset = const Offset(78, 250);
+        _captureCaptionSize = 24;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Memory posted successfully to your Circle!')),
         );
-
-    // Stop and dispose preview player
-    _videoPlayerController?.pause();
-    _videoPlayerController?.dispose();
-    _videoPlayerController = null;
-
-    // Reset states
-    setState(() {
-      _hasRecording = false;
-      _isRecording = false;
-      _recordedVideoPath = null;
-      _captureCaptionOpen = false;
-      _captureCaption.clear();
-      _captureCaptionOffset = const Offset(78, 250);
-      _captureCaptionSize = 24;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Memory posted successfully to your Circle!')),
-    );
-
-    // Navigate back to capture
-    context.go('/capture');
+        // Navigate back to capture
+        context.go('/capture');
+      }
+    } catch (e) {
+      if (mounted) {
+        showAppError(context, 'Failed to post memory: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _uploading = false);
+      }
+    }
   }
 
   void _showProfileSheet(BuildContext context) {
@@ -550,7 +569,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   Widget _sendToCircleButton(bool dark) {
     return GestureDetector(
-      onTap: _sendToCircle,
+      onTap: _uploading ? null : _sendToCircle,
       child: Container(
         width: 76,
         height: 76,
@@ -566,11 +585,20 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
             ),
           ],
         ),
-        child: const Icon(
-          Icons.send_rounded,
-          color: kBlack,
-          size: 32,
-        ),
+        child: _uploading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: kBlack,
+                  strokeWidth: 3,
+                ),
+              )
+            : const Icon(
+                Icons.send_rounded,
+                color: kBlack,
+                size: 32,
+              ),
       ),
     );
   }

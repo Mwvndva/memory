@@ -13,6 +13,7 @@ import '../../repositories/chat_repository.dart';
 import '../../repositories/memory_repository.dart';
 import '../../core/api_config.dart';
 import '../../repositories/auth_repository.dart';
+import '../../core/error_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../repositories/circles_repository.dart';
 import '../../models/user_profile.dart';
@@ -193,7 +194,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     Future.microtask(() {
       if (mounted) {
         ref.read(authProvider.notifier).fetchProfile();
-        ref.read(memoryProvider.notifier).fetchFeed();
+        ref.read(memoryProvider.notifier).fetchFeed().catchError((err) {
+          if (mounted) {
+            showAppError(context, err.toString());
+          }
+        });
       }
     });
   }

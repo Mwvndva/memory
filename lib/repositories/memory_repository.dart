@@ -11,6 +11,7 @@ import '../core/theme.dart';
 import '../models/memory_item.dart';
 import '../core/widget_manager.dart';
 import 'auth_repository.dart';
+import '../core/error_handler.dart';
 
 Color parseHexColor(String hexStr) {
   var clean = hexStr.replaceAll('#', '').trim();
@@ -141,12 +142,13 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       // Save to Hive cache
       try {
         final box = Hive.box('feed_cache');
-        box.put('feed', jsonEncode(rawList));
-      } catch (_) {
-        // Ignore cache saving errors
+        await box.put('feed', jsonEncode(rawList));
+      } catch (e) {
+        debugPrint('Failed to save feed cache: $e');
       }
-    } catch (_) {
-      // Keep existing state (fallback or empty) on error
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      throw mapped;
     }
   }
 
@@ -185,7 +187,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
             final size = await file.length();
             const maxSizeBytes = 50 * 1024 * 1024; // 50MB
             if (size > maxSizeBytes) {
-              throw Exception('Video file size exceeds the 50MB limit.');
+              throw ValidationException('Video file size exceeds the 50MB limit.', null, StackTrace.current);
             }
           }
         }
@@ -209,8 +211,9 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
 
         // Re-fetch clean list from backend to keep local UI exactly in sync
         await fetchFeed();
-      } catch (_) {
-        rethrow;
+      } catch (e, stack) {
+        final mapped = mapException(e, stack);
+        throw mapped;
       }
     }
   }

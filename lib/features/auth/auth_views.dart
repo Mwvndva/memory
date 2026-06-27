@@ -88,20 +88,33 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   Future<void> _onLogin() async {
-    setState(() => _loginLoading = true);
-    final success = await ref.read(authProvider.notifier).login(
-          _loginId.text,
-          _loginPassword.text,
-        );
-    setState(() => _loginLoading = false);
-
-    if (!mounted) return;
-    if (success) {
-      context.go('/feed');
-    } else {
-      setState(() {
-        _errorMessage = 'Invalid username/email or password.';
-      });
+    setState(() {
+      _loginLoading = true;
+      _errorMessage = '';
+    });
+    try {
+      final success = await ref.read(authProvider.notifier).login(
+            _loginId.text,
+            _loginPassword.text,
+          );
+      if (!mounted) return;
+      if (success) {
+        context.go('/feed');
+      } else {
+        setState(() {
+          _errorMessage = 'Invalid username/email or password.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loginLoading = false);
+      }
     }
   }
 
@@ -776,7 +789,13 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
     setState(() {
       _avatarBytes = bytes;
     });
-    ref.read(authProvider.notifier).updateAvatar(bytes);
+    try {
+      await ref.read(authProvider.notifier).updateAvatar(bytes);
+    } catch (e) {
+      if (mounted) {
+        showAppError(context, e.toString());
+      }
+    }
   }
 
   @override

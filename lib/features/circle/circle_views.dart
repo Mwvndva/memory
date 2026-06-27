@@ -227,7 +227,15 @@ class CircleChatListView extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               GestureDetector(
-                onTap: () => ref.read(pendingRequestsProvider.notifier).acceptRequest(req.id),
+                onTap: () async {
+                  try {
+                    await ref.read(pendingRequestsProvider.notifier).acceptRequest(req.id);
+                  } catch (e) {
+                    if (context.mounted) {
+                      showAppError(context, e.toString());
+                    }
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
@@ -246,7 +254,15 @@ class CircleChatListView extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               GestureDetector(
-                onTap: () => ref.read(pendingRequestsProvider.notifier).declineRequest(req.id),
+                onTap: () async {
+                  try {
+                    await ref.read(pendingRequestsProvider.notifier).declineRequest(req.id);
+                  } catch (e) {
+                    if (context.mounted) {
+                      showAppError(context, e.toString());
+                    }
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
@@ -434,7 +450,13 @@ class CircleChatListView extends ConsumerWidget {
                 ),
               );
               if (confirm == true) {
-                await ref.read(circlesProvider.notifier).removeMember(member.id);
+                try {
+                  await ref.read(circlesProvider.notifier).removeMember(member.id);
+                } catch (e) {
+                  if (context.mounted) {
+                    showAppError(context, e.toString());
+                  }
+                }
               }
             },
             child: Container(

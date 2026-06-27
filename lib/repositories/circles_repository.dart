@@ -12,6 +12,7 @@ import '../models/user_profile.dart';
 import '../features/feed/streak_milestones.dart';
 import '../core/theme.dart';
 import '../core/router.dart';
+import '../core/error_handler.dart';
 
 // ─── Circle Member model ─────────────────────────────────────────────────────
 
@@ -86,7 +87,10 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
       for (final m in members) {
         _ref.read(chatProvider.notifier).loadConversation(m.username, shouldMarkRead: false);
       }
-    } catch (_) {}
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      debugPrint('Failed to fetch circle: $mapped');
+    }
   }
 
   // ─── Add a member by their user ID ──────────────────────────────────────
@@ -126,30 +130,15 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
           'message': data is Map && data['message'] != null ? data['message'] : 'Request sent',
           'status': resp.statusCode,
         };
-      } catch (e) {
+      } catch (e, stack) {
         // If the requests endpoint is not available (404) or fails, fall back to older behavior.
         // We'll inspect the error and decide whether to try the fallback.
         if (e is DioException && e.response?.statusCode == 404) {
           // fallback below
-        } else if (e is DioException) {
-          // If server returned a meaningful error (e.g., 409), propagate it.
-          final status = e.response?.statusCode;
-          String msg = 'Failed to send request.';
-          if (status == 409) {
-            try {
-              final d = e.response?.data;
-              if (d is Map && d['message'] != null) msg = d['message'].toString();
-            } catch (_) {}
-          } else if (e.response != null && e.response?.data != null) {
-            final d = e.response!.data;
-            if (d is Map && d['message'] != null) msg = d['message'].toString();
-          } else {
-            msg = e.message ?? msg;
-          }
-          return {'ok': false, 'message': msg, 'status': status};
+        } else {
+          final mapped = mapException(e, stack);
+          return {'ok': false, 'message': mapped.message, 'status': e is DioException ? e.response?.statusCode : null};
         }
-
-        // otherwise continue to fallback
       }
 
       // Fallback: older endpoint behavior which may directly add the member (if permitted)
@@ -161,23 +150,13 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
         'message': data is Map && data['message'] != null ? data['message'] : 'Member added',
         'status': response.statusCode,
       };
-    } on DioException catch (e) {
-      final status = e.response?.statusCode;
-      String msg = 'Failed to send request.';
-      if (status == 409) {
-        try {
-          final d = e.response?.data;
-          if (d is Map && d['message'] != null) msg = d['message'].toString();
-        } catch (_) {}
-      } else if (e.response != null && e.response?.data != null) {
-        final d = e.response!.data;
-        if (d is Map && d['message'] != null) msg = d['message'].toString();
-      } else {
-        msg = e.message ?? msg;
-      }
-      return {'ok': false, 'message': msg, 'status': status};
-    } catch (e) {
-      return {'ok': false, 'message': e.toString()};
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      return {
+        'ok': false,
+        'message': mapped.message,
+        'status': e is DioException ? e.response?.statusCode : null,
+      };
     }
   }
 
@@ -193,8 +172,9 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
       await dio.delete('/circles/members/$memberId');
       state = state.where((m) => m.id != memberId).toList();
       return true;
-    } catch (_) {
-      return false;
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      throw mapped;
     }
   }
 
@@ -317,7 +297,10 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
         final userJson = item['user'] as Map<String, dynamic>? ?? {};
         return CircleMember.fromJson(userJson);
       }).toList();
-    } catch (_) {}
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      debugPrint('Failed to fetch pending requests: $mapped');
+    }
   }
 
   /// Optimistically add a pending request locally. This is used when a WS
@@ -333,7 +316,10 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
     _reconTimer = Timer.periodic(const Duration(seconds: 20), (_) {
       try {
         fetchPendingRequests();
-      } catch (_) {}
+      } catch (e, stack) {
+        final mapped = mapException(e, stack);
+        debugPrint('Error in pending requests reconciliation poll: $mapped');
+      }
     });
   }
 
@@ -359,8 +345,9 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
       await fetchPendingRequests();
       await _ref.read(circlesProvider.notifier).fetchCircle();
       return true;
-    } catch (_) {
-      return false;
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      throw mapped;
     }
   }
 
@@ -374,8 +361,9 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
       await dio.post('/circles/requests/decline', data: {'senderId': senderId});
       await fetchPendingRequests();
       return true;
-    } catch (_) {
-      return false;
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      throw mapped;
     }
   }
 

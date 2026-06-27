@@ -16,6 +16,7 @@ import 'auth_repository.dart';
 import 'package:flutter/material.dart';
 import '../features/feed/streak_milestones.dart';
 import '../core/theme.dart';
+import '../core/error_handler.dart';
 
 // ─── Chat state ──────────────────────────────────────────────────────────────
 
@@ -208,7 +209,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
             'event': 'ping',
             'data': {'ts': DateTime.now().toIso8601String()},
           }));
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Failed to send ping: $e');
+        }
       });
 
       _channel?.stream.listen(
@@ -235,15 +238,21 @@ class ChatNotifier extends StateNotifier<ChatState> {
                         avatarUrl: senderAvatar,
                       ),
                     );
-                  } catch (_) {}
+                  } catch (e) {
+                    debugPrint('Error adding pending request: $e');
+                  }
                 }
 
                 Future.delayed(const Duration(seconds: 4), () {
                   try {
                     _ref.read(pendingRequestsProvider.notifier).fetchPendingRequests();
-                  } catch (_) {}
+                  } catch (e) {
+                    debugPrint('Error fetching pending requests in delay: $e');
+                  }
                 });
-              } catch (_) {}
+              } catch (e) {
+                debugPrint('Failed to process pending request frame: $e');
+              }
               return;
             }
 
@@ -262,7 +271,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
             } else if (event == 'message_sent') {
               // ACK — already shown optimistically; skip duplicate
             }
-          } catch (_) {}
+          } catch (e, stack) {
+            final mapped = mapException(e, stack);
+            debugPrint('Failed to decode incoming stream frame: $mapped');
+          }
         },
         onError: (error) {
           _handleSocketClosed('error: $error', connectionId);
@@ -272,7 +284,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
         },
         cancelOnError: true,
       );
-    } catch (_) {
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      debugPrint('Failed to establish WebSocket connection: $mapped');
       _scheduleReconnect();
     } finally {
       _isConnecting = false;
@@ -326,7 +340,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
     _reconnectTimer = null;
     try {
       _channel?.sink.close();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to close WS channel: $e');
+    }
     _channel = null;
   }
 
@@ -472,7 +488,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
         messagesByContact: updatedMap,
         unreadCounts: updatedUnread,
       );
-    } catch (_) {}
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      debugPrint('Failed to load/merge conversation: $mapped');
+    }
   }
 
   // ─── Send a message ───────────────────────────────────────────────────────
@@ -503,7 +522,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
             'text': text.trim(),
           },
         }));
-      } catch (_) {}
+      } catch (e, stack) {
+        final mapped = mapException(e, stack);
+        debugPrint('Failed to transmit message over WS: $mapped');
+      }
     }
   }
 
@@ -629,7 +651,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
           }
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to present milestone congratulations dialog: $e');
+    }
   }
 
   @override
