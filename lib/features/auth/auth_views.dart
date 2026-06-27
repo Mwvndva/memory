@@ -13,6 +13,7 @@ import '../../core/api_client.dart';
 import '../../core/countries.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/circles_repository.dart';
+import '../circle/circle_state_manager.dart';
 import '../../core/error_handler.dart';
 
 String _formatImageUrl(String url) {
@@ -1322,7 +1323,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                 if (isMock) {
                   _toggleAdded(userKey);
                 } else {
-                  final Map<String, dynamic> result = await ref.read(circlesProvider.notifier).addMember(userKey);
+                  final Map<String, dynamic> result = await ref.read(circleStateManagerProvider.notifier).inviteMember(userKey);
                   final ok = result['ok'] == true;
                   final msg = result['message']?.toString() ?? '';
                   if (ok) {

@@ -16,6 +16,7 @@ import '../../repositories/auth_repository.dart';
 import '../../repositories/chat_repository.dart';
 import '../../repositories/circles_repository.dart';
 import '../../media/unified_media_widgets.dart';
+import 'circle_state_manager.dart';
 
 class CircleChatListView extends ConsumerWidget {
   const CircleChatListView({super.key});
@@ -34,8 +35,9 @@ class CircleChatListView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dark = ref.watch(isDarkProvider);
     final user = ref.watch(authProvider);
-    final circleMembers = ref.watch(circlesProvider);
-    final pendingRequests = ref.watch(pendingRequestsProvider);
+    final circleState = ref.watch(circleStateManagerProvider);
+    final circleMembers = circleState.circles;
+    final pendingRequests = circleState.pendingRequests;
     final topInset = MediaQuery.paddingOf(context).top;
 
     return Scaffold(
@@ -230,7 +232,7 @@ class CircleChatListView extends ConsumerWidget {
               GestureDetector(
                 onTap: () async {
                   try {
-                    await ref.read(pendingRequestsProvider.notifier).acceptRequest(req.id);
+                    await ref.read(circleStateManagerProvider.notifier).acceptRequest(req.id);
                   } catch (e) {
                     if (context.mounted) {
                       showAppError(context, e.toString());
@@ -257,7 +259,7 @@ class CircleChatListView extends ConsumerWidget {
               GestureDetector(
                 onTap: () async {
                   try {
-                    await ref.read(pendingRequestsProvider.notifier).declineRequest(req.id);
+                    await ref.read(circleStateManagerProvider.notifier).declineRequest(req.id);
                   } catch (e) {
                     if (context.mounted) {
                       showAppError(context, e.toString());
@@ -452,7 +454,7 @@ class CircleChatListView extends ConsumerWidget {
               );
               if (confirm == true) {
                 try {
-                  await ref.read(circlesProvider.notifier).removeMember(member.id);
+                  await ref.read(circleStateManagerProvider.notifier).removeMember(member.id);
                 } catch (e) {
                   if (context.mounted) {
                     showAppError(context, e.toString());
