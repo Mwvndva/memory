@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'api_config.dart';
 import 'secure_storage.dart';
 import '../repositories/auth_repository.dart';
+import 'structured_logger.dart';
 
 final apiClientProvider = Provider<Dio>((ref) {
   final dio = Dio(
@@ -52,8 +53,8 @@ final apiClientProvider = Provider<Dio>((ref) {
               }
             }
           }
-        } catch (_) {
-          // Fallback if secure storage is not ready or throws in tests
+        } catch (e) {
+          StructuredLogger.logWarning('Fallback if secure storage is not ready or throws in tests', category: 'APIClient', error: e);
         }
         return handler.next(options);
       },
@@ -89,8 +90,8 @@ final apiClientProvider = Provider<Dio>((ref) {
                 if (status == 400 || status == 401 || status == 403) {
                   shouldLogout = true;
                 }
-              } catch (_) {
-                // Other exceptions
+              } catch (e, st) {
+                StructuredLogger.logError('Other exception during token refresh', category: 'APIClient', error: e, stackTrace: st);
               }
               return null;
             }();

@@ -61,6 +61,22 @@ class ServerException extends AppException {
   ServerException(super.message, [super.originalError, super.stackTrace]);
 }
 
+class CacheException extends AppException {
+  CacheException(super.message, [super.originalError, super.stackTrace]);
+}
+
+class RealtimeException extends AppException {
+  RealtimeException(super.message, [super.originalError, super.stackTrace]);
+}
+
+class MediaException extends AppException {
+  MediaException(super.message, [super.originalError, super.stackTrace]);
+}
+
+class UploadException extends AppException {
+  UploadException(super.message, [super.originalError, super.stackTrace]);
+}
+
 class UnknownException extends AppException {
   UnknownException(super.message, [super.originalError, super.stackTrace]);
 }

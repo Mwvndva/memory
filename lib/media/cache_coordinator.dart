@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import '../core/structured_logger.dart';
 
 class CacheCoordinator {
   CacheCoordinator(this._ref);
@@ -12,10 +13,12 @@ class CacheCoordinator {
   Future<void> write(String key, dynamic value) async {
     _memoryCache[key] = value;
     try {
-      final box = Hive.box('feed_cache');
-      await box.put(key, jsonEncode(value));
-    } catch (e) {
-      debugPrint('Failed to save to disk cache: $e');
+      if (Hive.isBoxOpen('feed_cache')) {
+        final box = Hive.box('feed_cache');
+        await box.put(key, jsonEncode(value));
+      }
+    } catch (e, st) {
+      StructuredLogger.logError('Failed to save to disk cache', category: 'CacheCoordinator', error: e, stackTrace: st);
     }
   }
 
@@ -24,31 +27,43 @@ class CacheCoordinator {
       return _memoryCache[key];
     }
     try {
-      final box = Hive.box('feed_cache');
-      final cachedString = box.get(key) as String?;
-      if (cachedString != null) {
-        final decoded = jsonDecode(cachedString);
-        _memoryCache[key] = decoded;
-        return decoded;
+      if (Hive.isBoxOpen('feed_cache')) {
+        final box = Hive.box('feed_cache');
+        final cachedString = box.get(key) as String?;
+        if (cachedString != null) {
+          final decoded = jsonDecode(cachedString);
+          _memoryCache[key] = decoded;
+          return decoded;
+        }
       }
-    } catch (_) {}
+    } catch (e, st) {
+      StructuredLogger.logError('Failed to read from disk cache', category: 'CacheCoordinator', error: e, stackTrace: st);
+    }
     return null;
   }
 
   void invalidate(String key) {
     _memoryCache.remove(key);
     try {
-      final box = Hive.box('feed_cache');
-      box.delete(key);
-    } catch (_) {}
+      if (Hive.isBoxOpen('feed_cache')) {
+        final box = Hive.box('feed_cache');
+        box.delete(key);
+      }
+    } catch (e, st) {
+      StructuredLogger.logError('Failed to invalidate disk cache key $key', category: 'CacheCoordinator', error: e, stackTrace: st);
+    }
   }
 
   void clearAll() {
     _memoryCache.clear();
     try {
-      final box = Hive.box('feed_cache');
-      box.clear();
-    } catch (_) {}
+      if (Hive.isBoxOpen('feed_cache')) {
+        final box = Hive.box('feed_cache');
+        box.clear();
+      }
+    } catch (e, st) {
+      StructuredLogger.logError('Failed to clear disk cache', category: 'CacheCoordinator', error: e, stackTrace: st);
+    }
   }
 }
 

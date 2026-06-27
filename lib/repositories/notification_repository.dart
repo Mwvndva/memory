@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_client.dart';
 import '../../models/notification_item.dart';
+import '../../core/structured_logger.dart';
 
 class NotificationRepository {
   NotificationRepository(this._ref);
@@ -25,7 +26,8 @@ class NotificationRepository {
         'nextCursor': dataMap['nextCursor'] as String?,
         'unreadCount': dataMap['unreadCount'] as int? ?? 0,
       };
-    } catch (_) {
+    } catch (e, st) {
+      StructuredLogger.logError('Failed to fetch notifications', category: 'NotificationRepository', error: e, stackTrace: st);
       // Return empty defaults for mock/fallback robustness
       return {
         'notifications': <NotificationItem>[],
@@ -39,14 +41,18 @@ class NotificationRepository {
     try {
       final dio = _ref.read(apiClientProvider);
       await dio.post('/notifications/$notificationId/read');
-    } catch (_) {}
+    } catch (e, st) {
+      StructuredLogger.logError('Failed to mark notification $notificationId as read', category: 'NotificationRepository', error: e, stackTrace: st);
+    }
   }
 
   Future<void> markAllAsRead() async {
     try {
       final dio = _ref.read(apiClientProvider);
       await dio.post('/notifications/read-all');
-    } catch (_) {}
+    } catch (e, st) {
+      StructuredLogger.logError('Failed to mark all notifications as read', category: 'NotificationRepository', error: e, stackTrace: st);
+    }
   }
 }
 
