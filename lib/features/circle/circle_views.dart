@@ -36,9 +36,8 @@ class CircleChatListView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dark = ref.watch(isDarkProvider);
     final user = ref.watch(authProvider);
-    final circleState = ref.watch(circleStateManagerProvider);
-    final circleMembers = circleState.circles;
-    final pendingRequests = circleState.pendingRequests;
+    final circleMembers = ref.watch(circleStateManagerProvider.select((s) => s.circles));
+    final pendingRequests = ref.watch(circleStateManagerProvider.select((s) => s.pendingRequests));
     final topInset = MediaQuery.paddingOf(context).top;
 
     return Scaffold(
@@ -1536,7 +1535,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final user = ref.watch(profileStateManagerProvider).user;
+    final user = ref.watch(profileStateManagerProvider.select((s) => s.user));
     final circleMembers = ref.watch(circlesProvider);
 
     ref.listen<UserProfile>(authProvider, (previous, next) {
