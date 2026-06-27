@@ -234,3 +234,197 @@ final archivedMemoriesProvider = Provider<List<MemoryItem>>((ref) {
   final list = ref.watch(memoryProvider);
   return list.where((m) => m.ageHours >= 24).toList();
 });
+
+enum UploadStatus {
+  idle,
+  preparing,
+  validating,
+  uploading,
+  waitingForResponse,
+  succeeded,
+  failed,
+  cancelled,
+}
+
+class UploadState {
+  final UploadStatus status;
+  final double progress;
+  final String? errorMessage;
+
+  UploadState({
+    required this.status,
+    this.progress = 0.0,
+    this.errorMessage,
+  });
+
+  factory UploadState.idle() => UploadState(status: UploadStatus.idle);
+
+  UploadState copyWith({
+    UploadStatus? status,
+    double? progress,
+    String? errorMessage,
+  }) {
+    return UploadState(
+      status: status ?? this.status,
+      progress: progress ?? this.progress,
+      errorMessage: errorMessage ?? this.errorMessage,
+    );
+  }
+}
+
+class UploadNotifier extends StateNotifier<UploadState> {
+  UploadNotifier(this._ref) : super(UploadState.idle());
+
+  final Ref _ref;
+  CancelToken? _cancelToken;
+
+  void cancelUpload() {
+    if (state.status == UploadStatus.uploading || 
+        state.status == UploadStatus.preparing || 
+        state.status == UploadStatus.validating) {
+      _cancelToken?.cancel('User cancelled the upload');
+      state = state.copyWith(status: UploadStatus.cancelled);
+    }
+  }
+
+  void reset() {
+    state = UploadState.idle();
+  }
+
+  Future<void> uploadMemory(
+    String caption,
+    List<Color> colors, {
+    String? videoPath,
+  }) async {
+    if (state.status == UploadStatus.preparing ||
+        state.status == UploadStatus.validating ||
+        state.status == UploadStatus.uploading ||
+        state.status == UploadStatus.waitingForResponse) {
+      return;
+    }
+
+    _cancelToken = CancelToken();
+
+    state = state.copyWith(status: UploadStatus.preparing, progress: 0.0, errorMessage: null);
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    state = state.copyWith(status: UploadStatus.validating);
+    try {
+      if (videoPath != null && videoPath.isNotEmpty) {
+        final file = File(videoPath);
+        if (!await file.exists()) {
+          throw ValidationException('Recorded video file does not exist on disk.', null, StackTrace.current);
+        }
+        final size = await file.length();
+        const maxSizeBytes = 50 * 1024 * 1024;
+        if (size > maxSizeBytes) {
+          throw ValidationException('Video file size exceeds the 50MB limit.', null, StackTrace.current);
+        }
+      }
+    } catch (e) {
+      state = state.copyWith(status: UploadStatus.failed, errorMessage: e.toString());
+      return;
+    }
+
+    state = state.copyWith(status: UploadStatus.uploading);
+
+    if (kUseMockBackend) {
+      try {
+        for (int i = 1; i <= 10; i++) {
+          await Future.delayed(const Duration(milliseconds: 150));
+          if (_cancelToken?.isCancelled == true) return;
+          state = state.copyWith(progress: i / 10);
+        }
+        state = state.copyWith(status: UploadStatus.waitingForResponse);
+        await Future.delayed(const Duration(milliseconds: 200));
+
+        final user = _ref.read(authProvider);
+        final name = user.firstName.isNotEmpty ? user.firstName : 'You';
+        final initial = name.isNotEmpty ? name[0] : 'Y';
+        final newItem = MemoryItem(
+          person: name,
+          username: user.username,
+          initial: initial,
+          time: 'Just now',
+          caption: caption,
+          avatar: kYellow,
+          colors: colors,
+          ageHours: 0.01,
+          videoPath: videoPath,
+          avatarUrl: user.avatarUrl,
+        );
+
+        _ref.read(memoryProvider.notifier).state = [newItem, ..._ref.read(memoryProvider.notifier).state];
+        final feedItems = _ref.read(memoryProvider.notifier).state.where((m) => m.ageHours < 24).toList();
+        WidgetManager.syncLatestMemory(feedItems);
+
+        final currentStreak = _ref.read(authProvider).streakDays;
+        _ref.read(sessionProvider.notifier).updateProfile(
+          _ref.read(authProvider).copyWith(streakDays: currentStreak + 1),
+        );
+
+        state = state.copyWith(status: UploadStatus.succeeded);
+      } catch (e) {
+        state = state.copyWith(status: UploadStatus.failed, errorMessage: e.toString());
+      }
+    } else {
+      try {
+        final dio = _ref.read(apiClientProvider);
+        final List<String> colorsHex = colors.map((c) {
+          return '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
+        }).toList();
+
+        final formData = FormData.fromMap({
+          'caption': caption,
+          'colors': colorsHex,
+          if (videoPath != null && videoPath.isNotEmpty)
+            'video': await MultipartFile.fromFile(videoPath, filename: 'captured_memory.mp4'),
+        });
+
+        await dio.post(
+          '/memories/upload',
+          data: formData,
+          cancelToken: _cancelToken,
+          onSendProgress: (sent, total) {
+            if (total > 0) {
+              final progress = sent / total;
+              if (progress >= 1.0) {
+                state = state.copyWith(
+                  status: UploadStatus.waitingForResponse,
+                  progress: 1.0,
+                );
+              } else {
+                if (progress - state.progress > 0.02) {
+                  state = state.copyWith(
+                    status: UploadStatus.uploading,
+                    progress: progress,
+                  );
+                }
+              }
+            }
+          },
+        );
+
+        state = state.copyWith(status: UploadStatus.waitingForResponse);
+
+        await _ref.read(sessionProvider.notifier).fetchProfile();
+        await _ref.read(memoryProvider.notifier).fetchFeed();
+
+        state = state.copyWith(status: UploadStatus.succeeded);
+      } on DioException catch (e, stack) {
+        if (e.type == DioExceptionType.cancel) {
+          return;
+        }
+        final mapped = mapException(e, stack);
+        state = state.copyWith(status: UploadStatus.failed, errorMessage: mapped.message);
+      } catch (e, stack) {
+        final mapped = mapException(e, stack);
+        state = state.copyWith(status: UploadStatus.failed, errorMessage: mapped.message);
+      }
+    }
+  }
+}
+
+final uploadProvider = StateNotifierProvider<UploadNotifier, UploadState>((ref) {
+  return UploadNotifier(ref);
+});

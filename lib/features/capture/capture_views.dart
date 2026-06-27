@@ -48,7 +48,6 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   int _selectedCameraIndex = 0;
   bool _isInitializing = false;
   int _lastInitMs = 0;
-  bool _uploading = false;
 
   @override
   void initState() {
@@ -262,77 +261,12 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   }
 
   Future<void> _sendToCircle() async {
-    if (_uploading) return;
     final captionText = _captureCaption.text.trim();
-
-    // Pre-validate video size client-side (max 50MB)
-    if (_recordedVideoPath != null && _recordedVideoPath!.isNotEmpty) {
-      final file = File(_recordedVideoPath!);
-      if (file.existsSync()) {
-        final size = file.lengthSync();
-        const maxSizeBytes = 50 * 1024 * 1024; // 50MB
-        if (size > maxSizeBytes) {
-          showAppError(context, 'Video exceeds 50MB limit. Please record a shorter memory.');
-          return;
-        }
-      }
-    }
-
-    setState(() => _uploading = true);
-
-    try {
-      // Capture dynamic memory
-      await ref.read(memoryProvider.notifier).addMemory(
-            captionText,
-            const [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Beautiful violet/purple gradient for dynamic captures
-            videoPath: _recordedVideoPath,
-          );
-
-      // Stop and dispose preview player
-      _videoPlayerController?.pause();
-      _videoPlayerController?.dispose();
-      _videoPlayerController = null;
-
-      // Delete temporary file on disk if it exists
-      if (_recordedVideoPath != null) {
-        try {
-          final file = File(_recordedVideoPath!);
-          if (file.existsSync()) {
-            file.deleteSync();
-            debugPrint('Local media file deleted after confirmed upload success: $_recordedVideoPath');
-          }
-        } catch (e) {
-          debugPrint('Failed to delete temporary video file: $e');
-        }
-      }
-
-      // Reset states
-      setState(() {
-        _hasRecording = false;
-        _isRecording = false;
-        _recordedVideoPath = null;
-        _captureCaptionOpen = false;
-        _captureCaption.clear();
-        _captureCaptionOffset = const Offset(78, 250);
-        _captureCaptionSize = 24;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Memory posted successfully to your Circle!')),
-        );
-        // Navigate back to capture
-        context.go('/capture');
-      }
-    } catch (e) {
-      if (mounted) {
-        showAppError(context, 'Failed to post memory: ${e.toString()}');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _uploading = false);
-      }
-    }
+    ref.read(uploadProvider.notifier).uploadMemory(
+      captionText,
+      const [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Beautiful violet/purple gradient for dynamic captures
+      videoPath: _recordedVideoPath,
+    );
   }
 
   void _showProfileSheet(BuildContext context) {
@@ -347,6 +281,48 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<UploadState>(uploadProvider, (previous, next) async {
+      if (next.status == UploadStatus.succeeded) {
+        // Success cleanup
+        if (_recordedVideoPath != null) {
+          try {
+            final file = File(_recordedVideoPath!);
+            if (file.existsSync()) {
+              file.deleteSync();
+              debugPrint('Local media file deleted after confirmed upload success: $_recordedVideoPath');
+            }
+          } catch (e) {
+            debugPrint('Failed to delete temporary video file: $e');
+          }
+        }
+
+        _videoPlayerController?.pause();
+        _videoPlayerController?.dispose();
+        _videoPlayerController = null;
+
+        setState(() {
+          _hasRecording = false;
+          _isRecording = false;
+          _recordedVideoPath = null;
+          _captureCaptionOpen = false;
+          _captureCaption.clear();
+          _captureCaptionOffset = const Offset(78, 250);
+          _captureCaptionSize = 24;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Memory posted successfully to your Circle!')),
+        );
+
+        ref.read(uploadProvider.notifier).reset();
+        context.go('/capture');
+      } else if (next.status == UploadStatus.failed) {
+        showAppError(context, 'Failed to post memory: ${next.errorMessage}');
+      } else if (next.status == UploadStatus.cancelled) {
+        showAppMessage(context, 'Upload cancelled.');
+      }
+    });
+
     final dark = ref.watch(isDarkProvider);
     final bottomPad = MediaQuery.paddingOf(context).bottom;
     final topPad = MediaQuery.paddingOf(context).top;
@@ -581,8 +557,16 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   }
 
   Widget _sendToCircleButton(bool dark) {
+    final uploadState = ref.watch(uploadProvider);
+    final isUploading = uploadState.status == UploadStatus.preparing ||
+                        uploadState.status == UploadStatus.validating ||
+                        uploadState.status == UploadStatus.uploading ||
+                        uploadState.status == UploadStatus.waitingForResponse;
+
     return GestureDetector(
-      onTap: _uploading ? null : _sendToCircle,
+      onTap: isUploading
+          ? () => ref.read(uploadProvider.notifier).cancelUpload()
+          : _sendToCircle,
       child: Container(
         width: 76,
         height: 76,
@@ -598,14 +582,21 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
             ),
           ],
         ),
-        child: _uploading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: kBlack,
-                  strokeWidth: 3,
-                ),
+        child: isUploading
+            ? Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    value: uploadState.status == UploadStatus.uploading ? uploadState.progress : null,
+                    color: kBlack,
+                    strokeWidth: 3,
+                  ),
+                  const Icon(
+                    Icons.close_rounded,
+                    color: kBlack,
+                    size: 20,
+                  ),
+                ],
               )
             : const Icon(
                 Icons.send_rounded,
