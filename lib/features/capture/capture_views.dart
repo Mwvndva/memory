@@ -293,6 +293,19 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
       _videoPlayerController?.dispose();
       _videoPlayerController = null;
 
+      // Delete temporary file on disk if it exists
+      if (_recordedVideoPath != null) {
+        try {
+          final file = File(_recordedVideoPath!);
+          if (file.existsSync()) {
+            file.deleteSync();
+            debugPrint('Local media file deleted after confirmed upload success: $_recordedVideoPath');
+          }
+        } catch (e) {
+          debugPrint('Failed to delete temporary video file: $e');
+        }
+      }
+
       // Reset states
       setState(() {
         _hasRecording = false;
