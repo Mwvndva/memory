@@ -17,6 +17,7 @@ import '../../repositories/chat_repository.dart';
 import '../../repositories/circles_repository.dart';
 import '../../media/unified_media_widgets.dart';
 import 'circle_state_manager.dart';
+import 'profile_state_manager.dart';
 
 class CircleChatListView extends ConsumerWidget {
   const CircleChatListView({super.key});
@@ -1199,7 +1200,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(sessionProvider.notifier).fetchProfile();
+      ref.read(profileStateManagerProvider.notifier).fetchProfile();
     });
   }
 
@@ -1535,7 +1536,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final user = ref.watch(authProvider);
+    final user = ref.watch(profileStateManagerProvider).user;
     final circleMembers = ref.watch(circlesProvider);
 
     ref.listen<UserProfile>(authProvider, (previous, next) {
@@ -1688,7 +1689,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             );
                             if (file == null) return;
                             final bytes = await file.readAsBytes();
-                            await ref.read(sessionProvider.notifier).updateAvatar(bytes);
+                            await ref.read(profileStateManagerProvider.notifier).updateAvatar(bytes);
                           },
                           child: Stack(
                             children: [
