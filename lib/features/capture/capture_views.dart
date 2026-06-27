@@ -262,7 +262,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   Future<void> _sendToCircle() async {
     final captionText = _captureCaption.text.trim();
-    ref.read(uploadProvider.notifier).uploadMemory(
+    ref.read(uploadProvider.notifier).startUpload(
       captionText,
       const [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Beautiful violet/purple gradient for dynamic captures
       videoPath: _recordedVideoPath,
@@ -277,6 +277,21 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
       backgroundColor: Colors.transparent,
       builder: (_) => const ProfilePanel(),
     );
+  }
+
+  String _getUploadStageMessage(UploadStatus status) {
+    switch (status) {
+      case UploadStatus.preparing:
+        return 'Preparing your memory...';
+      case UploadStatus.validating:
+        return 'Checking your upload...';
+      case UploadStatus.uploading:
+        return 'Uploading your memory...';
+      case UploadStatus.waitingForResponse:
+        return 'Finalizing...';
+      default:
+        return 'Uploading...';
+    }
   }
 
   @override
@@ -343,16 +358,74 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
     final dark = ref.watch(isDarkProvider);
     final bottomPad = MediaQuery.paddingOf(context).bottom;
-    final topPad = MediaQuery.paddingOf(context).top;
     final chatState = ref.watch(chatProvider);
     final unreadCount = chatState.unreadNotifications;
+
+    final uploadState = ref.watch(uploadProvider);
+    final isUploading = uploadState.status == UploadStatus.preparing ||
+                        uploadState.status == UploadStatus.validating ||
+                        uploadState.status == UploadStatus.uploading ||
+                        uploadState.status == UploadStatus.waitingForResponse;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       onVerticalDragEnd: (details) {
         if ((details.primaryVelocity ?? 0) < -300) context.go('/feed');
       },
-      child: Scaffold(
+      child: PopScope(
+        canPop: !isUploading,
+        onPopInvoked: (didPop) async {
+          if (didPop) return;
+          final leave = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: dark ? kBlack : Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                'Upload in Progress',
+                style: TextStyle(
+                  color: dark ? kCream : kCharcoal,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              content: Text(
+                'Your memory is still uploading. Leaving will cancel the upload. Leave anyway?',
+                style: TextStyle(
+                  color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                  fontSize: 13,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    'Continue Upload',
+                    style: TextStyle(
+                      color: dark ? kYellow : kBlack,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    ref.read(uploadProvider.notifier).cancelUpload();
+                    Navigator.of(context).pop(true);
+                  },
+                  child: Text(
+                    'Leave Anyway',
+                    style: TextStyle(
+                      color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+          if (leave == true && context.mounted) {
+            context.go('/feed');
+          }
+        },
+        child: Scaffold(
         backgroundColor: Colors.black,
         resizeToAvoidBottomInset: false,
         body: Stack(
@@ -485,6 +558,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -643,6 +717,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   Widget _capturePreview() {
     final dark = ref.watch(isDarkProvider);
+    final uploadState = ref.watch(uploadProvider);
+    final isUploading = uploadState.status == UploadStatus.preparing ||
+                        uploadState.status == UploadStatus.validating ||
+                        uploadState.status == UploadStatus.uploading ||
+                        uploadState.status == UploadStatus.waitingForResponse;
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.maxWidth;
@@ -788,6 +867,71 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
                   // 4. Caption editor overlay
                   if (_hasRecording && _captureCaptionOpen) _captureCaptionEditor(),
+
+                  // 5. Upload progress overlay
+                  if (isUploading)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black54,
+                        child: Center(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: dark ? kBlack : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _getUploadStageMessage(uploadState.status),
+                                  style: TextStyle(
+                                    color: dark ? kCream : kCharcoal,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                if (uploadState.status == UploadStatus.uploading) ...[
+                                  LinearProgressIndicator(
+                                    value: uploadState.progress,
+                                    color: kYellow,
+                                    backgroundColor: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    '${(uploadState.progress * 100).toInt()}%',
+                                    style: TextStyle(
+                                      color: dark ? kYellow : kBlack,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ] else ...[
+                                  LinearProgressIndicator(
+                                    color: kYellow,
+                                    backgroundColor: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

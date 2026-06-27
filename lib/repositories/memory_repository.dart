@@ -152,7 +152,13 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
     }
   }
 
-  Future<void> addMemory(String caption, List<Color> colors, {String? videoPath}) async {
+  Future<void> addMemory({
+    required String caption,
+    required List<Color> colors,
+    required String? videoPath,
+    CancelToken? cancelToken,
+    void Function(int, int)? onSendProgress,
+  }) async {
     final user = _ref.read(authProvider);
     final name = user.firstName.isNotEmpty ? user.firstName : 'You';
     final initial = name.isNotEmpty ? name[0] : 'Y';
@@ -168,53 +174,36 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
         colors: colors,
         ageHours: 0.01,
         videoPath: videoPath,
+        avatarUrl: user.avatarUrl,
       );
 
       state = [newItem, ...state];
       final feedItems = state.where((m) => m.ageHours < 24).toList();
       WidgetManager.syncLatestMemory(feedItems);
-      // Increment local streakDays to easily test milestones in mock mode
+      
       final currentStreak = _ref.read(authProvider).streakDays;
       _ref.read(sessionProvider.notifier).updateProfile(
         _ref.read(authProvider).copyWith(streakDays: currentStreak + 1),
       );
     } else {
-      try {
-        // Pre-validate video size client-side (max 50MB)
-        if (videoPath != null && videoPath.isNotEmpty) {
-          final file = File(videoPath);
-          if (await file.exists()) {
-            final size = await file.length();
-            const maxSizeBytes = 50 * 1024 * 1024; // 50MB
-            if (size > maxSizeBytes) {
-              throw ValidationException('Video file size exceeds the 50MB limit.', null, StackTrace.current);
-            }
-          }
-        }
+      final dio = _ref.read(apiClientProvider);
+      final List<String> colorsHex = colors.map((c) {
+        return '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
+      }).toList();
 
-        final dio = _ref.read(apiClientProvider);
-        final List<String> colorsHex = colors.map((c) {
-          return '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
-        }).toList();
+      final formData = FormData.fromMap({
+        'caption': caption,
+        'colors': colorsHex,
+        if (videoPath != null && videoPath.isNotEmpty)
+          'video': await MultipartFile.fromFile(videoPath, filename: 'captured_memory.mp4'),
+      });
 
-        final formData = FormData.fromMap({
-          'caption': caption,
-          'colors': colorsHex,
-          if (videoPath != null && videoPath.isNotEmpty)
-            'video': await MultipartFile.fromFile(videoPath, filename: 'captured_memory.mp4'),
-        });
-
-        await dio.post('/memories/upload', data: formData);
-        
-        // Fetch updated profile stats to update user streakDays
-        await _ref.read(sessionProvider.notifier).fetchProfile();
-
-        // Re-fetch clean list from backend to keep local UI exactly in sync
-        await fetchFeed();
-      } catch (e, stack) {
-        final mapped = mapException(e, stack);
-        throw mapped;
-      }
+      await dio.post(
+        '/memories/upload',
+        data: formData,
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+      );
     }
   }
 }
@@ -276,8 +265,8 @@ class UploadState {
   }
 }
 
-class UploadNotifier extends StateNotifier<UploadState> {
-  UploadNotifier(this._ref) : super(UploadState.idle());
+class UploadCoordinator extends StateNotifier<UploadState> {
+  UploadCoordinator(this._ref) : super(UploadState.idle());
 
   final Ref _ref;
   CancelToken? _cancelToken;
@@ -295,7 +284,7 @@ class UploadNotifier extends StateNotifier<UploadState> {
     state = UploadState.idle();
   }
 
-  Future<void> uploadMemory(
+  Future<void> startUpload(
     String caption,
     List<Color> colors, {
     String? videoPath,
@@ -309,7 +298,7 @@ class UploadNotifier extends StateNotifier<UploadState> {
 
     _cancelToken = CancelToken();
 
-    state = state.copyWith(status: UploadStatus.preparing, progress: 0.0, errorMessage: null);
+    state = state.copyWith(status: UploadStatus.preparing, progress: 0.0, errorMessage: null, isRetryable: false);
     await Future.delayed(const Duration(milliseconds: 100));
 
     state = state.copyWith(status: UploadStatus.validating);
@@ -326,136 +315,87 @@ class UploadNotifier extends StateNotifier<UploadState> {
         }
       }
     } catch (e) {
-      state = state.copyWith(status: UploadStatus.failed, errorMessage: e.toString());
+      state = state.copyWith(status: UploadStatus.failed, errorMessage: e.toString(), isRetryable: false);
       return;
     }
 
     state = state.copyWith(status: UploadStatus.uploading);
 
-    if (kUseMockBackend) {
-      try {
-        for (int i = 1; i <= 10; i++) {
-          await Future.delayed(const Duration(milliseconds: 150));
-          if (_cancelToken?.isCancelled == true) return;
-          state = state.copyWith(progress: i / 10);
-        }
-        state = state.copyWith(status: UploadStatus.waitingForResponse);
-        await Future.delayed(const Duration(milliseconds: 200));
-
-        final user = _ref.read(authProvider);
-        final name = user.firstName.isNotEmpty ? user.firstName : 'You';
-        final initial = name.isNotEmpty ? name[0] : 'Y';
-        final newItem = MemoryItem(
-          person: name,
-          username: user.username,
-          initial: initial,
-          time: 'Just now',
-          caption: caption,
-          avatar: kYellow,
-          colors: colors,
-          ageHours: 0.01,
-          videoPath: videoPath,
-          avatarUrl: user.avatarUrl,
-        );
-
-        _ref.read(memoryProvider.notifier).state = [newItem, ..._ref.read(memoryProvider.notifier).state];
-        final feedItems = _ref.read(memoryProvider.notifier).state.where((m) => m.ageHours < 24).toList();
-        WidgetManager.syncLatestMemory(feedItems);
-
-        final currentStreak = _ref.read(authProvider).streakDays;
-        _ref.read(sessionProvider.notifier).updateProfile(
-          _ref.read(authProvider).copyWith(streakDays: currentStreak + 1),
-        );
-
-        state = state.copyWith(status: UploadStatus.succeeded);
-      } catch (e) {
-        state = state.copyWith(status: UploadStatus.failed, errorMessage: e.toString());
-      }
-    } else {
-      try {
-        final dio = _ref.read(apiClientProvider);
-        final List<String> colorsHex = colors.map((c) {
-          return '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
-        }).toList();
-
-        final formData = FormData.fromMap({
-          'caption': caption,
-          'colors': colorsHex,
-          if (videoPath != null && videoPath.isNotEmpty)
-            'video': await MultipartFile.fromFile(videoPath, filename: 'captured_memory.mp4'),
-        });
-
-        await dio.post(
-          '/memories/upload',
-          data: formData,
-          cancelToken: _cancelToken,
-          onSendProgress: (sent, total) {
-            if (total > 0) {
-              final progress = sent / total;
-              if (progress >= 1.0) {
+    try {
+      final repository = _ref.read(memoryProvider.notifier);
+      await repository.addMemory(
+        caption: caption,
+        colors: colors,
+        videoPath: videoPath,
+        cancelToken: _cancelToken,
+        onSendProgress: (sent, total) {
+          if (total > 0) {
+            final progress = sent / total;
+            if (progress >= 1.0) {
+              state = state.copyWith(
+                status: UploadStatus.waitingForResponse,
+                progress: 1.0,
+              );
+            } else {
+              if (progress - state.progress > 0.02) {
                 state = state.copyWith(
-                  status: UploadStatus.waitingForResponse,
-                  progress: 1.0,
+                  status: UploadStatus.uploading,
+                  progress: progress,
                 );
-              } else {
-                if (progress - state.progress > 0.02) {
-                  state = state.copyWith(
-                    status: UploadStatus.uploading,
-                    progress: progress,
-                  );
-                }
               }
             }
-          },
-        );
+          }
+        },
+      );
 
-        state = state.copyWith(status: UploadStatus.waitingForResponse);
+      state = state.copyWith(status: UploadStatus.waitingForResponse);
 
+      if (!kUseMockBackend) {
         await _ref.read(sessionProvider.notifier).fetchProfile();
-        await _ref.read(memoryProvider.notifier).fetchFeed();
+        await repository.fetchFeed();
+      }
 
-        state = state.copyWith(status: UploadStatus.succeeded);
-      } on DioException catch (e, stack) {
-        if (e.type == DioExceptionType.cancel) {
-          return;
-        }
-        final mapped = mapException(e, stack);
-        bool retryable = false;
-        if (e.type == DioExceptionType.connectionTimeout ||
-            e.type == DioExceptionType.sendTimeout ||
-            e.type == DioExceptionType.receiveTimeout ||
-            e.type == DioExceptionType.connectionError ||
-            e.error is SocketException) {
-          retryable = true;
-        } else {
-          final statusCode = e.response?.statusCode;
-          if (statusCode != null) {
-            if (statusCode == 408 || statusCode == 429 || statusCode == 502 || statusCode == 503 || statusCode == 504) {
-              retryable = true;
-            }
+      state = state.copyWith(status: UploadStatus.succeeded);
+    } on DioException catch (e, stack) {
+      if (e.type == DioExceptionType.cancel) {
+        return;
+      }
+      final mapped = mapException(e, stack);
+      bool retryable = false;
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError ||
+          e.error is SocketException) {
+        retryable = true;
+      } else {
+        final statusCode = e.response?.statusCode;
+        if (statusCode != null) {
+          if (statusCode == 408 || statusCode == 429 || statusCode == 502 || statusCode == 503 || statusCode == 504) {
+            retryable = true;
           }
         }
-        state = state.copyWith(
-          status: UploadStatus.failed,
-          errorMessage: mapped.message,
-          isRetryable: retryable,
-        );
-      } catch (e, stack) {
-        final mapped = mapException(e, stack);
-        bool retryable = false;
-        if (e is SocketException) {
-          retryable = true;
-        }
-        state = state.copyWith(
-          status: UploadStatus.failed,
-          errorMessage: mapped.message,
-          isRetryable: retryable,
-        );
       }
+      state = state.copyWith(
+        status: UploadStatus.failed,
+        errorMessage: mapped.message,
+        isRetryable: retryable,
+      );
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      bool retryable = false;
+      if (e is SocketException) {
+        retryable = true;
+      }
+      state = state.copyWith(
+        status: UploadStatus.failed,
+        errorMessage: mapped.message,
+        isRetryable: retryable,
+      );
     }
   }
 }
 
-final uploadProvider = StateNotifierProvider<UploadNotifier, UploadState>((ref) {
-  return UploadNotifier(ref);
+final uploadProvider = StateNotifierProvider<UploadCoordinator, UploadState>((ref) {
+  return UploadCoordinator(ref);
 });
