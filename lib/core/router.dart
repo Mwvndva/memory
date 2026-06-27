@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/auth_views.dart';
 import '../features/feed/feed_views.dart';
+import '../features/feed/memory_detail_screen.dart';
 import '../features/capture/capture_views.dart';
 import '../features/circle/circle_views.dart';
 import '../features/dev/dev_diagnostics.dart';
@@ -126,6 +127,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final name = state.pathParameters['name'] ?? 'Contact';
           return ChatInboxView(contactName: name);
+        },
+      ),
+      GoRoute(
+        path: '/memory/:id',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return MemoryDetailScreen(memoryId: id);
         },
       ),
     ],

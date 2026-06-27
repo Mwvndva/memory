@@ -512,9 +512,21 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   void initState() {
     super.initState();
     _loadHistory();
+    _messageController.addListener(() {
+      if (mounted) {
+        final text = _messageController.text.trim();
+        ref.read(chatProvider.notifier).sendTypingIndicator(widget.contactName, text.isNotEmpty);
+      }
+    });
+    _scrollController.addListener(() {
+      if (_scrollController.hasClients && _scrollController.position.pixels <= 50) {
+        ref.read(chatProvider.notifier).loadConversation(widget.contactName, loadMore: true);
+      }
+    });
     Future.microtask(() {
       if (mounted) {
         ref.read(chatProvider.notifier).enterConversation(widget.contactName);
+        ref.read(chatProvider.notifier).sendReadReceipt(widget.contactName);
       }
     });
   }
@@ -701,16 +713,42 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         ),
                       )
                     else
-                      ListView.builder(
-                        controller: _scrollController,
-                        itemCount: messages.length,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        physics: const BouncingScrollPhysics(),
-                        itemBuilder: (context, i) {
-                          final msg = messages[i];
-                          return _inboxBubble(msg, contactMember, dark);
-                        },
-                      ),
+                      Builder(builder: (context) {
+                        final isTyping = chatState.typingIndicators[widget.contactName] ?? false;
+                        return ListView.builder(
+                          controller: _scrollController,
+                          itemCount: messages.length + (isTyping ? 1 : 0),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          physics: const BouncingScrollPhysics(),
+                          itemBuilder: (context, i) {
+                            if (i == messages.length) {
+                              return Align(
+                                alignment: Alignment.centerLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const SizedBox(width: 36),
+                                      Text(
+                                        '${widget.contactName} is typing...',
+                                        style: TextStyle(
+                                          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.6),
+                                          fontSize: 11,
+                                          fontStyle: FontStyle.italic,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                            final msg = messages[i];
+                            return _inboxBubble(msg, contactMember, dark);
+                          },
+                        );
+                      }),
                   ],
                 ),
               ),
@@ -1010,6 +1048,42 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
               ),
               const SizedBox(width: 8),
             ],
+            if (mine && msg.isFailed)
+              GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: kCharcoal,
+                    builder: (ctx) => SafeArea(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.refresh_rounded, color: Colors.white),
+                            title: const Text('Retry sending', style: TextStyle(color: Colors.white)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              ref.read(chatProvider.notifier).retryMessage(widget.contactName, msg.id);
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                            title: const Text('Delete message', style: TextStyle(color: Colors.redAccent)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              ref.read(chatProvider.notifier).deleteMessageOptimistic(widget.contactName, msg.id);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6.0),
+                  child: Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
+                ),
+              ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
               constraints: const BoxConstraints(maxWidth: 240),
@@ -1059,15 +1133,35 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    _formatTime(msg.timestamp),
-                    style: TextStyle(
-                      color: (mine
-                          ? (dark ? kBlack : Colors.white)
-                          : (dark ? kCream : kCharcoal)).withValues(alpha: 0.5),
-                      fontSize: 9,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _formatTime(msg.timestamp),
+                        style: TextStyle(
+                          color: (mine
+                              ? (dark ? kBlack : Colors.white)
+                              : (dark ? kCream : kCharcoal)).withValues(alpha: 0.5),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (mine) ...[
+                        const SizedBox(width: 4),
+                        if (msg.isPending)
+                          const SizedBox(
+                            width: 10,
+                            height: 10,
+                            child: CircularProgressIndicator(strokeWidth: 1.2, color: kYellow),
+                          )
+                        else
+                          Icon(
+                            msg.isRead ? Icons.done_all_rounded : Icons.done_rounded,
+                            size: 11,
+                            color: dark ? kBlack.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5),
+                          ),
+                      ],
+                    ],
                   ),
                 ],
               ),

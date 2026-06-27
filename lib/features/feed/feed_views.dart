@@ -1365,14 +1365,16 @@ class MemoryFrame extends ConsumerWidget {
       return index != -1 ? state.memories[index] : memory;
     }));
 
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: kYellow, width: 3),
-      ),
-      child: ClipRRect(
+    return GestureDetector(
+      onDoubleTap: () => context.push('/memory/${m.id}'),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(radius),
+          border: Border.all(color: kYellow, width: 3),
+        ),
+        child: ClipRRect(
         borderRadius: BorderRadius.circular(radius - 8),
         child: Stack(
           fit: StackFit.expand,
@@ -1515,6 +1517,7 @@ class MemoryFrame extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

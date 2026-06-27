@@ -6,6 +6,11 @@ class Message {
     required this.timestamp,
     required this.isMine,
     this.isRead = true,
+    this.isPending = false,
+    this.isFailed = false,
+    this.attachmentUrl,
+    this.attachmentLocalPath,
+    this.uploadProgress,
   });
 
   final String id;
@@ -14,6 +19,11 @@ class Message {
   final DateTime timestamp;
   final bool isMine;
   final bool isRead;
+  final bool isPending;
+  final bool isFailed;
+  final String? attachmentUrl;
+  final String? attachmentLocalPath;
+  final double? uploadProgress;
 
   Message copyWith({
     String? id,
@@ -22,6 +32,11 @@ class Message {
     DateTime? timestamp,
     bool? isMine,
     bool? isRead,
+    bool? isPending,
+    bool? isFailed,
+    String? attachmentUrl,
+    String? attachmentLocalPath,
+    double? uploadProgress,
   }) {
     return Message(
       id: id ?? this.id,
@@ -30,6 +45,11 @@ class Message {
       timestamp: timestamp ?? this.timestamp,
       isMine: isMine ?? this.isMine,
       isRead: isRead ?? this.isRead,
+      isPending: isPending ?? this.isPending,
+      isFailed: isFailed ?? this.isFailed,
+      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
+      attachmentLocalPath: attachmentLocalPath ?? this.attachmentLocalPath,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
     );
   }
 }

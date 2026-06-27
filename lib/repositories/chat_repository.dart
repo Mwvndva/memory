@@ -23,10 +23,20 @@ class ChatState {
   const ChatState({
     required this.messagesByContact,
     required this.unreadCounts,
+    this.typingIndicators = const {},
+    this.cursors = const {},
+    this.hasMoreMessages = const {},
+    this.isConversationsLoading = false,
+    this.errorMessage,
   });
 
   final Map<String, List<Message>> messagesByContact;
   final Map<String, int> unreadCounts;
+  final Map<String, bool> typingIndicators;
+  final Map<String, String?> cursors;
+  final Map<String, bool> hasMoreMessages;
+  final bool isConversationsLoading;
+  final String? errorMessage;
 
   int get unreadNotifications {
     return unreadCounts.values.fold(0, (sum, count) => sum + count);
@@ -35,10 +45,20 @@ class ChatState {
   ChatState copyWith({
     Map<String, List<Message>>? messagesByContact,
     Map<String, int>? unreadCounts,
+    Map<String, bool>? typingIndicators,
+    Map<String, String?>? cursors,
+    Map<String, bool>? hasMoreMessages,
+    bool? isConversationsLoading,
+    String? errorMessage,
   }) {
     return ChatState(
       messagesByContact: messagesByContact ?? this.messagesByContact,
       unreadCounts: unreadCounts ?? this.unreadCounts,
+      typingIndicators: typingIndicators ?? this.typingIndicators,
+      cursors: cursors ?? this.cursors,
+      hasMoreMessages: hasMoreMessages ?? this.hasMoreMessages,
+      isConversationsLoading: isConversationsLoading ?? this.isConversationsLoading,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -80,6 +100,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   bool _disposed = false;
   int _reconnectAttempt = 0;
   int _connectionGeneration = 0;
+  final Map<String, Timer> _typingExpirationTimers = {};
 
   // ─── Default mock data (shown when kUseMockBackend = true) ────────────────
 
@@ -268,6 +289,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
               _handleCircleMilestone(data);
             } else if (event == 'message_sent') {
               // ACK — already shown optimistically; skip duplicate
+            } else if (event == 'typing' || event == 'typing_status') {
+              _handleTypingEvent(data);
+            } else if (event == 'read_receipt') {
+              _handleReadReceipt(data);
             }
           } catch (e, stack) {
             final mapped = mapException(e, stack);
@@ -346,17 +371,51 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   void _handleIncoming(Map<String, dynamic> data, {required bool isMine}) {
     final sender = data['sender'] as String? ?? 'Unknown';
-    final msg = Message(
-      id:        data['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      sender:    sender,
-      text:      data['text'] as String? ?? '',
-      timestamp: DateTime.tryParse(data['timestamp']?.toString() ?? '') ?? DateTime.now(),
-      isMine:    isMine,
+    final text = data['text'] as String? ?? '';
+    final id = data['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final timestamp = DateTime.tryParse(data['timestamp']?.toString() ?? '') ?? DateTime.now();
+
+    final contactKey = isMine ? (data['receiver'] as String? ?? 'Unknown') : sender;
+
+    final existingList = state.messagesByContact[contactKey] ?? [];
+    final hasDuplicate = existingList.any((m) => m.id == id);
+    if (hasDuplicate) return;
+
+    bool replaced = false;
+    final updatedList = existingList.map((m) {
+      if (m.isMine && m.isPending && m.text == text && !replaced) {
+        replaced = true;
+        return m.copyWith(id: id, isPending: false, timestamp: timestamp);
+      }
+      return m;
+    }).toList();
+
+    if (!replaced) {
+      final msg = Message(
+        id: id,
+        sender: sender,
+        text: text,
+        timestamp: timestamp,
+        isMine: isMine,
+      );
+      updatedList.add(msg);
+    }
+
+    final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
+    updatedMap[contactKey] = updatedList;
+
+    final updatedUnread = Map<String, int>.from(state.unreadCounts);
+    if (!isMine && _activeContact != contactKey) {
+      updatedUnread[contactKey] = (updatedUnread[contactKey] ?? 0) + 1;
+    }
+
+    state = state.copyWith(
+      messagesByContact: updatedMap,
+      unreadCounts: updatedUnread,
     );
-    _appendMessage(sender, msg);
 
     if (!isMine) {
-      _showNewMessageNotification(sender, msg.text);
+      _showNewMessageNotification(sender, text);
     }
   }
 
@@ -435,24 +494,29 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   // ─── Load conversation history from REST API ─────────────────────────────
 
-  Future<void> loadConversation(String contactUsername, {bool shouldMarkRead = false}) async {
+  Future<void> loadConversation(String contactUsername, {bool shouldMarkRead = false, bool loadMore = false}) async {
     if (kUseMockBackend) return;
+
+    if (loadMore && state.hasMoreMessages[contactUsername] == false) {
+      return;
+    }
+
     try {
-      // Resolve username → userId via the circles list (already fetched)
       final circles = _ref.read(circlesProvider);
       final member = circles.where((m) => m.username == contactUsername).firstOrNull;
-      if (member == null) return; // not in circle, skip
+      if (member == null) return;
 
       final dio = _ref.read(apiClientProvider);
-      // Pass markRead=false during background preview loads; markRead=true when user opens chat
       final markReadParam = shouldMarkRead ? 'true' : 'false';
-      final response = await dio.get('/messages/history/${member.id}?markRead=$markReadParam');
+      final cursor = loadMore ? state.cursors[contactUsername] : null;
+      final cursorParam = cursor != null ? '&cursor=$cursor' : '';
+
+      final response = await dio.get('/messages/history/${member.id}?markRead=$markReadParam$cursorParam');
       final body = response.data as Map<String, dynamic>? ?? {};
-      final rawList = body['data'] as List? ?? [];
+      final rawList = body['data'] as List? ?? body['comments'] as List? ?? [];
 
       final fetched = rawList.map((item) {
         final d = item as Map<String, dynamic>;
-        // determine if the message is mine by checking sender username
         final senderUsername = (d['sender'] as Map<String, dynamic>?)?['username'] as String? ?? '';
         final isMine = senderUsername != contactUsername;
         return Message(
@@ -465,26 +529,48 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
       }).toList();
 
-      if (fetched.isEmpty) return;
+      final String? nextCursor = body['nextCursor'] as String? ?? (body['meta'] as Map?)?['nextCursor'] as String?;
+      final bool hasMore = nextCursor != null;
 
       final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
-      // Merge: history first, then any messages already in state (sent this session)
       final existing = state.messagesByContact[contactUsername] ?? [];
       final merged = <Message>[];
-      final existingIds = existing.map((m) => m.id).toSet();
-      for (final m in fetched) {
-        if (!existingIds.contains(m.id)) merged.add(m);
+
+      if (loadMore) {
+        // Prepended history
+        final existingIds = existing.map((m) => m.id).toSet();
+        for (final m in fetched) {
+          if (!existingIds.contains(m.id)) merged.add(m);
+        }
+        merged.addAll(existing);
+      } else {
+        // Initial load
+        final existingIds = fetched.map((m) => m.id).toSet();
+        merged.addAll(fetched);
+        for (final m in existing) {
+          if (!existingIds.contains(m.id)) merged.add(m);
+        }
       }
-      merged.addAll(existing);
+
+      // Sort by timestamp to guarantee deterministic message ordering
+      merged.sort((a, b) => a.timestamp.compareTo(b.timestamp));
       updatedMap[contactUsername] = merged;
 
       final unreadCount = fetched.where((msg) => !msg.isMine && !msg.isRead).length;
       final updatedUnread = Map<String, int>.from(state.unreadCounts);
       updatedUnread[contactUsername] = _activeContact == contactUsername ? 0 : unreadCount;
 
+      final updatedCursors = Map<String, String?>.from(state.cursors);
+      updatedCursors[contactUsername] = nextCursor;
+
+      final updatedHasMore = Map<String, bool>.from(state.hasMoreMessages);
+      updatedHasMore[contactUsername] = hasMore;
+
       state = state.copyWith(
         messagesByContact: updatedMap,
         unreadCounts: updatedUnread,
+        cursors: updatedCursors,
+        hasMoreMessages: updatedHasMore,
       );
     } catch (e, stack) {
       final mapped = mapException(e, stack);
@@ -492,40 +578,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
-  // ─── Send a message ───────────────────────────────────────────────────────
-
-  void sendMessage(String contactName, String text) {
-    if (text.trim().isEmpty) return;
-
-    final newMessage = Message(
-      id:        DateTime.now().millisecondsSinceEpoch.toString(),
-      sender:    'You',
-      text:      text.trim(),
-      timestamp: DateTime.now(),
-      isMine:    true,
-    );
-
-    // Optimistic UI update
-    _appendMessage(contactName, newMessage);
-
-    if (kUseMockBackend) {
-      _simulateReply(contactName);
-    } else {
-      try {
-        // NestJS gateway expects: { "event": "send_message", "data": { "receiver": "<username>", "text": "<text>" } }
-        _channel?.sink.add(jsonEncode({
-          'event': 'send_message',
-          'data': {
-            'receiver': contactName,
-            'text': text.trim(),
-          },
-        }));
-      } catch (e, stack) {
-        final mapped = mapException(e, stack);
-        debugPrint('Failed to transmit message over WS: $mapped');
-      }
-    }
-  }
 
   Future<void> sendReactionEvent(String memoryId, String emoji, String action) async {
     if (kUseMockBackend) return;
@@ -672,10 +724,156 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
+  // ─── Send a message ───────────────────────────────────────────────────────
+
+  void sendMessage(String contactName, String text) {
+    if (text.trim().isEmpty) return;
+
+    final tempId = 'msg-local-${DateTime.now().millisecondsSinceEpoch}';
+    final newMessage = Message(
+      id:        tempId,
+      sender:    'You',
+      text:      text.trim(),
+      timestamp: DateTime.now(),
+      isMine:    true,
+      isPending: true,
+    );
+
+    _appendMessage(contactName, newMessage);
+
+    if (kUseMockBackend) {
+      Timer(const Duration(milliseconds: 300), () {
+        _confirmDelivery(contactName, tempId);
+        _simulateReply(contactName);
+      });
+    } else {
+      _transmitMessage(contactName, tempId, text.trim());
+    }
+  }
+
+  void _transmitMessage(String contactName, String tempId, String text) {
+    if (_channel == null) {
+      _markFailed(contactName, tempId);
+      return;
+    }
+    try {
+      _channel?.sink.add(jsonEncode({
+        'event': 'send_message',
+        'data': {'receiver': contactName, 'text': text},
+      }));
+      _confirmDelivery(contactName, tempId);
+    } catch (e) {
+      _markFailed(contactName, tempId);
+    }
+  }
+
+  void _confirmDelivery(String contactName, String tempId) {
+    final list = state.messagesByContact[contactName] ?? [];
+    final updated = list.map((msg) {
+      if (msg.id == tempId) return msg.copyWith(isPending: false, isFailed: false);
+      return msg;
+    }).toList();
+    final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
+    updatedMap[contactName] = updated;
+    state = state.copyWith(messagesByContact: updatedMap);
+  }
+
+  void _markFailed(String contactName, String tempId) {
+    final list = state.messagesByContact[contactName] ?? [];
+    final updated = list.map((msg) {
+      if (msg.id == tempId) return msg.copyWith(isPending: false, isFailed: true);
+      return msg;
+    }).toList();
+    final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
+    updatedMap[contactName] = updated;
+    state = state.copyWith(messagesByContact: updatedMap);
+  }
+
+  void retryMessage(String contactName, String tempId) {
+    final list = state.messagesByContact[contactName] ?? [];
+    final index = list.indexWhere((m) => m.id == tempId);
+    if (index < 0) return;
+    final msg = list[index];
+    final updated = list.toList();
+    updated[index] = msg.copyWith(isPending: true, isFailed: false);
+    final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
+    updatedMap[contactName] = updated;
+    state = state.copyWith(messagesByContact: updatedMap);
+    _transmitMessage(contactName, tempId, msg.text);
+  }
+
+  void deleteMessageOptimistic(String contactName, String tempId) {
+    final list = state.messagesByContact[contactName] ?? [];
+    final updated = list.where((m) => m.id != tempId).toList();
+    final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
+    updatedMap[contactName] = updated;
+    state = state.copyWith(messagesByContact: updatedMap);
+  }
+
+  // ─── Typing indicators ────────────────────────────────────────────────────
+
+  Future<void> sendTypingIndicator(String contactName, bool isTyping) async {
+    if (kUseMockBackend) return;
+    try {
+      _channel?.sink.add(jsonEncode({
+        'event': 'typing',
+        'data': {'receiver': contactName, 'isTyping': isTyping},
+      }));
+    } catch (e) {
+      debugPrint('Failed to transmit typing indicator: $e');
+    }
+  }
+
+  void _handleTypingEvent(Map<String, dynamic> data) {
+    final sender = data['sender'] as String? ?? '';
+    final isTyping = data['isTyping'] as bool? ?? false;
+    if (sender.isEmpty) return;
+    final updated = Map<String, bool>.from(state.typingIndicators);
+    updated[sender] = isTyping;
+    state = state.copyWith(typingIndicators: updated);
+    _typingExpirationTimers[sender]?.cancel();
+    if (isTyping) {
+      _typingExpirationTimers[sender] = Timer(const Duration(seconds: 5), () {
+        if (_disposed) return;
+        final current = Map<String, bool>.from(state.typingIndicators);
+        current[sender] = false;
+        state = state.copyWith(typingIndicators: current);
+      });
+    }
+  }
+
+  // ─── Read receipts ────────────────────────────────────────────────────────
+
+  Future<void> sendReadReceipt(String contactName) async {
+    if (kUseMockBackend) return;
+    try {
+      _channel?.sink.add(jsonEncode({
+        'event': 'read_receipt',
+        'data': {'receiver': contactName},
+      }));
+    } catch (e) {
+      debugPrint('Failed to transmit read receipt: $e');
+    }
+  }
+
+  void _handleReadReceipt(Map<String, dynamic> data) {
+    final sender = data['sender'] as String? ?? '';
+    if (sender.isEmpty) return;
+    final list = state.messagesByContact[sender] ?? [];
+    final updated = list.map((m) => m.copyWith(isRead: true)).toList();
+    final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
+    updatedMap[sender] = updated;
+    state = state.copyWith(messagesByContact: updatedMap);
+  }
+
   @override
   void dispose() {
     _disposed = true;
     _connectionGeneration++;
+    for (final t in _typingExpirationTimers.values) {
+      t.cancel();
+    }
+    _typingExpirationTimers.clear();
     _closeSocket(manual: true);
     super.dispose();
   }
