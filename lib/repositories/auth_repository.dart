@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -6,6 +7,8 @@ import '../core/api_config.dart';
 import '../core/api_client.dart';
 import '../core/secure_storage.dart';
 import '../models/user_profile.dart';
+import '../core/error_handler.dart';
+import '../core/router.dart';
 
 class AuthNotifier extends StateNotifier<UserProfile> {
   AuthNotifier(this._ref) : super(UserProfile.empty()) {
@@ -134,10 +137,14 @@ class AuthNotifier extends StateNotifier<UserProfile> {
 
         final tokens = response.data['tokens'] as Map<String, dynamic>?;
         final token = tokens != null ? tokens['access_token'] as String? : null;
+        final refreshToken = tokens != null ? tokens['refresh_token'] as String? : null;
         final userJson = response.data['user'] as Map<String, dynamic>? ?? {};
         if (token != null) {
           final storage = _ref.read(secureStorageProvider);
           await storage.write(key: 'auth_token', value: token);
+          if (refreshToken != null) {
+            await storage.write(key: 'refresh_token', value: refreshToken);
+          }
         }
 
         state = UserProfile(
@@ -233,11 +240,15 @@ class AuthNotifier extends StateNotifier<UserProfile> {
 
         final tokens = response.data['tokens'] as Map<String, dynamic>?;
         final token = tokens != null ? tokens['access_token'] as String? : null;
+        final refreshToken = tokens != null ? tokens['refresh_token'] as String? : null;
         final userJson = response.data['user'] as Map<String, dynamic>?;
 
         if (token != null && userJson != null) {
           final storage = _ref.read(secureStorageProvider);
           await storage.write(key: 'auth_token', value: token);
+          if (refreshToken != null) {
+            await storage.write(key: 'refresh_token', value: refreshToken);
+          }
 
           state = UserProfile(
             firstName: userJson['first_name'] ?? '',
@@ -293,7 +304,9 @@ class AuthNotifier extends StateNotifier<UserProfile> {
     state = UserProfile.empty();
     try {
       final prefs = _ref.read(sharedPreferencesProvider);
-      await _ref.read(secureStorageProvider).delete(key: 'auth_token');
+      final storage = _ref.read(secureStorageProvider);
+      await storage.delete(key: 'auth_token');
+      await storage.delete(key: 'refresh_token');
       await prefs.remove('is_logged_in');
       await prefs.remove('user_first_name');
       await prefs.remove('user_last_name');
@@ -302,6 +315,14 @@ class AuthNotifier extends StateNotifier<UserProfile> {
       await prefs.remove('user_phone');
       await prefs.remove('user_avatar_url');
     } catch (_) {}
+  }
+
+  Future<void> handleSessionExpired() async {
+    await logout();
+    final context = rootNavigatorKey.currentContext;
+    if (context != null && context.mounted) {
+      showAppError(context, 'Your session has expired. Please sign in again.');
+    }
   }
 
   void _saveSession() {

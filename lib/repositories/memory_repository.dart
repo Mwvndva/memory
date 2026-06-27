@@ -66,6 +66,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
 
       return MemoryItem(
         person:    item['person']    as String? ?? '',
+        username:  creatorObj?['username'] as String? ?? '',
         initial:   item['initial']   as String? ?? '',
         time:      item['time']      as String? ?? '',
         caption:   item['caption']   as String? ?? '',
@@ -83,6 +84,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
   static final _defaultMemories = [
     const MemoryItem(
       person: 'Amara',
+      username: 'amara',
       initial: 'A',
       time: '8 min ago',
       caption: 'The ridiculous cake moment',
@@ -92,24 +94,27 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
     ),
     const MemoryItem(
       person: 'Mum',
+      username: 'mum',
       initial: 'M',
       time: 'Yesterday',
       caption: 'Found your old school song',
       avatar: kMint,
-  colors: [kMint, kSky, Color(0xFFFADA5E)],
+      colors: [kMint, kSky, Color(0xFFFADA5E)],
       ageHours: 26,
     ),
     const MemoryItem(
       person: 'Leo',
+      username: 'leo',
       initial: 'L',
       time: 'Friday',
       caption: 'Rainy walk after class',
       avatar: kSky,
-  colors: [kSky, kLavender, Color(0xFFFADA5E)],
+      colors: [kSky, kLavender, Color(0xFFFADA5E)],
       ageHours: 72,
     ),
     const MemoryItem(
       person: 'Nia',
+      username: 'nia',
       initial: 'N',
       time: '2 days ago',
       caption: 'Sunset on the way home',
@@ -153,6 +158,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
     if (kUseMockBackend) {
       final newItem = MemoryItem(
         person: name,
+        username: user.username,
         initial: initial,
         time: 'Just now',
         caption: caption,

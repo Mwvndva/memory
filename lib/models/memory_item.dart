@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class MemoryItem {
   const MemoryItem({
     required this.person,
+    required this.username,
     required this.initial,
     required this.time,
     required this.caption,
@@ -14,6 +15,7 @@ class MemoryItem {
   });
 
   final String person;
+  final String username;
   final String initial;
   final String time;
   final String caption;
@@ -25,6 +27,7 @@ class MemoryItem {
 
   MemoryItem copyWith({
     String? person,
+    String? username,
     String? initial,
     String? time,
     String? caption,
@@ -36,6 +39,7 @@ class MemoryItem {
   }) {
     return MemoryItem(
       person: person ?? this.person,
+      username: username ?? this.username,
       initial: initial ?? this.initial,
       time: time ?? this.time,
       caption: caption ?? this.caption,

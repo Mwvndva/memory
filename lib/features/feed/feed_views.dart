@@ -796,7 +796,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                     duration: const Duration(milliseconds: 550),
                     curve: Curves.easeOutBack,
                     builder: (context, value, child) => Opacity(
-                      opacity: value,
+                      opacity: value.clamp(0.0, 1.0),
                       child: Transform.translate(
                         offset: Offset(0, 25 * (1 - value)),
                         child: child,
@@ -1023,7 +1023,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
 
   Widget _messageInput(MemoryItem m, bool dark) {
     return GestureDetector(
-      onTap: () => context.push('/chat/${m.person}'),
+      onTap: () => context.push('/chat/${m.username}'),
       child: Container(
         height: 50,
         padding: const EdgeInsets.only(left: 16, right: 6),
@@ -1063,7 +1063,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     final dark = ref.read(isDarkProvider);
 
     void sendQuickReaction(String emoji) {
-      ref.read(chatProvider.notifier).sendMessage(m.person, "Reacted $emoji to your memory: \"${m.caption}\"");
+      ref.read(chatProvider.notifier).sendMessage(m.username, "Reacted $emoji to your memory: \"${m.caption}\"");
       setState(() => _composerOpen = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Reaction sent to ${m.person}!')),
