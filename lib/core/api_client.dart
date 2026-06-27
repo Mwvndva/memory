@@ -37,16 +37,19 @@ final apiClientProvider = Provider<Dio>((ref) {
     QueuedInterceptorsWrapper(
       onRequest: (options, handler) async {
         try {
-          final session = ref.read(sessionProvider);
-          if (options.path == '/auth/refresh') {
-            final refreshToken = session.refreshToken;
-            if (refreshToken != null && refreshToken.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $refreshToken';
-            }
-          } else {
-            final token = session.accessToken;
-            if (token != null && token.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $token';
+          final isAnonymous = options.extra['anonymous'] == true;
+          if (!isAnonymous) {
+            final session = ref.read(sessionProvider);
+            if (options.path == '/auth/refresh') {
+              final refreshToken = session.refreshToken;
+              if (refreshToken != null && refreshToken.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $refreshToken';
+              }
+            } else {
+              final token = session.accessToken;
+              if (token != null && token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
             }
           }
         } catch (_) {

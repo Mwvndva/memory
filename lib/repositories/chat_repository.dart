@@ -6,7 +6,6 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../core/api_client.dart';
 import '../core/api_config.dart';
-import '../core/secure_storage.dart';
 import '../models/message.dart';
 import 'circles_repository.dart';
 import '../models/user_profile.dart';
@@ -163,8 +162,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final connectionId = ++_connectionGeneration;
       _closeSocket(manual: false);
 
-      final storage = _ref.read(secureStorageProvider);
-      final token = await storage.read(key: 'auth_token') ?? '';
+      final token = _ref.read(sessionProvider).accessToken ?? '';
       if (token.isEmpty) {
         _scheduleReconnect();
         return;

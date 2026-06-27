@@ -216,7 +216,11 @@ class SessionManager extends StateNotifier<SessionState> {
     } else {
       try {
         final dio = _ref.read(apiClientProvider);
-        final response = await dio.get('/auth/username-check', queryParameters: {'username': username});
+        final response = await dio.get(
+          '/auth/username-check',
+          queryParameters: {'username': username},
+          options: Options(extra: {'anonymous': true}),
+        );
         return {
           'message': response.data['message'] ?? 'Username checked.',
           'ok': response.data['ok'] ?? false,
@@ -262,15 +266,19 @@ class SessionManager extends StateNotifier<SessionState> {
     } else {
       try {
         final dio = _ref.read(apiClientProvider);
-        final response = await dio.post('/auth/register', data: {
-          'first_name': firstName,
-          'last_name': lastName,
-          'username': cleanUsername,
-          'email': email,
-          'phone': phone,
-          'password': password,
-          'accepted_terms': acceptedTerms,
-        });
+        final response = await dio.post(
+          '/auth/register',
+          data: {
+            'first_name': firstName,
+            'last_name': lastName,
+            'username': cleanUsername,
+            'email': email,
+            'phone': phone,
+            'password': password,
+            'accepted_terms': acceptedTerms,
+          },
+          options: Options(extra: {'anonymous': true}),
+        );
 
         final tokens = response.data['tokens'] as Map<String, dynamic>?;
         final accessToken = tokens != null ? tokens['access_token'] as String? : null;
@@ -366,10 +374,14 @@ class SessionManager extends StateNotifier<SessionState> {
     } else {
       try {
         final dio = _ref.read(apiClientProvider);
-        final response = await dio.post('/auth/login', data: {
-          'identity': cleanId,
-          'password': password,
-        });
+        final response = await dio.post(
+          '/auth/login',
+          data: {
+            'identity': cleanId,
+            'password': password,
+          },
+          options: Options(extra: {'anonymous': true}),
+        );
 
         final tokens = response.data['tokens'] as Map<String, dynamic>?;
         final accessToken = tokens != null ? tokens['access_token'] as String? : null;
