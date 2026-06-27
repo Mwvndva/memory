@@ -18,6 +18,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../repositories/circles_repository.dart';
 import '../../models/user_profile.dart';
 import '../../features/notification/notification_provider.dart';
+import '../../media/playback_coordinator.dart';
+import '../../media/unified_media_widgets.dart';
 import 'streak_milestones.dart';
 
 String _formatImageUrl(String url) {
@@ -280,14 +282,6 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
   Future<void> _initFeedVideo(MemoryItem m, int index) async {
     if (index != _activeMemoryIndex) return;
 
-    final oldController = _feedVideoController;
-    _feedVideoController = null;
-    if (oldController != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        oldController.dispose();
-      });
-    }
-
     if (m.videoPath == null || m.videoPath!.isEmpty) {
       // No video — mark ready immediately so the gradient/caption shows
       if (mounted) setState(() { _feedReady = true; });
@@ -295,24 +289,16 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     }
 
     final String path = m.videoPath!;
-    final VideoPlayerController controller;
-
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      controller = VideoPlayerController.networkUrl(Uri.parse(path));
-    } else {
-      final file = File(path);
-      if (!file.existsSync()) {
-        if (mounted) setState(() {});
-        return;
-      }
-      controller = VideoPlayerController.file(file);
-    }
+    final coordinator = ref.read(playbackCoordinatorProvider);
 
     try {
-      await controller.initialize();
-      await controller.setLooping(true);
-      await controller.setVolume(_isMuted ? 0.0 : 1.0);
-      await controller.play();
+      final key = 'feed_video_$index';
+      final controller = await coordinator.getOrCreateController(key, path);
+
+      if (controller == null) {
+        if (mounted) setState(() { _feedReady = true; });
+        return;
+      }
 
       if (mounted && _activeMemoryIndex == index) {
         setState(() {
@@ -320,13 +306,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
           _enqueuedIndex = index;
           _feedReady = true;
         });
-      } else {
-        controller.dispose();
+        coordinator.play(key);
       }
     } catch (e) {
-      debugPrint('Error initializing feed video at index $index: $e');
-      controller.dispose();
-      // Still mark ready so UI doesn't stay permanently black on error
+      debugPrint('Error initializing feed video at index $index via PlaybackCoordinator: $e');
       if (mounted) setState(() { _feedReady = true; });
     }
   }
@@ -1308,7 +1291,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
 
 // ── First-frame video thumbnail for the memory grid ──────────────────────────
 
-class _VideoGridThumbnail extends StatefulWidget {
+class _VideoGridThumbnail extends ConsumerWidget {
   const _VideoGridThumbnail({
     required this.videoUrl,
     required this.fallbackColors,
@@ -1318,62 +1301,22 @@ class _VideoGridThumbnail extends StatefulWidget {
   final List<Color> fallbackColors;
 
   @override
-  State<_VideoGridThumbnail> createState() => _VideoGridThumbnailState();
-}
-
-class _VideoGridThumbnailState extends State<_VideoGridThumbnail> {
-  VideoPlayerController? _controller;
-  bool _initialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
-    try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
-      _controller = controller;
-      await controller.initialize();
-      await controller.seekTo(Duration.zero);
-      await controller.setVolume(0.0);
-      if (mounted) {
-        setState(() {
-          _initialized = true;
-        });
-      }
-    } catch (_) {
-      // Keep _initialized as false to show gradient fallback on error
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_initialized || _controller == null) {
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: widget.fallbackColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fallback = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: fallbackColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      );
-    }
-    return FittedBox(
-      fit: BoxFit.cover,
-      child: SizedBox(
-        width: _controller!.value.size.width,
-        height: _controller!.value.size.height,
-        child: VideoPlayer(_controller!),
       ),
+    );
+
+    return UnifiedVideoWidget(
+      videoKey: 'thumb_$videoUrl',
+      videoUrl: videoUrl,
+      fallbackWidget: fallback,
+      autoPlay: false,
     );
   }
 }

@@ -15,6 +15,7 @@ import '../../core/error_handler.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/chat_repository.dart';
 import '../../repositories/circles_repository.dart';
+import '../../media/unified_media_widgets.dart';
 
 class CircleChatListView extends ConsumerWidget {
   const CircleChatListView({super.key});
@@ -2078,10 +2079,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       child: avatarBytes != null
                           ? Image.memory(avatarBytes, fit: BoxFit.cover)
                           : resolvedAvatar != null
-                              ? Image.network(
-                                  resolvedAvatar,
+                              ? UnifiedImageWidget(
+                                  imageUrl: resolvedAvatar,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (ctx, err, st) => Center(
+                                  fallbackWidget: Center(
                                     child: Text(
                                       avatarInitial,
                                       style: const TextStyle(color: kCream, fontSize: 28, fontWeight: FontWeight.w900),
