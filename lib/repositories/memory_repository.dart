@@ -12,9 +12,14 @@ import '../models/memory_item.dart';
 import '../core/widget_manager.dart';
 import 'auth_repository.dart';
 import '../core/error_handler.dart';
+import '../core/router.dart';
+import '../core/widget_manager.dart';
+import 'package:go_router/go_router.dart';
 import 'chat_repository.dart';
 import 'optimistic_transaction_manager.dart';
 import '../models/user_profile.dart';
+import '../realtime/realtime_event.dart';
+import '../realtime/realtime_providers.dart';
 
 Color parseHexColor(String hexStr) {
   var clean = hexStr.replaceAll('#', '').trim();
@@ -407,6 +412,62 @@ class FeedStateManager extends StateNotifier<FeedState> {
         }
       }
     });
+
+    // Listen to real-time events for new memory notifications.
+    _ref.listen<AsyncValue<RealtimeEvent>>(realtimeEventStreamProvider, (_, next) {
+      next.whenData((event) {
+        if (event is NewMemoryEvent) {
+          _handleNewMemoryNotification(event);
+        } else if (event is NewReactionEvent) {
+          _handleNewReactionNotification(event);
+        }
+      });
+    });
+  }
+
+  void _handleNewMemoryNotification(NewMemoryEvent event) {
+    // Show the notification toast (the business logic requirement)
+    final templates = [
+      '{name} just shared a new memory! Tap to see what they\'re up to.',
+      'New post alert! {name} just captured a new memory.',
+      '{name} has updated their circle! Check out their latest memory.',
+      '{name}\'s day looks interesting! See their new memory now.',
+      'Peek into {name}\'s world — a new memory was just posted!',
+    ];
+    final randomIdx = DateTime.now().millisecondsSinceEpoch % templates.length;
+    final body = templates[randomIdx].replaceAll('{name}', event.creatorName);
+
+    showGlobalNotification(
+      title: 'New Memory 📸',
+      body: body,
+      onTap: () {
+        rootNavigatorKey.currentState?.context.go('/feed');
+      },
+    );
+  }
+
+  void _handleNewReactionNotification(NewReactionEvent event) {
+    // Show the notification toast (the business logic requirement)
+    final templates = [
+      '{name} loved your memory! Reaction: emoji',
+      '{name} reacted emoji to your latest memory: "caption"',
+      'emoji from {name}! She just reacted to your post.',
+      '{name} found your memory "caption" reaction-worthy: emoji',
+      'Reaction alert! {name} left a emoji on your memory.',
+    ];
+    final randomIdx = DateTime.now().millisecondsSinceEpoch % templates.length;
+    final body = templates[randomIdx]
+        .replaceAll('{name}', event.reactorName)
+        .replaceAll('emoji', event.emoji)
+        .replaceAll('caption', event.memoryCaption);
+
+    showGlobalNotification(
+      title: 'New Reaction ${event.emoji}',
+      body: body,
+      onTap: () {
+        rootNavigatorKey.currentState?.context.go('/circle');
+      },
+    );
   }
 
   // ─── Reconciliation engine ──────────────────────────────────────────────────
@@ -912,20 +973,12 @@ class FeedStateManager extends StateNotifier<FeedState> {
     state = state.copyWith(memories: updatedList);
 
     try {
-      // Re-route WS interaction or call REST API.
-      // Since WebSocket is available in chatProvider notifier, we can use it to transmit.
-      // Let's use the REST client if needed, or directly connect to ChatNotifier.
-      // In NesteJS Gateway: payload expects { "memory_id": "uuid", "emoji": "😂", "action": "add" }
+      // Re-route WS interaction via ChatNotifier (which delegates to RealtimeCoordinator).
+      // In NestJS Gateway: payload expects { "memory_id": "uuid", "emoji": "😂", "action": "add" }
       final chatNotifier = _ref.read(chatProvider.notifier);
-      // Wait, chatProvider is in chat_repository.dart.
-      // Does chat_repository expose a WS connection or stream? Yes, chatNotifier._channel.
-      // If mock backend is enabled or websocket is closed, we simulate.
       if (kUseMockBackend) {
         await Future.delayed(const Duration(milliseconds: 150));
       } else {
-        // We'll invoke chatNotifier's WS sender. We can add a sendReaction WS method or send it directly.
-        // Let's create a custom socket method on ChatNotifier, or implement it here directly.
-        // Let's add the call in ChatNotifier and call it here:
         await chatNotifier.sendReactionEvent(memoryId, emoji, isRemoving ? 'remove' : 'add');
       }
 

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_client.dart';
 import '../../repositories/circles_repository.dart';
 import '../../repositories/chat_repository.dart';
+import '../../realtime/realtime_providers.dart';
 
 class DevDiagnosticsView extends ConsumerStatefulWidget {
   const DevDiagnosticsView({super.key});
@@ -64,6 +65,15 @@ class _DevDiagnosticsViewState extends ConsumerState<DevDiagnosticsView> {
             'timestamp': m.timestamp.toIso8601String(),
             'isMine': m.isMine,
           }).toList())),
+    };
+
+    final coordinator = ref.read(realtimeCoordinatorProvider);
+    results['realtime_diagnostics'] = {
+      'connectionState': coordinator.connectionState.toString(),
+      'reconnectAttempts': coordinator.reconnectAttempts,
+      'heartbeatFailures': coordinator.heartbeatFailures,
+      'lastConnectedAt': coordinator.lastConnectedAt?.toIso8601String(),
+      'recentDisconnectReasons': coordinator.recentDisconnectReasons,
     };
 
     setState(() {

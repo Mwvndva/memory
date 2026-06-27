@@ -13,6 +13,8 @@ import '../features/feed/streak_milestones.dart';
 import '../core/theme.dart';
 import '../core/router.dart';
 import '../core/error_handler.dart';
+import '../realtime/realtime_event.dart';
+import '../realtime/realtime_providers.dart';
 
 // ─── Circle Member model ─────────────────────────────────────────────────────
 
@@ -67,6 +69,81 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
         }
       }
     });
+
+    // Listen to real-time event stream for circle milestone updates
+    _ref.listen<AsyncValue<RealtimeEvent>>(realtimeEventStreamProvider, (_, next) {
+      next.whenData((event) {
+        if (event is CircleMilestoneEvent) {
+          _handleCircleMilestone(event);
+        }
+      });
+    });
+  }
+
+  void _handleCircleMilestone(CircleMilestoneEvent event) {
+    try {
+      final circleOwnerId = event.circleOwnerId;
+      final circleOwnerUsername = event.circleOwnerUsername;
+      final milestone = event.milestone;
+      final rawMembers = event.members;
+
+      final prefs = _ref.read(sharedPreferencesProvider);
+      final user = _ref.read(authProvider);
+      final currentUsername = user.username.isNotEmpty ? user.username : 'user';
+      final key = 'user_${currentUsername}_seen_circle_${circleOwnerId}_$milestone';
+
+      if (prefs.getBool(key) ?? false) return;
+      prefs.setBool(key, true);
+
+      final membersList = rawMembers.map((m) {
+        return CircleMemberWithMemories(
+          id: m['id'] as String? ?? '',
+          username: m['username'] as String? ?? '',
+          firstName: m['firstName'] as String? ?? '',
+          lastName: m['lastName'] as String?,
+          avatarUrl: m['avatarUrl'] as String?,
+          memoryCount: m['memoryCount'] as int? ?? 0,
+        );
+      }).toList();
+
+      showGlobalNotification(
+        title: 'Circle Milestone! 👥🎉',
+        body: '@$circleOwnerUsername\'s circle reached a $milestone-user milestone! Tap to view the special card.',
+        onTap: () {
+          final context = rootNavigatorKey.currentContext;
+          if (context != null && context.mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (context) => CircleMilestoneCongratulationsDialog(
+                circleOwnerUsername: circleOwnerUsername,
+                milestone: milestone,
+                members: membersList,
+              ),
+            );
+          }
+        },
+      );
+
+      if (circleOwnerUsername == user.username) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          final context = rootNavigatorKey.currentContext;
+          if (context != null && context.mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (context) => CircleMilestoneCongratulationsDialog(
+                circleOwnerUsername: circleOwnerUsername,
+                milestone: milestone,
+                members: membersList,
+              ),
+            );
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to present milestone congratulations dialog: $e');
+    }
   }
 
   final Ref _ref;
@@ -282,6 +359,23 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
           _cancelReconciliationPoll();
         }
       }
+    });
+
+    // Listen to real-time events for new circle requests
+    _ref.listen<AsyncValue<RealtimeEvent>>(realtimeEventStreamProvider, (_, next) {
+      next.whenData((event) {
+        if (event is CircleRequestEvent) {
+          addPending(CircleMember(
+            id: event.senderId,
+            username: event.senderUsername,
+            firstName: event.senderFirstName,
+            avatarUrl: event.senderAvatarUrl,
+          ));
+          Future.delayed(const Duration(seconds: 4), () {
+            fetchPendingRequests();
+          });
+        }
+      });
     });
   }
 

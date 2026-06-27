@@ -9,6 +9,7 @@ import 'core/router.dart';
 import 'core/theme.dart';
 import 'features/capture/capture_views.dart';
 import 'firebase_options.dart';
+import 'realtime/realtime_providers.dart';
 import 'repositories/push_notification_repository.dart';
 
 
@@ -47,6 +48,9 @@ class MemoryApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(pushNotificationRepositoryProvider);
+    // Bootstrap the Realtime Coordinator so it connects as soon as the app
+    // starts (or as soon as the user authenticates).
+    ref.watch(realtimeCoordinatorProvider);
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(

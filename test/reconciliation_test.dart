@@ -1,8 +1,12 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/models/memory_item.dart';
 import 'package:memory_app/repositories/memory_repository.dart';
 import 'package:memory_app/core/theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
+import 'package:memory_app/models/user_profile.dart';
+import 'package:memory_app/repositories/auth_repository.dart';
 
 // ---------------------------------------------------------------------------
 // Shared test fixtures
@@ -74,14 +78,42 @@ class MockMemoryRepository extends MemoryRepository {
 
 // ---------------------------------------------------------------------------
 // Helper: create a container backed by MockMemoryRepository and drain init.
-// The notifier MUST be read first to trigger construction and _initFeed,
-// then pumpEventQueue() drains the async completion.
-// ---------------------------------------------------------------------------
+
+class _FakeSessionManager extends StateNotifier<SessionState>
+    implements SessionManager {
+  _FakeSessionManager()
+      : super(SessionState(
+          isAuthenticated: false,
+          user: const UserProfile(
+            firstName: 'Test',
+            lastName: 'User',
+            username: 'testuser',
+            email: 'test@test.com',
+            phone: '+10000000000',
+            isAuthenticated: true,
+          ),
+          accessToken: '',
+        ));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
 
 Future<({ProviderContainer container, FeedStateManager notifier})> makeContainer() async {
+  final prefs = await SharedPreferences.getInstance();
   final container = ProviderContainer(
     overrides: [
       memoryRepositoryProvider.overrideWith((ref) => MockMemoryRepository(ref)),
+      sessionProvider.overrideWith((_) => _FakeSessionManager()),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      authProvider.overrideWithValue(const UserProfile(
+        firstName: 'Test',
+        lastName: 'User',
+        username: 'testuser',
+        email: 'test@test.com',
+        phone: '+10000000000',
+        isAuthenticated: true,
+      )),
     ],
   );
   // Read notifier first — this triggers FeedStateManager construction + _initFeed.
@@ -97,6 +129,16 @@ Future<({ProviderContainer container, FeedStateManager notifier})> makeContainer
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    const secureStorageChannel =
+        MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorageChannel, (_) async => null);
+
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+  });
 
   group('Feed Reconciliation Engine Tests', () {
 
