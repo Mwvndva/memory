@@ -250,11 +250,13 @@ class UploadState {
   final UploadStatus status;
   final double progress;
   final String? errorMessage;
+  final bool isRetryable;
 
   UploadState({
     required this.status,
     this.progress = 0.0,
     this.errorMessage,
+    this.isRetryable = false,
   });
 
   factory UploadState.idle() => UploadState(status: UploadStatus.idle);
@@ -263,11 +265,13 @@ class UploadState {
     UploadStatus? status,
     double? progress,
     String? errorMessage,
+    bool? isRetryable,
   }) {
     return UploadState(
       status: status ?? this.status,
       progress: progress ?? this.progress,
       errorMessage: errorMessage ?? this.errorMessage,
+      isRetryable: isRetryable ?? this.isRetryable,
     );
   }
 }
@@ -416,10 +420,37 @@ class UploadNotifier extends StateNotifier<UploadState> {
           return;
         }
         final mapped = mapException(e, stack);
-        state = state.copyWith(status: UploadStatus.failed, errorMessage: mapped.message);
+        bool retryable = false;
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError ||
+            e.error is SocketException) {
+          retryable = true;
+        } else {
+          final statusCode = e.response?.statusCode;
+          if (statusCode != null) {
+            if (statusCode == 408 || statusCode == 429 || statusCode == 502 || statusCode == 503 || statusCode == 504) {
+              retryable = true;
+            }
+          }
+        }
+        state = state.copyWith(
+          status: UploadStatus.failed,
+          errorMessage: mapped.message,
+          isRetryable: retryable,
+        );
       } catch (e, stack) {
         final mapped = mapException(e, stack);
-        state = state.copyWith(status: UploadStatus.failed, errorMessage: mapped.message);
+        bool retryable = false;
+        if (e is SocketException) {
+          retryable = true;
+        }
+        state = state.copyWith(
+          status: UploadStatus.failed,
+          errorMessage: mapped.message,
+          isRetryable: retryable,
+        );
       }
     }
   }

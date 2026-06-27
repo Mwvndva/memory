@@ -317,7 +317,25 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         ref.read(uploadProvider.notifier).reset();
         context.go('/capture');
       } else if (next.status == UploadStatus.failed) {
-        showAppError(context, 'Failed to post memory: ${next.errorMessage}');
+        if (next.isRetryable) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Upload failed: ${next.errorMessage}'),
+              backgroundColor: Colors.black,
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: kYellow,
+                onPressed: () {
+                  _sendToCircle();
+                },
+              ),
+              duration: const Duration(seconds: 8),
+            ),
+          );
+        } else {
+          showAppError(context, 'Failed to post memory: ${next.errorMessage}');
+        }
       } else if (next.status == UploadStatus.cancelled) {
         showAppMessage(context, 'Upload cancelled.');
       }
