@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/api_client.dart';
 import '../core/router.dart';
+import '../features/notification/notification_provider.dart';
 import 'auth_repository.dart';
 
 class PushNotificationRepository {
@@ -88,6 +89,13 @@ class PushNotificationRepository {
       if (notification != null) {
         final title = notification.title ?? 'Memory Alert';
         final body = notification.body ?? '';
+
+        // Route to the Notification State Manager
+        _ref.read(notificationProvider.notifier).handlePushNotification(
+          title,
+          body,
+          message.data,
+        );
 
         showGlobalNotification(
           title: title,

@@ -17,6 +17,7 @@ import '../../core/error_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../repositories/circles_repository.dart';
 import '../../models/user_profile.dart';
+import '../../features/notification/notification_provider.dart';
 import 'streak_milestones.dart';
 
 String _formatImageUrl(String url) {
@@ -782,6 +783,18 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
             if (!_gridOpen) ...[
               Positioned(
                 top: top + 16,
+                right: 78,
+                child: _roundIcon(
+                  Icons.notifications_outlined,
+                  () {
+                    _feedVideoController?.pause();
+                    context.push('/notifications');
+                  },
+                  badgeCount: ref.watch(notificationProvider).unreadCount,
+                ),
+              ),
+              Positioned(
+                top: top + 16,
                 right: 22,
                 child: _roundIcon(
                   Icons.grid_view_rounded,
@@ -1231,16 +1244,47 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
         ),
       );
 
-  Widget _roundIcon(IconData icon, VoidCallback onTap) => GestureDetector(
+  Widget _roundIcon(IconData icon, VoidCallback onTap, {int badgeCount = 0}) => GestureDetector(
         onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .22),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: Colors.white, size: 20),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .22),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            if (badgeCount > 0)
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$badgeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       );
 

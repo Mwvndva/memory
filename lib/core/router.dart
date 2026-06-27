@@ -9,6 +9,7 @@ import '../features/feed/memory_detail_screen.dart';
 import '../features/capture/capture_views.dart';
 import '../features/circle/circle_views.dart';
 import '../features/dev/dev_diagnostics.dart';
+import '../features/notification/notification_screen.dart';
 import '../repositories/auth_repository.dart';
 import 'theme.dart';
 
@@ -136,6 +137,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id'] ?? '';
           return MemoryDetailScreen(memoryId: id);
         },
+      ),
+      GoRoute(
+        path: '/notifications',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const NotificationScreen(),
       ),
     ],
   );
