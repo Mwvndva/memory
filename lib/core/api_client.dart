@@ -37,14 +37,14 @@ final apiClientProvider = Provider<Dio>((ref) {
     QueuedInterceptorsWrapper(
       onRequest: (options, handler) async {
         try {
-          final storage = ref.read(secureStorageProvider);
+          final session = ref.read(sessionProvider);
           if (options.path == '/auth/refresh') {
-            final refreshToken = await storage.read(key: 'refresh_token');
+            final refreshToken = session.refreshToken;
             if (refreshToken != null && refreshToken.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $refreshToken';
             }
           } else {
-            final token = await storage.read(key: 'auth_token');
+            final token = session.accessToken;
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
             }
@@ -69,12 +69,15 @@ final apiClientProvider = Provider<Dio>((ref) {
                 final newAccessToken = tokens != null ? tokens['access_token'] as String? : null;
                 final newRefreshToken = tokens != null ? tokens['refresh_token'] as String? : null;
 
-                if (newAccessToken != null) {
+                if (newAccessToken != null && newRefreshToken != null) {
+                  // Centralized token update inside SessionManager
+                  ref.read(sessionProvider.notifier).updateTokens(newAccessToken, newRefreshToken);
+
+                  // Persist to secure storage
                   final storage = ref.read(secureStorageProvider);
                   await storage.write(key: 'auth_token', value: newAccessToken);
-                  if (newRefreshToken != null) {
-                    await storage.write(key: 'refresh_token', value: newRefreshToken);
-                  }
+                  await storage.write(key: 'refresh_token', value: newRefreshToken);
+                  
                   return newAccessToken;
                 }
               } on DioException catch (refreshErr) {
@@ -109,7 +112,7 @@ final apiClientProvider = Provider<Dio>((ref) {
           }
 
           if (shouldLogout) {
-            await ref.read(authProvider.notifier).handleSessionExpired();
+            await ref.read(sessionProvider.notifier).handleSessionExpired();
           }
         }
 

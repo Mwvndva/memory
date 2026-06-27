@@ -17,8 +17,9 @@ final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
 
 class GoRouterRefreshNotifier extends ChangeNotifier {
   GoRouterRefreshNotifier(Ref ref) {
-    ref.listen(authProvider, (previous, next) {
-      if (previous?.isAuthenticated != next.isAuthenticated) {
+    ref.listen(sessionProvider, (previous, next) {
+      if (previous?.isAuthenticated != next.isAuthenticated ||
+          previous?.isRestoring != next.isRestoring) {
         notifyListeners();
       }
     });
@@ -37,11 +38,20 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/loading',
     refreshListenable: listenable,
     redirect: (context, state) {
-      final isAuth = ref.read(authProvider).isAuthenticated;
+      final session = ref.read(sessionProvider);
+      final isRestoring = session.isRestoring;
+      final isAuth = session.isAuthenticated;
       final path = state.uri.path;
 
-      // Loading screen doesn't block redirects
-      if (path == '/loading') return null;
+      // While restoring session, hold the user on /loading
+      if (isRestoring) {
+        return '/loading';
+      }
+
+      // Once finished restoring, route from loading to correct home/login
+      if (path == '/loading') {
+        return isAuth ? '/capture' : '/login';
+      }
 
       // If not authenticated, force them to onboarding/login
       if (!isAuth) {

@@ -1102,7 +1102,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(authProvider.notifier).fetchProfile();
+      ref.read(sessionProvider.notifier).fetchProfile();
     });
   }
 
@@ -1591,7 +1591,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             );
                             if (file == null) return;
                             final bytes = await file.readAsBytes();
-                            await ref.read(authProvider.notifier).updateAvatar(bytes);
+                            await ref.read(sessionProvider.notifier).updateAvatar(bytes);
                           },
                           child: Stack(
                             children: [
@@ -1723,7 +1723,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   onTap: () {
                     Navigator.pop(context);
                     Future.microtask(() {
-                      ref.read(authProvider.notifier).logout();
+                      ref.read(sessionProvider.notifier).logout();
                     });
                   },
                   child: Container(

@@ -175,8 +175,8 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
       WidgetManager.syncLatestMemory(feedItems);
       // Increment local streakDays to easily test milestones in mock mode
       final currentStreak = _ref.read(authProvider).streakDays;
-      _ref.read(authProvider.notifier).state = _ref.read(authProvider).copyWith(
-        streakDays: currentStreak + 1,
+      _ref.read(sessionProvider.notifier).updateProfile(
+        _ref.read(authProvider).copyWith(streakDays: currentStreak + 1),
       );
     } else {
       try {
@@ -207,7 +207,7 @@ class MemoryNotifier extends StateNotifier<List<MemoryItem>> {
         await dio.post('/memories/upload', data: formData);
         
         // Fetch updated profile stats to update user streakDays
-        await _ref.read(authProvider.notifier).fetchProfile();
+        await _ref.read(sessionProvider.notifier).fetchProfile();
 
         // Re-fetch clean list from backend to keep local UI exactly in sync
         await fetchFeed();

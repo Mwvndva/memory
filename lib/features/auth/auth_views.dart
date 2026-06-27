@@ -32,34 +32,27 @@ class LoadingView extends ConsumerStatefulWidget {
 }
 
 class _LoadingViewState extends ConsumerState<LoadingView> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer(const Duration(milliseconds: 1100), () {
-      if (mounted) {
-        context.go('/login');
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final session = ref.watch(sessionProvider);
+    if (!session.isRestoring) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.go(session.isAuthenticated ? '/capture' : '/login');
+        }
+      });
+    }
+
+    return const Scaffold(
       backgroundColor: kYellow,
       body: Center(
-        child: Image.asset(
-          'assets/images/memory-logo.png',
-          width: 220,
-          height: 220,
-          fit: BoxFit.contain,
+        child: SizedBox(
+          width: 50,
+          height: 50,
+          child: CircularProgressIndicator(
+            color: kBlack,
+            strokeWidth: 4,
+          ),
         ),
       ),
     );
@@ -93,7 +86,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
       _errorMessage = '';
     });
     try {
-      final success = await ref.read(authProvider.notifier).login(
+      final success = await ref.read(sessionProvider.notifier).login(
             _loginId.text,
             _loginPassword.text,
           );
@@ -244,7 +237,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   }
 
   Future<void> _validateUsername() async {
-    final result = await ref.read(authProvider.notifier).checkUsername(_username.text);
+    final result = await ref.read(sessionProvider.notifier).checkUsername(_username.text);
     if (!mounted) return;
     setState(() {
       usernameStatus = result['message'];
@@ -253,7 +246,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   }
 
   void _validatePassword() {
-    final result = ref.read(authProvider.notifier).checkPassword(_password.text, _confirmPassword.text);
+    final result = ref.read(sessionProvider.notifier).checkPassword(_password.text, _confirmPassword.text);
     setState(() {
       passwordStatus = result['message'];
       passwordOk = result['ok'];
@@ -282,7 +275,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     setState(() => _createLoading = true);
     Map<String, dynamic> result = {'ok': false, 'message': 'Registration failed'};
     try {
-      result = await ref.read(authProvider.notifier).createAccount(
+      result = await ref.read(sessionProvider.notifier).createAccount(
             firstName: _firstName.text.trim(),
             lastName: _lastName.text.trim(),
             username: _username.text.trim(),
@@ -790,7 +783,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
       _avatarBytes = bytes;
     });
     try {
-      await ref.read(authProvider.notifier).updateAvatar(bytes);
+      await ref.read(sessionProvider.notifier).updateAvatar(bytes);
     } catch (e) {
       if (mounted) {
         showAppError(context, e.toString());
@@ -1256,7 +1249,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               _pill(
                 'Start using Memory',
                 () {
-                  ref.read(authProvider.notifier).authenticate();
+                  ref.read(sessionProvider.notifier).authenticate();
                   context.go('/feed');
                 },
                 dark,

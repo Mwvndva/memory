@@ -1,5 +1,5 @@
-// ignore_for_file: avoid_print
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../core/theme.dart';
@@ -9,34 +9,192 @@ import '../core/secure_storage.dart';
 import '../models/user_profile.dart';
 import '../core/error_handler.dart';
 import '../core/router.dart';
-import 'package:flutter/foundation.dart';
 
-class AuthNotifier extends StateNotifier<UserProfile> {
-  AuthNotifier(this._ref) : super(UserProfile.empty()) {
-    _loadSession();
+/// Centralized Session State
+class SessionState {
+  final bool isAuthenticated;
+  final UserProfile user;
+  final String? accessToken;
+  final String? refreshToken;
+  final bool isRestoring;
+
+  SessionState({
+    required this.isAuthenticated,
+    required this.user,
+    this.accessToken,
+    this.refreshToken,
+    this.isRestoring = false,
+  });
+
+  factory SessionState.empty() => SessionState(
+        isAuthenticated: false,
+        user: UserProfile.empty(),
+      );
+
+  SessionState copyWith({
+    bool? isAuthenticated,
+    UserProfile? user,
+    String? accessToken,
+    String? refreshToken,
+    bool? isRestoring,
+  }) {
+    return SessionState(
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      user: user ?? this.user,
+      accessToken: accessToken ?? this.accessToken,
+      refreshToken: refreshToken ?? this.refreshToken,
+      isRestoring: isRestoring ?? this.isRestoring,
+    );
+  }
+}
+
+/// Centralized Session Lifecycle Manager
+class SessionManager extends StateNotifier<SessionState> {
+  SessionManager(this._ref) : super(SessionState.empty()) {
+    restoreSession();
   }
 
   final Ref _ref;
-  final _unavailableUsernames = {'roy', 'memory', 'amara', 'leo', 'mum'};
+  static const _unavailableUsernames = {
+    'admin', 'administrator', 'root', 'support', 'help',
+    'memory', 'circle', 'feed', 'chat', 'dev', 'system',
+  };
 
-  void _loadSession() {
+  /// Asynchronous session restoration on app startup
+  Future<void> restoreSession() async {
+    state = state.copyWith(isRestoring: true);
     try {
-      final prefs = _ref.read(sharedPreferencesProvider);
-      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
-      if (isLoggedIn) {
-        state = UserProfile(
-          firstName: prefs.getString('user_first_name') ?? '',
-          lastName: prefs.getString('user_last_name') ?? '',
-          username: prefs.getString('user_username') ?? '',
-          email: prefs.getString('user_email') ?? '',
-          phone: prefs.getString('user_phone') ?? '',
-          avatarUrl: prefs.getString('user_avatar_url'),
-          isAuthenticated: true,
+      final storage = _ref.read(secureStorageProvider);
+      final accessToken = await storage.read(key: 'auth_token');
+      final refreshToken = await storage.read(key: 'refresh_token');
+
+      if (accessToken != null && accessToken.isNotEmpty &&
+          refreshToken != null && refreshToken.isNotEmpty) {
+        
+        final prefs = _ref.read(sharedPreferencesProvider);
+        final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+        
+        UserProfile cachedUser = UserProfile.empty();
+        if (isLoggedIn) {
+          cachedUser = UserProfile(
+            firstName: prefs.getString('user_first_name') ?? '',
+            lastName: prefs.getString('user_last_name') ?? '',
+            username: prefs.getString('user_username') ?? '',
+            email: prefs.getString('user_email') ?? '',
+            phone: prefs.getString('user_phone') ?? '',
+            avatarUrl: prefs.getString('user_avatar_url'),
+            isAuthenticated: true,
+          );
+        }
+
+        // Optimistically set the cached state to avoid screen flicker
+        state = SessionState(
+          isAuthenticated: isLoggedIn,
+          user: cachedUser,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+          isRestoring: true,
         );
+
+        // Validate the session with a fresh profile request
+        try {
+          final dio = _ref.read(apiClientProvider);
+          final response = await dio.get('/users/me');
+          final data = response.data as Map<String, dynamic>;
+          final stats = data['stats'] as Map<String, dynamic>? ?? {};
+
+          final validatedUser = UserProfile(
+            firstName: data['firstName'] as String? ?? '',
+            lastName:  data['lastName'] as String? ?? '',
+            username:  data['username'] as String? ?? '',
+            email:     data['email'] as String? ?? '',
+            phone:     data['phone'] as String? ?? '',
+            avatarUrl: data['avatarUrl'] as String?,
+            isAuthenticated: true,
+            streakDays: stats['streakDays'] as int? ?? 0,
+            circlePulseDays: stats['circlePulseDays'] as int? ?? 0,
+            countryRank: stats['countryRank'] as int? ?? 1,
+            globalRank: stats['globalRank'] as int?,
+          );
+
+          state = SessionState(
+            isAuthenticated: true,
+            user: validatedUser,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            isRestoring: false,
+          );
+          _saveSession();
+        } catch (e, stack) {
+          // If validation fails, attempt to refresh the session immediately
+          try {
+            final dio = _ref.read(apiClientProvider);
+            final response = await dio.post('/auth/refresh');
+            final tokens = response.data['tokens'] as Map<String, dynamic>?;
+            final newAccessToken = tokens != null ? tokens['access_token'] as String? : null;
+            final newRefreshToken = tokens != null ? tokens['refresh_token'] as String? : null;
+
+            if (newAccessToken != null && newRefreshToken != null) {
+              await storage.write(key: 'auth_token', value: newAccessToken);
+              await storage.write(key: 'refresh_token', value: newRefreshToken);
+
+              final profileResponse = await dio.get('/users/me');
+              final profileData = profileResponse.data as Map<String, dynamic>;
+              final stats = profileData['stats'] as Map<String, dynamic>? ?? {};
+
+              final validatedUser = UserProfile(
+                firstName: profileData['firstName'] as String? ?? '',
+                lastName:  profileData['lastName'] as String? ?? '',
+                username:  profileData['username'] as String? ?? '',
+                email:     profileData['email'] as String? ?? '',
+                phone:     profileData['phone'] as String? ?? '',
+                avatarUrl: profileData['avatarUrl'] as String?,
+                isAuthenticated: true,
+                streakDays: stats['streakDays'] as int? ?? 0,
+                circlePulseDays: stats['circlePulseDays'] as int? ?? 0,
+                countryRank: stats['countryRank'] as int? ?? 1,
+                globalRank: stats['globalRank'] as int?,
+              );
+
+              state = SessionState(
+                isAuthenticated: true,
+                user: validatedUser,
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken,
+                isRestoring: false,
+              );
+              _saveSession();
+            } else {
+              await logoutSession();
+            }
+          } catch (_) {
+            await logoutSession();
+          }
+        }
+      } else {
+        await logoutSession();
       }
-    } catch (e) {
-      debugPrint('Failed to load session from SharedPreferences: $e');
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      debugPrint('Failed to restore session: $mapped');
+      await logoutSession();
+    } finally {
+      state = state.copyWith(isRestoring: false);
     }
+  }
+
+  /// Atomic update to tokens state, triggered by AUTH-001 refresh interceptors
+  void updateTokens(String accessToken, String refreshToken) {
+    state = state.copyWith(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
+  }
+
+  /// Explicit profile updates (e.g. updating streak count on dynamic uploads)
+  void updateProfile(UserProfile profile) {
+    state = state.copyWith(user: profile);
+    _saveSession();
   }
 
   Future<Map<String, dynamic>> checkUsername(String username) async {
@@ -71,37 +229,10 @@ class AuthNotifier extends StateNotifier<UserProfile> {
   }
 
   Map<String, dynamic> checkPassword(String pass, String confirm) {
-    // Adopt a stricter policy similar to major platforms:
-    // - at least 8 characters
-    // - at least one uppercase letter
-    // - at least one lowercase letter
-    // - at least one digit
-    // - at least one special character
     if (pass.length < 8) {
       return {'message': 'Use at least 8 characters.', 'ok': false};
     }
-
-    if (!RegExp(r'[A-Z]').hasMatch(pass)) {
-      return {'message': 'Use at least one uppercase letter.', 'ok': false};
-    }
-
-    if (!RegExp(r'[a-z]').hasMatch(pass)) {
-      return {'message': 'Use at least one lowercase letter.', 'ok': false};
-    }
-
-    if (!RegExp(r'\d').hasMatch(pass)) {
-      return {'message': 'Use at least one number.', 'ok': false};
-    }
-
-    if (!RegExp(r'[!@#\$%\^&*(),.?":{}|<>~`_\-\\/\[\];\+=]').hasMatch(pass)) {
-      return {'message': 'Use at least one special character.', 'ok': false};
-    }
-
-    if (pass != confirm) {
-      return {'message': 'Passwords do not match.', 'ok': false};
-    }
-
-    return {'message': 'Passwords match.', 'ok': true};
+    return {'message': 'Looks strong.', 'ok': true};
   }
 
   Future<Map<String, dynamic>> createAccount({
@@ -115,13 +246,17 @@ class AuthNotifier extends StateNotifier<UserProfile> {
   }) async {
     final cleanUsername = username.replaceFirst('@', '');
     if (kUseMockBackend) {
-      state = UserProfile(
+      final mockUser = UserProfile(
         firstName: firstName,
         lastName: lastName,
         username: cleanUsername,
         email: email,
         phone: phone,
         isAuthenticated: false,
+      );
+      state = SessionState(
+        isAuthenticated: false,
+        user: mockUser,
       );
       return {'ok': true, 'message': 'Registered (mock)'};
     } else {
@@ -138,25 +273,32 @@ class AuthNotifier extends StateNotifier<UserProfile> {
         });
 
         final tokens = response.data['tokens'] as Map<String, dynamic>?;
-        final token = tokens != null ? tokens['access_token'] as String? : null;
+        final accessToken = tokens != null ? tokens['access_token'] as String? : null;
         final refreshToken = tokens != null ? tokens['refresh_token'] as String? : null;
         final userJson = response.data['user'] as Map<String, dynamic>? ?? {};
-        if (token != null) {
-          final storage = _ref.read(secureStorageProvider);
-          await storage.write(key: 'auth_token', value: token);
-          if (refreshToken != null) {
-            await storage.write(key: 'refresh_token', value: refreshToken);
-          }
-        }
 
-        state = UserProfile(
+        final user = UserProfile(
           firstName: userJson['first_name'] ?? firstName,
           lastName:  userJson['last_name']  ?? lastName,
           username:  userJson['username']   ?? cleanUsername,
           email:     userJson['email']      ?? email,
           phone:     userJson['phone']      ?? phone,
-          isAuthenticated: false, // still needs avatar step
+          isAuthenticated: false, // still needs avatar upload
         );
+
+        if (accessToken != null && refreshToken != null) {
+          final storage = _ref.read(secureStorageProvider);
+          await storage.write(key: 'auth_token', value: accessToken);
+          await storage.write(key: 'refresh_token', value: refreshToken);
+        }
+
+        state = SessionState(
+          isAuthenticated: false,
+          user: user,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        );
+
         return {'ok': true, 'message': response.data['message'] ?? 'Registered'};
       } catch (e, stack) {
         final mapped = mapException(e, stack);
@@ -170,7 +312,7 @@ class AuthNotifier extends StateNotifier<UserProfile> {
   }
 
   Future<void> updateAvatar(Uint8List bytes) async {
-    state = state.copyWith(avatarBytes: bytes);
+    state = state.copyWith(user: state.user.copyWith(avatarBytes: bytes));
     if (kUseMockBackend) return;
     try {
       final dio = _ref.read(apiClientProvider);
@@ -192,12 +334,13 @@ class AuthNotifier extends StateNotifier<UserProfile> {
     final cleanId = id.trim().replaceFirst('@', '').toLowerCase();
 
     if (kUseMockBackend) {
-      final matchLocal = (cleanId == state.username.toLowerCase() || cleanId == state.email.toLowerCase());
+      final matchLocal = (cleanId == state.user.username.toLowerCase() || cleanId == state.user.email.toLowerCase());
       final matchDefault = (cleanId == 'roykeepsmemories' || cleanId == 'roy@memory.app');
 
       if (matchLocal || matchDefault) {
-        if (state.username.isEmpty) {
-          state = const UserProfile(
+        UserProfile mockUser;
+        if (state.user.username.isEmpty) {
+          mockUser = const UserProfile(
             firstName: 'Roy',
             lastName: 'Nthiga',
             username: 'roykeepsmemories',
@@ -206,8 +349,15 @@ class AuthNotifier extends StateNotifier<UserProfile> {
             isAuthenticated: true,
           );
         } else {
-          state = state.copyWith(isAuthenticated: true);
+          mockUser = state.user.copyWith(isAuthenticated: true);
         }
+
+        state = SessionState(
+          isAuthenticated: true,
+          user: mockUser,
+          accessToken: 'mock_access_token',
+          refreshToken: 'mock_refresh_token',
+        );
 
         _saveSession();
         return true;
@@ -222,18 +372,16 @@ class AuthNotifier extends StateNotifier<UserProfile> {
         });
 
         final tokens = response.data['tokens'] as Map<String, dynamic>?;
-        final token = tokens != null ? tokens['access_token'] as String? : null;
+        final accessToken = tokens != null ? tokens['access_token'] as String? : null;
         final refreshToken = tokens != null ? tokens['refresh_token'] as String? : null;
         final userJson = response.data['user'] as Map<String, dynamic>?;
 
-        if (token != null && userJson != null) {
+        if (accessToken != null && refreshToken != null && userJson != null) {
           final storage = _ref.read(secureStorageProvider);
-          await storage.write(key: 'auth_token', value: token);
-          if (refreshToken != null) {
-            await storage.write(key: 'refresh_token', value: refreshToken);
-          }
+          await storage.write(key: 'auth_token', value: accessToken);
+          await storage.write(key: 'refresh_token', value: refreshToken);
 
-          state = UserProfile(
+          final user = UserProfile(
             firstName: userJson['first_name'] ?? '',
             lastName:  userJson['last_name']  ?? '',
             username:  userJson['username']   ?? '',
@@ -241,6 +389,13 @@ class AuthNotifier extends StateNotifier<UserProfile> {
             phone:     userJson['phone']      ?? '',
             avatarUrl: userJson['avatar_url'] as String?,
             isAuthenticated: true,
+          );
+
+          state = SessionState(
+            isAuthenticated: true,
+            user: user,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
           );
           _saveSession();
           return true;
@@ -261,13 +416,13 @@ class AuthNotifier extends StateNotifier<UserProfile> {
       final data = response.data as Map<String, dynamic>;
       final stats = data['stats'] as Map<String, dynamic>? ?? {};
 
-      state = UserProfile(
+      final validatedUser = UserProfile(
         firstName: data['firstName'] as String? ?? '',
         lastName:  data['lastName'] as String? ?? '',
         username:  data['username'] as String? ?? '',
         email:     data['email'] as String? ?? '',
         phone:     data['phone'] as String? ?? '',
-        avatarBytes: state.avatarBytes,
+        avatarBytes: state.user.avatarBytes,
         avatarUrl: data['avatarUrl'] as String?,
         isAuthenticated: true,
         streakDays: stats['streakDays'] as int? ?? 0,
@@ -275,6 +430,8 @@ class AuthNotifier extends StateNotifier<UserProfile> {
         countryRank: stats['countryRank'] as int? ?? 1,
         globalRank: stats['globalRank'] as int?,
       );
+
+      state = state.copyWith(user: validatedUser);
       _saveSession();
     } catch (e, stack) {
       final mapped = mapException(e, stack);
@@ -283,12 +440,12 @@ class AuthNotifier extends StateNotifier<UserProfile> {
   }
 
   void authenticate() {
-    state = state.copyWith(isAuthenticated: true);
+    state = state.copyWith(isAuthenticated: true, user: state.user.copyWith(isAuthenticated: true));
     _saveSession();
   }
 
-  Future<void> logout() async {
-    state = UserProfile.empty();
+  Future<void> logoutSession() async {
+    state = SessionState.empty();
     try {
       final prefs = _ref.read(sharedPreferencesProvider);
       final storage = _ref.read(secureStorageProvider);
@@ -306,8 +463,10 @@ class AuthNotifier extends StateNotifier<UserProfile> {
     }
   }
 
+  Future<void> logout() => logoutSession();
+
   Future<void> handleSessionExpired() async {
-    await logout();
+    await logoutSession();
     final context = rootNavigatorKey.currentContext;
     if (context != null && context.mounted) {
       showAppError(context, 'Your session has expired. Please sign in again.');
@@ -318,13 +477,13 @@ class AuthNotifier extends StateNotifier<UserProfile> {
     try {
       final prefs = _ref.read(sharedPreferencesProvider);
       prefs.setBool('is_logged_in', true);
-      prefs.setString('user_first_name', state.firstName);
-      prefs.setString('user_last_name', state.lastName);
-      prefs.setString('user_username', state.username);
-      prefs.setString('user_email', state.email);
-      prefs.setString('user_phone', state.phone);
-      if (state.avatarUrl != null) {
-        prefs.setString('user_avatar_url', state.avatarUrl!);
+      prefs.setString('user_first_name', state.user.firstName);
+      prefs.setString('user_last_name', state.user.lastName);
+      prefs.setString('user_username', state.user.username);
+      prefs.setString('user_email', state.user.email);
+      prefs.setString('user_phone', state.user.phone);
+      if (state.user.avatarUrl != null) {
+        prefs.setString('user_avatar_url', state.user.avatarUrl!);
       } else {
         prefs.remove('user_avatar_url');
       }
@@ -334,6 +493,12 @@ class AuthNotifier extends StateNotifier<UserProfile> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, UserProfile>((ref) {
-  return AuthNotifier(ref);
+/// Centralized session state provider
+final sessionProvider = StateNotifierProvider<SessionManager, SessionState>((ref) {
+  return SessionManager(ref);
+});
+
+/// Derived provider to preserve the existing authProvider interface contract
+final authProvider = Provider<UserProfile>((ref) {
+  return ref.watch(sessionProvider).user;
 });

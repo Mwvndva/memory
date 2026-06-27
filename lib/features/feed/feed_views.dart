@@ -193,7 +193,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     super.initState();
     Future.microtask(() {
       if (mounted) {
-        ref.read(authProvider.notifier).fetchProfile();
+        ref.read(sessionProvider.notifier).fetchProfile();
         ref.read(memoryProvider.notifier).fetchFeed().catchError((err) {
           if (mounted) {
             showAppError(context, err.toString());
