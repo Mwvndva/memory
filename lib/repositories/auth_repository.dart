@@ -9,6 +9,7 @@ import '../core/secure_storage.dart';
 import '../models/user_profile.dart';
 import '../core/error_handler.dart';
 import '../core/router.dart';
+import '../media/cache_coordinator.dart';
 
 /// Centralized Session State
 class SessionState {
@@ -470,6 +471,7 @@ class SessionManager extends StateNotifier<SessionState> {
       await prefs.remove('user_email');
       await prefs.remove('user_phone');
       await prefs.remove('user_avatar_url');
+      _ref.read(cacheCoordinatorProvider).clearAll();
     } catch (e) {
       debugPrint('Error clearing secure storage/shared preferences: $e');
     }

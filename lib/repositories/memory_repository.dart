@@ -20,6 +20,7 @@ import 'optimistic_transaction_manager.dart';
 import '../models/user_profile.dart';
 import '../realtime/realtime_event.dart';
 import '../realtime/realtime_providers.dart';
+import '../media/cache_coordinator.dart';
 
 Color parseHexColor(String hexStr) {
   var clean = hexStr.replaceAll('#', '').trim();
@@ -195,10 +196,10 @@ class MemoryRepository {
         WidgetManager.syncLatestMemory(feedItems);
 
         try {
-          final box = Hive.box('feed_cache');
-          await box.put('feed', jsonEncode(rawList));
+          final coordinator = _ref.read(cacheCoordinatorProvider);
+          await coordinator.write('feed', rawList);
         } catch (e) {
-          debugPrint('Failed to save feed cache: $e');
+          debugPrint('Failed to save feed cache via CacheCoordinator: $e');
         }
       }
 
@@ -211,10 +212,9 @@ class MemoryRepository {
 
   List<MemoryItem> getCachedFeed() {
     try {
-      final box = Hive.box('feed_cache');
-      final cachedJson = box.get('feed') as String?;
-      if (cachedJson != null && cachedJson.isNotEmpty) {
-        final List<dynamic> rawList = jsonDecode(cachedJson);
+      final coordinator = _ref.read(cacheCoordinatorProvider);
+      final rawList = coordinator.read('feed');
+      if (rawList != null && rawList is List) {
         return _parseJsonFeed(rawList);
       }
     } catch (_) {
