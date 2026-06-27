@@ -527,6 +527,24 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
+  Future<void> sendReactionEvent(String memoryId, String emoji, String action) async {
+    if (kUseMockBackend) return;
+    try {
+      _channel?.sink.add(jsonEncode({
+        'event': 'send_reaction',
+        'data': {
+          'memory_id': memoryId,
+          'emoji': emoji,
+          'action': action,
+        },
+      }));
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      debugPrint('Failed to transmit reaction over WS: $mapped');
+      rethrow;
+    }
+  }
+
   // ─── Internal helpers ─────────────────────────────────────────────────────
 
   String? _activeContact;
