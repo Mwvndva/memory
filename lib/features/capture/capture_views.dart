@@ -11,6 +11,7 @@ import '../../core/theme.dart';
 import '../../core/error_handler.dart';
 import '../../repositories/memory_repository.dart';
 import '../../repositories/chat_repository.dart';
+import '../../models/memory_item.dart';
 import '../circle/circle_views.dart';
 
 List<CameraDescription>? _globalCameras;
@@ -564,23 +565,107 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   // Helper for memories pill button below capture button
   Widget _memoriesPillButton({required VoidCallback onTap}) {
+    final activeMemories = ref.watch(feedMemoriesProvider);
+    // Find unique authors who posted (excluding self is typical, but we can list active friends)
+    final Map<String, MemoryItem> uniqueFriends = {};
+    for (final m in activeMemories) {
+      if (m.person.isNotEmpty) {
+        uniqueFriends[m.person] = m;
+      }
+    }
+    final friendsList = uniqueFriends.values.toList();
+    final friendsCount = friendsList.length;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.35),
+          color: Colors.black.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.2),
         ),
-        child: const Text(
-          'memories',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.8,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (friendsCount > 0) ...[
+              SizedBox(
+                height: 22,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: List.generate(
+                        friendsCount > 3 ? 3 : friendsCount,
+                        (index) {
+                          final f = friendsList[index];
+                          return Positioned(
+                            left: index * 14.0,
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.black, width: 1.5),
+                                color: f.avatar,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  f.initial,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(width: (friendsCount > 3 ? 3 : friendsCount) * 14.0 + 8.0),
+                    if (friendsCount > 3) ...[
+                      Text(
+                        '+${friendsCount - 3} ',
+                        style: const TextStyle(
+                          color: kYellow,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Today's Memories",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                if (friendsCount > 0)
+                  Text(
+                    '$friendsCount friends posted',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -608,25 +693,27 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   // Message icon button for bottom-right with unread badge overlay
   Widget _overlayCircleMessageButton({required VoidCallback onTap, required int unreadCount}) {
+    final displayCount = unreadCount > 9 ? '9+' : '$unreadCount';
     return GestureDetector(
       onTap: onTap,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           const Icon(
-            Icons.mark_unread_chat_alt_rounded,
+            Icons.chat_bubble_outline_rounded,
             color: Colors.white,
             size: 28,
           ),
           if (unreadCount > 0)
             Positioned(
-              right: -3,
-              top: -3,
+              right: -5,
+              top: -5,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
+                decoration: BoxDecoration(
+                  color: kYellow,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.black, width: 1.2),
                 ),
                 constraints: const BoxConstraints(
                   minWidth: 16,
@@ -634,11 +721,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  '$unreadCount',
+                  displayCount,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 8,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
@@ -700,18 +787,51 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   }
 
   Widget _captureReflectionBackground() {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF151515), Color(0xFF2B2618), Color(0xFF0E0E0E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    final isRecording = _isRecording;
+    final blurVal = isRecording ? 22.0 : 16.0;
+    final opacityVal = isRecording ? 0.25 : 0.15;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Duplicate camera/reflection visual basis
+        if (_isCameraInitialized && _cameraController != null)
+          Transform.scale(
+            scale: 1.20,
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _cameraController!.value.previewSize?.height ?? 1080,
+                height: _cameraController!.value.previewSize?.width ?? 1920,
+                child: CameraPreview(_cameraController!),
+              ),
+            ),
+          )
+        else
+          Container(color: const Color(0xFF151515)),
+
+        // Dark overlay and blur filter combo
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blurVal, sigmaY: blurVal),
+          child: Container(
+            color: Colors.black.withValues(alpha: 1.0 - opacityVal),
+          ),
         ),
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(color: Colors.black.withValues(alpha: 0.28)),
-      ),
+
+        // 60% Vignette/dark gradient overlay to limit adaptive brightness and ensure control contrast
+        Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: [
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.60),
+              ],
+              center: Alignment.center,
+              radius: 1.1,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -731,14 +851,21 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         return Container(
           width: double.infinity,
           height: double.infinity,
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(2), // 2px border outline
           decoration: BoxDecoration(
             borderRadius: borderRadius,
-            border: Border.all(color: kYellow, width: 3),
+            border: Border.all(color: kYellow.withValues(alpha: 0.85), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: kYellow.withValues(alpha: 0.18),
+                blurRadius: 10,
+                spreadRadius: 1,
+              ),
+            ],
             color: Colors.white.withValues(alpha: 0.12),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius - 8),
+            borderRadius: BorderRadius.circular(radius - 2),
             child: GestureDetector(
               onTap: _hasRecording ? () => setState(() => _captureCaptionOpen = true) : null,
               child: Stack(
@@ -998,17 +1125,27 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         onTap: onTap,
         child: Container(
           width: width ?? double.infinity,
-          height: compact ? 34 : 46,
+          height: compact ? 38 : 46,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: color ?? (dark ? kDarkCream : kCream),
-            borderRadius: BorderRadius.circular(999),
+            color: color ?? (dark ? kBlack : Colors.white),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: dark ? 0.12 : 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Text(
             text,
             style: TextStyle(
               color: foreground ?? (dark ? kCream : kCharcoal),
-              fontSize: compact ? 10 : 13,
+              fontSize: 13,
               fontWeight: FontWeight.w900,
             ),
           ),
