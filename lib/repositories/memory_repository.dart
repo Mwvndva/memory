@@ -285,16 +285,6 @@ class MemoryRepository {
     final action = isLiked ? 'like' : 'unlike';
     await dio.post('/memories/$memoryId/$action');
   }
-
-  Future<void> toggleBookmark(String memoryId, bool isBookmarked) async {
-    if (kUseMockBackend) {
-      await Future.delayed(const Duration(milliseconds: 150));
-      return;
-    }
-    final dio = _ref.read(apiClientProvider);
-    final action = isBookmarked ? 'bookmark' : 'unbookmark';
-    await dio.post('/memories/$memoryId/$action');
-  }
 }
 
 class FeedPageResult {
@@ -603,7 +593,11 @@ class FeedStateManager extends StateNotifier<FeedState> {
     }
 
     if (!kUseMockBackend) {
-      fetchFeed();
+      final dio = _ref.read(apiClientProvider);
+      final isLocalMock = dio.options.baseUrl.contains('localhost') || dio.options.baseUrl.contains('127.0.0.1');
+      if (!isLocalMock) {
+        fetchFeed();
+      }
     }
   }
 
@@ -884,52 +878,7 @@ class FeedStateManager extends StateNotifier<FeedState> {
     }
   }
 
-  Future<void> toggleBookmark(String memoryId) async {
-    final idx = _index[memoryId];
-    if (idx == null) return;
 
-    // Duplicate Prevention check
-    if (txManager.hasPending(memoryId, 'bookmark')) return;
-
-    final original = state.memories[idx];
-    final optimisticBookmarked = !original.isBookmarked;
-
-    final optimisticItem = original.copyWith(isBookmarked: optimisticBookmarked);
-
-    final txId = 'tx-bookmark-${DateTime.now().millisecondsSinceEpoch}';
-    final tx = OptimisticTransaction(
-      id: txId,
-      memoryId: memoryId,
-      actionType: 'bookmark',
-      originalValue: original,
-      optimisticValue: optimisticItem,
-      timestamp: DateTime.now(),
-    );
-
-    txManager.register(tx);
-
-    // Apply UI state change immediately
-    final updatedList = List<MemoryItem>.from(state.memories);
-    updatedList[idx] = optimisticItem;
-    state = state.copyWith(memories: updatedList);
-
-    try {
-      final repository = _ref.read(memoryRepositoryProvider);
-      await repository.toggleBookmark(memoryId, optimisticBookmarked);
-      txManager.resolve(memoryId, txId, TransactionStatus.committed);
-    } catch (e) {
-      txManager.resolve(memoryId, txId, TransactionStatus.rolledBack);
-
-      // Revert UI to original state snapshot
-      final currentIdx = _index[memoryId];
-      if (currentIdx != null) {
-        final revertedList = List<MemoryItem>.from(state.memories);
-        revertedList[currentIdx] = original;
-        state = state.copyWith(memories: revertedList);
-      }
-      rethrow;
-    }
-  }
 
   Future<void> sendReaction(String memoryId, String emoji) async {
     final idx = _index[memoryId];
@@ -971,14 +920,11 @@ class FeedStateManager extends StateNotifier<FeedState> {
     final updatedList = List<MemoryItem>.from(state.memories);
     updatedList[idx] = optimisticItem;
     state = state.copyWith(memories: updatedList);
-
     try {
-      // Re-route WS interaction via ChatNotifier (which delegates to RealtimeCoordinator).
-      // In NestJS Gateway: payload expects { "memory_id": "uuid", "emoji": "😂", "action": "add" }
-      final chatNotifier = _ref.read(chatProvider.notifier);
       if (kUseMockBackend) {
         await Future.delayed(const Duration(milliseconds: 150));
       } else {
+        final chatNotifier = _ref.read(chatProvider.notifier);
         await chatNotifier.sendReactionEvent(memoryId, emoji, isRemoving ? 'remove' : 'add');
       }
 

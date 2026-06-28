@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -28,7 +28,7 @@ const _stubDetailItem = MemoryItem(
 class MockInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (options.path.endsWith('/comments')) {
+    if (options.path.contains('/comments') || options.path.contains('comments')) {
       if (options.method == 'POST') {
         final Map<String, dynamic> dataMap = options.data is Map ? options.data as Map<String, dynamic> : {};
         final text = dataMap['text'] as String? ?? '';
@@ -63,7 +63,7 @@ class MockInterceptor extends Interceptor {
         },
       );
       handler.resolve(res);
-    } else if (options.path.contains('/memories/detail-test-uuid')) {
+    } else if (options.path.contains('detail-test-uuid')) {
       final res = Response(
         requestOptions: options,
         statusCode: 200,
@@ -79,7 +79,8 @@ class MockInterceptor extends Interceptor {
           'is_liked': false,
           'like_count': 0,
           'is_bookmarked': false,
-          'reactions': []
+          'reactions': [],
+          'creator': {'username': 'testactor', 'avatar_url': ''}
         },
       );
       handler.resolve(res);
@@ -112,7 +113,7 @@ void main() {
     final tempDir = await Directory.systemTemp.createTemp();
     Hive.init(tempDir.path);
     await Hive.openBox('feed_cache');
-    mockDio = Dio()..interceptors.add(MockInterceptor());
+    mockDio = Dio(BaseOptions(baseUrl: 'http://localhost'))..interceptors.add(MockInterceptor());
   });
 
   group('Memory Details Modernization Subsystem Tests', () {
@@ -122,6 +123,11 @@ void main() {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
           apiClientProvider.overrideWithValue(mockDio),
+          feedProvider.overrideWith((ref) {
+            final notifier = FeedStateManager(ref);
+            notifier.state = notifier.state.copyWith(memories: [_stubDetailItem]);
+            return notifier;
+          }),
         ],
       );
       addTearDown(container.dispose);
@@ -146,6 +152,11 @@ void main() {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
           apiClientProvider.overrideWithValue(mockDio),
+          feedProvider.overrideWith((ref) {
+            final notifier = FeedStateManager(ref);
+            notifier.state = notifier.state.copyWith(memories: [_stubDetailItem]);
+            return notifier;
+          }),
         ],
       );
       addTearDown(container.dispose);
@@ -162,8 +173,9 @@ void main() {
       notifier.state = notifier.state.copyWith(comments: []);
 
       const commentText = 'Testing optimistic rollback comments';
-      await notifier.postComment(commentText);
+      final future = notifier.postComment(commentText);
       expect(container.read(memoryDetailProvider('detail-test-uuid')).comments.first.text, commentText);
+      await future;
     });
 
     test('Reaction synchronization propagates to state manager successfully', () async {
@@ -172,6 +184,11 @@ void main() {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
           apiClientProvider.overrideWithValue(mockDio),
+          feedProvider.overrideWith((ref) {
+            final notifier = FeedStateManager(ref);
+            notifier.state = notifier.state.copyWith(memories: [_stubDetailItem]);
+            return notifier;
+          }),
         ],
       );
       addTearDown(container.dispose);
@@ -198,6 +215,11 @@ void main() {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
           apiClientProvider.overrideWithValue(mockDio),
+          feedProvider.overrideWith((ref) {
+            final notifier = FeedStateManager(ref);
+            notifier.state = notifier.state.copyWith(memories: [_stubDetailItem]);
+            return notifier;
+          }),
         ],
       );
       addTearDown(container.dispose);

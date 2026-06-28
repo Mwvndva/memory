@@ -43,7 +43,6 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
 
       state = state.copyWith(memory: found);
 
-      // Fetch memory from backend if not mock
       if (!kUseMockBackend) {
         final dio = _ref.read(apiClientProvider);
         final response = await dio.get('/memories/$_memoryId');
@@ -84,18 +83,22 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
       );
 
       // Initial load of comments
-      await loadComments(replaceAll: true);
+      if (mounted) {
+        await loadComments(replaceAll: true);
+      }
     } catch (e, stack) {
-      final mapped = mapException(e, stack);
-      state = state.copyWith(
-        status: MemoryDetailLoadStatus.error,
-        errorMessage: mapped.toString(),
-      );
+      if (mounted) {
+        final mapped = mapException(e, stack);
+        state = state.copyWith(
+          status: MemoryDetailLoadStatus.error,
+          errorMessage: mapped.toString(),
+        );
+      }
     }
   }
 
   Future<void> loadComments({bool replaceAll = false}) async {
-    if (state.isCommentsLoading) return;
+    if (!mounted || state.isCommentsLoading) return;
     state = state.copyWith(isCommentsLoading: true);
 
     try {
@@ -171,14 +174,18 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
         deduped[c.id] = c;
       }
 
-      state = state.copyWith(
-        comments: deduped.values.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp)), // Newest first
-        commentCursor: nextCursor,
-        hasMoreComments: nextCursor != null,
-        isCommentsLoading: false,
-      );
+      if (mounted) {
+        state = state.copyWith(
+          comments: deduped.values.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp)), // Newest first
+          commentCursor: nextCursor,
+          hasMoreComments: nextCursor != null,
+          isCommentsLoading: false,
+        );
+      }
     } catch (e) {
-      state = state.copyWith(isCommentsLoading: false);
+      if (mounted) {
+        state = state.copyWith(isCommentsLoading: false);
+      }
     }
   }
 
@@ -271,19 +278,7 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
     });
   }
 
-  Future<void> toggleBookmark() async {
-    final m = state.memory;
-    if (m == null) return;
 
-    _memoryBackup = m;
-    final optimisticItem = m.copyWith(isBookmarked: !m.isBookmarked);
-
-    state = state.copyWith(memory: optimisticItem);
-
-    _ref.read(feedProvider.notifier).toggleBookmark(m.id).catchError((_) {
-      state = state.copyWith(memory: _memoryBackup);
-    });
-  }
 
   Future<void> sendReaction(String emoji) async {
     final m = state.memory;
