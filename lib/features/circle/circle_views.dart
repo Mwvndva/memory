@@ -2163,7 +2163,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           color: dark ? kBlack : Colors.white,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
             width: 1,
           ),
           boxShadow: [
@@ -2182,7 +2182,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 Text(
                   '$circleCount / 30',
                   style: TextStyle(
-                    color: kCream,
+                    color: dark ? kCream : kCharcoal,
                     fontSize: 19,
                     fontWeight: FontWeight.w900,
                   ),
@@ -2190,7 +2190,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 Text(
                   'in your circle',
                   style: TextStyle(
-                    color: kCream.withValues(alpha: 0.68),
+                    color: (dark ? kCream : kCharcoal).withValues(alpha: 0.68),
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
@@ -2205,8 +2205,8 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 circleCount < 30 ? () => _showInviteOptions(context, dark) : () {},
                 dark,
                 compact: true,
-                color: Colors.white,
-                foreground: kBlack,
+                color: dark ? Colors.white : kBlack,
+                foreground: dark ? kBlack : Colors.white,
               ),
             ),
           ],

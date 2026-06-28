@@ -44,16 +44,28 @@ class _LoadingViewState extends ConsumerState<LoadingView> {
       });
     }
 
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: kYellow,
       body: Center(
-        child: SizedBox(
-          width: 50,
-          height: 50,
-          child: CircularProgressIndicator(
-            color: kBlack,
-            strokeWidth: 4,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/memory-logo.png',
+              width: 140,
+              height: 140,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 24),
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                color: kBlack,
+                strokeWidth: 3,
+              ),
+            ),
+          ],
         ),
       ),
     );
