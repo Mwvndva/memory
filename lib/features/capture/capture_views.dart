@@ -588,59 +588,54 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (friendsCount > 0) ...[
               SizedBox(
                 height: 22,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: List.generate(
-                        friendsCount > 3 ? 3 : friendsCount,
-                        (index) {
-                          final f = friendsList[index];
-                          return Positioned(
-                            left: index * 14.0,
-                            child: Container(
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.black, width: 1.5),
-                                color: f.avatar,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  f.initial,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
+                // Provide a finite width calculated from friends Count to prevent unbounded Stack exception
+                width: (friendsCount > 3 ? 3 : friendsCount) * 14.0 + 8.0,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: List.generate(
+                    friendsCount > 3 ? 3 : friendsCount,
+                    (index) {
+                      final f = friendsList[index];
+                      return Positioned(
+                        left: index * 14.0,
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.black, width: 1.5),
+                            color: f.avatar,
+                          ),
+                          child: Center(
+                            child: Text(
+                              f.initial,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                    SizedBox(width: (friendsCount > 3 ? 3 : friendsCount) * 14.0 + 8.0),
-                    if (friendsCount > 3) ...[
-                      Text(
-                        '+${friendsCount - 3} ',
-                        style: const TextStyle(
-                          color: kYellow,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                    ],
-                  ],
+                      );
+                    },
+                  ),
                 ),
               ),
-            ],
+              const SizedBox(width: 8),
+              if (friendsCount > 3) ...[
+                Text(
+                  '+${friendsCount - 3} ',
+                  style: const TextStyle(
+                    color: kYellow,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
             Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
