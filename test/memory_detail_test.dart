@@ -76,8 +76,6 @@ class MockInterceptor extends Interceptor {
           'avatar': '#00FF00',
           'gradient_colors': ['#00FF00'],
           'age_hours': 0.1,
-          'is_liked': false,
-          'like_count': 0,
           'is_bookmarked': false,
           'reactions': [],
           'creator': {'username': 'testactor', 'avatar_url': ''}

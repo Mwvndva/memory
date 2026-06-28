@@ -14,29 +14,72 @@ export class MessagesController {
   ) {}
 
   /**
-   * GET /messages/history/:userId?page=1&limit=50
+   * GET /messages/history/:conversationId
+   * GET /messages/history/:userId
    * Authenticated — fetches paginated conversation history between the caller
-   * and another user. Used by the Flutter app to load older messages on scroll.
+   * and another user/conversation. Used by the Flutter app to load older messages on scroll.
    */
-  @Get('history/:userId')
+  @Get('history/:conversationId')
   async getHistory(
     @Req() req: any,
-    @Param('userId') userId: string,
+    @Param('conversationId') conversationId: string,
     @Query('page') page = '1',
     @Query('limit') limit = '50',
     @Query('markRead') markRead = 'true',
   ) {
-    // Check if the target user is in the caller's circle (accepted) OR the
-    // caller is in the target user's circle (accepted). This allows messaging
-    // to work for either party after acceptance.
-    const outgoing = await this.prisma.circleMembership.findUnique({
-      where: { unique_user_member: { userId: req.user.id, memberId: userId } },
-    });
-    const incoming = await this.prisma.circleMembership.findUnique({
-      where: { unique_user_member: { userId: userId, memberId: req.user.id } },
-    });
+    const callerId = req.user?.id;
+    if (!callerId) {
+      this.logger.error(`[Get History] Unauthenticated request context.`);
+      return {
+        data: [],
+        meta: { page: 1, limit: 50, total: 0, totalPages: 0 }
+      };
+    }
 
-    if (!((outgoing && outgoing.accepted) || (incoming && incoming.accepted))) {
+    try {
+      this.logger.log(`[Get History] Fetching relationship for callerId="${callerId}" with memberId/convId="${conversationId}"`);
+      // Resolve either-direction membership details
+      const outgoing = await this.prisma.circleMembership.findUnique({
+        where: { unique_user_member: { userId: callerId, memberId: conversationId } },
+      });
+      const incoming = await this.prisma.circleMembership.findUnique({
+        where: { unique_user_member: { userId: conversationId, memberId: callerId } },
+      });
+
+      if (!((outgoing && outgoing.accepted) || (incoming && incoming.accepted))) {
+        this.logger.warn(`[Get History] Request blocked: No active circle membership between caller="${callerId}" and target="${conversationId}"`);
+        return {
+          data: [],
+          meta: {
+            page: parseInt(page, 10),
+            limit: parseInt(limit, 10),
+            total: 0,
+            totalPages: 0,
+          },
+        };
+      }
+
+      const shouldMarkRead = markRead !== 'false';
+      this.logger.log(`[Get History] Loading conversation: callerId="${callerId}" targetId="${conversationId}" markRead=${shouldMarkRead}`);
+
+      const result = await this.messagesService.getConversation(
+        callerId,
+        conversationId,
+        parseInt(page, 10),
+        parseInt(limit, 10),
+      );
+
+      if (shouldMarkRead) {
+        this.logger.log(`[Get History] Marking messages as read for callerId="${callerId}" from senderId="${conversationId}"`);
+        this.messagesService.markRead(callerId, conversationId).catch((err) => {
+          this.logger.error(`[Get History] Failed to mark messages as read: ${err.message}`, err.stack);
+        });
+      } else {
+        this.logger.log(`[Get History] Skipping markRead (background preview load) for callerId="${callerId}"`);
+      }
+      return result;
+    } catch (err: any) {
+      this.logger.error(`[Get History] Exception caught during loading: ${err.message}`, err.stack);
       return {
         data: [],
         meta: {
@@ -47,25 +90,5 @@ export class MessagesController {
         },
       };
     }
-
-    const shouldMarkRead = markRead !== 'false';
-    this.logger.log(`[Get History] Loading conversation: callerId="${req.user.id}" targetId="${userId}" markRead=${shouldMarkRead}`);
-
-    return this.messagesService.getConversation(
-      req.user.id,
-      userId,
-      parseInt(page, 10),
-      parseInt(limit, 10),
-    ).then(async (result) => {
-      if (shouldMarkRead) {
-        // Mark all messages from this sender to the current user as read
-        // (fire-and-forget — don't await so response isn't delayed)
-        this.logger.log(`[Get History] Marking messages as read for callerId="${req.user.id}" from senderId="${userId}"`);
-        this.messagesService.markRead(req.user.id, userId).catch(() => {});
-      } else {
-        this.logger.log(`[Get History] Skipping markRead (background preview load) for callerId="${req.user.id}"`);
-      }
-      return result;
-    });
   }
 }

@@ -243,7 +243,13 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     WidgetsBinding.instance.removeObserver(this);
     _gridScrollController.removeListener(_onGridScroll);
     _gridScrollController.dispose();
-    _feedVideoController?.dispose();
+    // Do not call _feedVideoController?.dispose() directly here since
+    // PlaybackCoordinator owns the controller and manages its caching and disposal.
+    // Pause the active key to stop audio/video resource consumption cleanly on exit.
+    if (_enqueuedIndex != null) {
+      final key = 'feed_video_$_enqueuedIndex';
+      ref.read(playbackCoordinatorProvider).pause(key);
+    }
     super.dispose();
   }
 
@@ -718,6 +724,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                 controller: pageController,
                 itemCount: listToUse.length,
                 onPageChanged: (idx) {
+                  // Pause old video controller before switching pages
+                  if (_enqueuedIndex != null && _enqueuedIndex != idx) {
+                    final oldKey = 'feed_video_$_enqueuedIndex';
+                    ref.read(playbackCoordinatorProvider).pause(oldKey);
+                  }
                   setState(() {
                     _activeMemoryIndex = idx;
                     _feedReady = false;
@@ -804,42 +815,30 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                 },
               ),
             ),
-            if (!_gridOpen) ...[
-              Positioned(
-                top: top + 16,
-                right: 78,
-                child: _roundIcon(
-                  Icons.notifications_outlined,
-                  () {
-                    _feedVideoController?.pause();
-                    context.push('/notifications');
-                  },
-                  badgeCount: ref.watch(notificationProvider).unreadCount,
-                ),
-              ),
-              Positioned(
-                top: top + 16,
-                right: 22,
-                child: _roundIcon(
-                  Icons.grid_view_rounded,
-                  () => _setGridOpen(true),
-                ),
-              ),
-              if (!isEmptyFeed)
-                Positioned(
-                  top: top + 16,
-                  right: 134,
-                  child: _roundIcon(
-                    _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                    () {
-                      setState(() {
-                        _isMuted = !_isMuted;
-                        _feedVideoController?.setVolume(_isMuted ? 0.0 : 1.0);
-                      });
-                    },
-                  ),
-                ),
-            ],
+             if (!_gridOpen) ...[
+               Positioned(
+                 top: top + 16,
+                 right: 22,
+                 child: _roundIcon(
+                   Icons.grid_view_rounded,
+                   () => _setGridOpen(true),
+                 ),
+               ),
+               if (!isEmptyFeed)
+                 Positioned(
+                   top: top + 16,
+                   right: 78,
+                   child: _roundIcon(
+                     _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                     () {
+                       setState(() {
+                         _isMuted = !_isMuted;
+                         _feedVideoController?.setVolume(_isMuted ? 0.0 : 1.0);
+                       });
+                     },
+                   ),
+                 ),
+             ],
             if (!isEmptyFeed && m != null)
               Positioned(
                 top: top + 24,
@@ -1529,54 +1528,6 @@ class MemoryFrame extends ConsumerWidget {
                   ),
                 ),
               ),
-            // Like/Bookmark action panel on the right side of the memory frame
-            Positioned(
-              right: 14,
-              bottom: 82,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    key: ValueKey('like_btn_${m.id}'),
-                    onTap: () async {
-                      try {
-                        await ref.read(feedProvider.notifier).toggleLike(m.id);
-                      } catch (err) {
-                        if (context.mounted) {
-                          showAppError(context, 'Failed to update like status');
-                        }
-                      }
-                    },
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        m.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: m.isLiked ? Colors.redAccent : Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  if (m.likeCount > 0) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '${m.likeCount}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
             if (composerOpen)
               Positioned(
                 left: 18,

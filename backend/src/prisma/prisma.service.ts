@@ -157,11 +157,18 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
     const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
 
-    if (operation === 'findUnique') {
-      return (client as any)[modelKey].findFirst(args);
-    }
-    if (operation === 'findUniqueOrThrow') {
-      return (client as any)[modelKey].findFirstOrThrow(args);
+    if (operation === 'findUnique' || operation === 'findUniqueOrThrow') {
+      const whereKeys = Object.keys(args.where || {});
+      const isCompoundUnique = whereKeys.length === 1 && whereKeys[0] === 'unique_user_member';
+      if (isCompoundUnique) {
+        // Direct query pass-through to let the prisma engine match the unique constraint properly
+        return query(args);
+      }
+      if (operation === 'findUnique') {
+        return (client as any)[modelKey].findFirst(args);
+      } else {
+        return (client as any)[modelKey].findFirstOrThrow(args);
+      }
     }
 
     if (operation === 'findFirst' || operation === 'findFirstOrThrow' || operation === 'findMany' || operation === 'count') {

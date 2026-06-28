@@ -13,8 +13,6 @@ class MemoryItem {
     required this.ageHours,
     this.videoPath,
     this.avatarUrl,
-    this.isLiked = false,
-    this.likeCount = 0,
     this.isBookmarked = false,
     this.reactions = const {},
   });
@@ -32,8 +30,6 @@ class MemoryItem {
   final double ageHours;
   final String? videoPath;
   final String? avatarUrl;
-  final bool isLiked;
-  final int likeCount;
   final bool isBookmarked;
   final Map<String, int> reactions;
 
@@ -49,8 +45,6 @@ class MemoryItem {
     double? ageHours,
     String? videoPath,
     String? avatarUrl,
-    bool? isLiked,
-    int? likeCount,
     bool? isBookmarked,
     Map<String, int>? reactions,
   }) {
@@ -66,8 +60,6 @@ class MemoryItem {
       ageHours: ageHours ?? this.ageHours,
       videoPath: videoPath ?? this.videoPath,
       avatarUrl: avatarUrl ?? this.avatarUrl,
-      isLiked: isLiked ?? this.isLiked,
-      likeCount: likeCount ?? this.likeCount,
       isBookmarked: isBookmarked ?? this.isBookmarked,
       reactions: reactions ?? this.reactions,
     );

@@ -98,8 +98,6 @@ class MemoryRepository {
       final creatorObj = item['creator'] as Map<String, dynamic>?;
       final avatarUrl = creatorObj?['avatar_url'] as String?;
 
-      final isLiked = item['is_liked'] as bool? ?? false;
-      final likeCount = item['like_count'] as int? ?? 0;
       final isBookmarked = item['is_bookmarked'] as bool? ?? false;
 
       final Map<String, int> reactionsMap = {};
@@ -126,8 +124,6 @@ class MemoryRepository {
         ageHours:  (item['age_hours'] as num?)?.toDouble() ?? 0.0,
         videoPath: item['video_url'] as String?,
         avatarUrl: avatarUrl,
-        isLiked: isLiked,
-        likeCount: likeCount,
         isBookmarked: isBookmarked,
         reactions: reactionsMap,
       );
@@ -275,15 +271,6 @@ class MemoryRepository {
         onSendProgress: onSendProgress,
       );
     }
-  }
-  Future<void> toggleLike(String memoryId, bool isLiked) async {
-    if (kUseMockBackend) {
-      await Future.delayed(const Duration(milliseconds: 150));
-      return;
-    }
-    final dio = _ref.read(apiClientProvider);
-    final action = isLiked ? 'like' : 'unlike';
-    await dio.post('/memories/$memoryId/$action');
   }
 }
 
@@ -823,60 +810,7 @@ class FeedStateManager extends StateNotifier<FeedState> {
   /// The legacy [deleteMemory] name is preserved for call-site compatibility.
   void deleteMemory(String id) => removeById(id);
 
-  // ─── Optimistic Updates Transaction Handling ───────────────────────────────
-
   final OptimisticTransactionManager txManager = OptimisticTransactionManager();
-
-  Future<void> toggleLike(String memoryId) async {
-    final idx = _index[memoryId];
-    if (idx == null) return;
-    
-    // Duplicate Prevention check
-    if (txManager.hasPending(memoryId, 'like')) return;
-
-    final original = state.memories[idx];
-    final optimisticLiked = !original.isLiked;
-    final optimisticCount = original.likeCount + (optimisticLiked ? 1 : -1);
-
-    final optimisticItem = original.copyWith(
-      isLiked: optimisticLiked,
-      likeCount: optimisticCount,
-    );
-
-    final txId = 'tx-like-${DateTime.now().millisecondsSinceEpoch}';
-    final tx = OptimisticTransaction(
-      id: txId,
-      memoryId: memoryId,
-      actionType: 'like',
-      originalValue: original,
-      optimisticValue: optimisticItem,
-      timestamp: DateTime.now(),
-    );
-
-    txManager.register(tx);
-
-    // Apply UI state change immediately
-    final updatedList = List<MemoryItem>.from(state.memories);
-    updatedList[idx] = optimisticItem;
-    state = state.copyWith(memories: updatedList);
-
-    try {
-      final repository = _ref.read(memoryRepositoryProvider);
-      await repository.toggleLike(memoryId, optimisticLiked);
-      txManager.resolve(memoryId, txId, TransactionStatus.committed);
-    } catch (e) {
-      txManager.resolve(memoryId, txId, TransactionStatus.rolledBack);
-      
-      // Revert UI to original state snapshot
-      final currentIdx = _index[memoryId];
-      if (currentIdx != null) {
-        final revertedList = List<MemoryItem>.from(state.memories);
-        revertedList[currentIdx] = original;
-        state = state.copyWith(memories: revertedList);
-      }
-      rethrow;
-    }
-  }
 
 
 

@@ -65,8 +65,6 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
           ageHours: (raw['age_hours'] as num?)?.toDouble() ?? 0.0,
           videoPath: raw['video_url'] as String?,
           avatarUrl: creator?['avatar_url'] as String?,
-          isLiked: raw['is_liked'] as bool? ?? false,
-          likeCount: raw['like_count'] as int? ?? 0,
           isBookmarked: raw['is_bookmarked'] as bool? ?? false,
           reactions: (raw['reactions'] as List? ?? []).fold<Map<String, int>>({}, (map, r) {
             final emoji = r['emoji'] as String? ?? '';
@@ -258,25 +256,6 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
   }
 
   // ─── Reaction Syncing ───────────────────────────────────────────────────────
-
-  Future<void> toggleLike() async {
-    final m = state.memory;
-    if (m == null) return;
-
-    _memoryBackup = m;
-
-    final optimisticLiked = !m.isLiked;
-    final optimisticCount = m.likeCount + (optimisticLiked ? 1 : -1);
-    final optimisticItem = m.copyWith(isLiked: optimisticLiked, likeCount: optimisticCount);
-
-    state = state.copyWith(memory: optimisticItem);
-
-    // Sync to feedProvider first so it stays in sync immediately
-    _ref.read(feedProvider.notifier).toggleLike(m.id).catchError((_) {
-      // Revert if feed manager failed and rolled back
-      state = state.copyWith(memory: _memoryBackup);
-    });
-  }
 
 
 
