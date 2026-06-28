@@ -11,6 +11,9 @@ import '../../core/theme.dart';
 import '../../core/error_handler.dart';
 import '../../repositories/memory_repository.dart';
 import '../../repositories/chat_repository.dart';
+import '../../repositories/auth_repository.dart';
+import '../../repositories/circles_repository.dart';
+import '../../models/user_profile.dart';
 import '../circle/circle_views.dart';
 
 List<CameraDescription>? _globalCameras;
@@ -31,7 +34,8 @@ class CameraCaptureView extends ConsumerStatefulWidget {
   ConsumerState<CameraCaptureView> createState() => _CameraCaptureViewState();
 }
 
-class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with WidgetsBindingObserver {
+class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
+    with WidgetsBindingObserver, TickerProviderStateMixin {
   final _captureCaption = TextEditingController();
   bool _hasRecording = false;
   bool _captureCaptionOpen = false;
@@ -49,20 +53,67 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   bool _isInitializing = false;
   int _lastInitMs = 0;
 
+  // Recording timer
+  final Stopwatch _recordingStopwatch = Stopwatch();
+  late AnimationController _timerAnimationController;
+  String _recordingTimeLabel = '00:00';
+
+  // Capture button pulse animation
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  // Memories bounce animation
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnimation;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initCamera();
+
+    // Capture button breathing pulse
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    // Memories bounce hint
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _bounceAnimation = Tween<double>(begin: 0, end: -6).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut),
+    );
+
+    // Timer tick controller
+    _timerAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3600),
+    );
+    _timerAnimationController.addListener(_updateTimerLabel);
+  }
+
+  void _updateTimerLabel() {
+    if (!_isRecording) return;
+    final elapsed = _recordingStopwatch.elapsed;
+    final minutes = elapsed.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final newLabel = '$minutes:$seconds';
+    if (newLabel != _recordingTimeLabel && mounted) {
+      setState(() => _recordingTimeLabel = newLabel);
+    }
   }
 
   Future<void> _initCamera() async {
-    // Prevent concurrent initializations and rapid re-inits
     if (_isInitializing) return;
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastInitMs < 300) return; // debounce quick calls
+    if (now - _lastInitMs < 300) return;
     _lastInitMs = now;
-
     _isInitializing = true;
     debugPrint('[Camera] init start at ${DateTime.now().toIso8601String()}');
     try {
@@ -70,13 +121,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         _globalCameras = await availableCameras();
       }
       _cameras = _globalCameras ?? [];
-
       if (_cameras.isNotEmpty) {
         if (_selectedCameraIndex >= _cameras.length) {
           _selectedCameraIndex = 0;
         }
-
-        // If an existing controller exists, ensure it's disposed first
         if (_cameraController != null) {
           final old = _cameraController!;
           _cameraController = null;
@@ -86,7 +134,6 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
             debugPrint('[Camera] error disposing old controller: $e');
           }
         }
-
         final controller = CameraController(
           _cameras[_selectedCameraIndex],
           ResolutionPreset.medium,
@@ -94,7 +141,6 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         );
         _cameraController = controller;
         await controller.initialize();
-
         if (mounted && _cameraController == controller) {
           setState(() {
             _isCameraInitialized = true;
@@ -111,14 +157,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   Future<void> _switchCamera() async {
     if (_cameras.isEmpty || _isRecording || _hasRecording) return;
-
     final nextIndex = (_selectedCameraIndex + 1) % _cameras.length;
-
     setState(() {
       _isCameraInitialized = false;
       _selectedCameraIndex = nextIndex;
     });
-
     if (_cameraController != null) {
       final oldController = _cameraController!;
       _cameraController = null;
@@ -128,10 +171,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         debugPrint('[Camera] error disposing old controller during switch: $e');
       }
     }
-
-    // Small delay to let the underlying driver finish teardown (helps some devices)
     await Future.delayed(const Duration(milliseconds: 200));
-
     try {
       await _initCamera();
     } catch (e) {
@@ -158,7 +198,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _captureCaption.dispose();
-    // best-effort dispose; we don't await here because dispose() cannot be async
+    _pulseController.dispose();
+    _bounceController.dispose();
+    _timerAnimationController.dispose();
+    _recordingStopwatch.stop();
     try {
       _cameraController?.dispose();
     } catch (e) {
@@ -174,16 +217,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Release the camera on pause/inactive to avoid holding surfaces when backgrounded
-    // and re-init on resume.
     debugPrint('[Camera] lifecycle state: $state');
     if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
-      // dispose camera to free hardware quickly
       _disposeCameraController();
     } else if (state == AppLifecycleState.resumed) {
-      // Re-init camera if needed
       if ((_cameraController == null || !_isCameraInitialized) && !_isInitializing) {
-        // Small delay to avoid racing with system resume
         Future.delayed(const Duration(milliseconds: 200), () {
           if (mounted) _initCamera();
         });
@@ -193,7 +231,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   Future<void> _toggleRecording() async {
     if (_isRecording) {
-      // Stop recording
+      _recordingStopwatch.stop();
+      _timerAnimationController.stop();
       try {
         final XFile? file;
         if (_isCameraInitialized && _cameraController != null) {
@@ -201,22 +240,20 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         } else {
           file = null;
         }
-
         String? finalPath;
         if (file != null) {
           final tempDir = await getTemporaryDirectory();
           finalPath = '${tempDir.path}/video_${DateTime.now().millisecondsSinceEpoch}.mp4';
           await file.saveTo(finalPath);
         }
-
         if (mounted) {
           setState(() {
             _isRecording = false;
             _hasRecording = true;
             _captureCaptionOpen = true;
             _recordedVideoPath = finalPath;
+            _recordingTimeLabel = '00:00';
           });
-
           if (finalPath != null) {
             final controller = VideoPlayerController.file(File(finalPath));
             _videoPlayerController = controller;
@@ -240,16 +277,19 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         if (mounted) {
           setState(() {
             _isRecording = false;
+            _recordingTimeLabel = '00:00';
           });
         }
       }
     } else {
-      // Start recording
       try {
         if (_isCameraInitialized && _cameraController != null) {
           await _cameraController!.startVideoRecording();
         }
         if (mounted) {
+          _recordingStopwatch.reset();
+          _recordingStopwatch.start();
+          _timerAnimationController.forward(from: 0);
           setState(() {
             _isRecording = true;
           });
@@ -264,7 +304,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     final captionText = _captureCaption.text.trim();
     ref.read(uploadProvider.notifier).startUpload(
       captionText,
-      const [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Beautiful violet/purple gradient for dynamic captures
+      const [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
       videoPath: _recordedVideoPath,
     );
   }
@@ -298,7 +338,6 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   Widget build(BuildContext context) {
     ref.listen<UploadState>(uploadProvider, (previous, next) async {
       if (next.status == UploadStatus.succeeded) {
-        // Success cleanup
         if (_recordedVideoPath != null) {
           try {
             final file = File(_recordedVideoPath!);
@@ -310,11 +349,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
             debugPrint('Failed to delete temporary video file: $e');
           }
         }
-
         _videoPlayerController?.pause();
         _videoPlayerController?.dispose();
         _videoPlayerController = null;
-
         setState(() {
           _hasRecording = false;
           _isRecording = false;
@@ -323,12 +360,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           _captureCaption.clear();
           _captureCaptionOffset = const Offset(78, 250);
           _captureCaptionSize = 24;
+          _recordingTimeLabel = '00:00';
         });
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Memory posted successfully to your Circle!')),
         );
-
         ref.read(uploadProvider.notifier).reset();
         context.go('/capture');
       } else if (next.status == UploadStatus.failed) {
@@ -356,16 +392,22 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
       }
     });
 
-    final dark = ref.watch(isDarkProvider);
     final bottomPad = MediaQuery.paddingOf(context).bottom;
+    final topPad = MediaQuery.paddingOf(context).top;
     final chatState = ref.watch(chatProvider);
     final unreadCount = chatState.unreadNotifications;
 
     final uploadState = ref.watch(uploadProvider);
     final isUploading = uploadState.status == UploadStatus.preparing ||
-                        uploadState.status == UploadStatus.validating ||
-                        uploadState.status == UploadStatus.uploading ||
-                        uploadState.status == UploadStatus.waitingForResponse;
+        uploadState.status == UploadStatus.validating ||
+        uploadState.status == UploadStatus.uploading ||
+        uploadState.status == UploadStatus.waitingForResponse;
+
+    final circleMembers = ref.watch(circlesProvider);
+    final memberCount = circleMembers.length;
+
+    final sessionState = ref.watch(sessionProvider);
+    final user = sessionState.user;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -379,44 +421,29 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           final leave = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              backgroundColor: dark ? kBlack : Colors.white,
+              backgroundColor: Colors.grey[900],
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text(
+              title: const Text(
                 'Upload in Progress',
-                style: TextStyle(
-                  color: dark ? kCream : kCharcoal,
-                  fontWeight: FontWeight.w900,
-                ),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
               ),
               content: Text(
                 'Your memory is still uploading. Leaving will cancel the upload. Leave anyway?',
-                style: TextStyle(
-                  color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(
-                    'Continue Upload',
-                    style: TextStyle(
-                      color: dark ? kYellow : kBlack,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: const Text('Continue Upload',
+                      style: TextStyle(color: kYellow, fontWeight: FontWeight.bold)),
                 ),
                 TextButton(
                   onPressed: () {
                     ref.read(uploadProvider.notifier).cancelUpload();
                     Navigator.of(context).pop(true);
                   },
-                  child: Text(
-                    'Leave Anyway',
-                    style: TextStyle(
-                      color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
-                    ),
-                  ),
+                  child: Text('Leave Anyway',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                 ),
               ],
             ),
@@ -426,220 +453,416 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           }
         },
         child: Scaffold(
-        backgroundColor: Colors.black,
-        resizeToAvoidBottomInset: false,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            _captureReflectionBackground(),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  28,
-                  12, // Tighter top padding
-                  28,
-                  12 + bottomPad, // Tighter bottom padding
+          backgroundColor: Colors.black,
+          resizeToAvoidBottomInset: false,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Layer 0: Full-bleed camera/video preview
+              _fullBleedCameraPreview(),
+              // Layer 1: Gradient vignette overlays (top + bottom)
+              _vignetteOverlay(),
+              // Layer 2: Caption editor overlay (when active)
+              if (_hasRecording && _captureCaptionOpen)
+                Positioned(
+                  left: _captureCaptionOffset.dx,
+                  top: _captureCaptionOffset.dy,
+                  child: _captureCaptionEditor(),
                 ),
+              // Layer 3: Upload progress overlay
+              if (isUploading) _uploadOverlay(uploadState),
+              // Layer 4: Top HUD
+              Positioned(
+                top: topPad + 10,
+                left: 20,
+                right: 20,
+                child: _topHud(memberCount, user),
+              ),
+              // Layer 5: REC indicator (while recording)
+              if (_isRecording)
+                Positioned(
+                  top: topPad + 68,
+                  left: 0,
+                  right: 0,
+                  child: Center(child: _recIndicator()),
+                ),
+              // Layer 6: Bottom controls
+              Positioned(
+                bottom: bottomPad + 20,
+                left: 20,
+                right: 20,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                // Top header row: Profile settings button on the right
-                Row(
-                  children: [
-                    const Spacer(),
-                    _overlayProfileSettingsButton(
-                      onTap: () => _showProfileSheet(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8), // Move camera frame higher
-                // Camera card preview (not full screen) with taller 3:4.3 ratio
-                Center(
-                  child: AspectRatio(
-                    aspectRatio: 3 / 4.3, // Increased height slightly from 3 / 4
-                    child: _capturePreview(),
-                  ),
-                ),
-                const Spacer(flex: 2), // Spacing between camera and capture controls (pushed higher)
-                // Bottom controls row: Flip camera on left, Capture in center, Message icon on right
-                SizedBox(
-                  width: double.infinity,
-                  height: 82,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Flip camera - bottom left
-                      if (!_hasRecording && !_isRecording && _cameras.length > 1)
-                        Positioned(
-                          left: 8,
-                          child: _overlayIconButton(
-                            icon: Icons.flip_camera_android_rounded,
-                            onTap: _switchCamera,
-                          ),
-                        ),
-
-                      // Centre: capture button or send button
-                      _hasRecording
-                          ? _sendToCircleButton(dark)
-                          : GestureDetector(
-                              onTap: _toggleRecording,
-                              child: Container(
-                                width: 82,
-                                height: 82,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.transparent, // Transparent gap
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.82),
-                                    width: 4, // 4px white border
-                                  ),
-                                ),
-                                padding: const EdgeInsets.all(6), // minimal space/gap between white border and inner button
-                                child: _isRecording
-                                    ? Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius: BorderRadius.circular(8), // stop recording red square
-                                        ),
-                                      )
-                                    : Container(
-                                        alignment: Alignment.center,
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: kYellow,
-                                        ),
-                                        child: Image.asset(
-                                          'assets/images/memory-logo.png',
-                                          width: 38,
-                                          height: 38,
-                                          fit: BoxFit.contain,
-                                        ),
-                                      ),
+                    if (!_hasRecording && !_isRecording) ...[
+                      _memoriesSwipeHint(),
+                      const SizedBox(height: 20),
+                    ],
+                    SizedBox(
+                      height: 92,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          if (!_hasRecording && !_isRecording && _cameras.length > 1)
+                            Positioned(
+                              left: 0,
+                              child: _glassIconButton(
+                                icon: Icons.flip_camera_android_rounded,
+                                onTap: _switchCamera,
                               ),
                             ),
-
-                      // Message icon button (opens Circle screen) - bottom right
-                      if (!_hasRecording && !_isRecording)
-                        Positioned(
-                          right: 8,
-                          child: _overlayCircleMessageButton(
-                            onTap: () => context.go('/circle'),
-                            unreadCount: unreadCount,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const Spacer(flex: 3), // Spacing below capture button (increased to move memories pill lower)
-                // Memories button in a pill below the capture button
-                if (!_hasRecording && !_isRecording)
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _memoriesPillButton(
-                          onTap: () => context.go('/feed'),
-                        ),
-                        const SizedBox(height: 5),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Colors.white.withValues(alpha: 0.82),
-                          size: 18,
-                        ),
-                      ],
+                          _hasRecording
+                              ? _sendToCircleButton(isUploading, uploadState)
+                              : _captureButton(),
+                          if (!_hasRecording && !_isRecording)
+                            Positioned(
+                              right: 0,
+                              child: _circleMessageButton(unreadCount),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                const Spacer(flex: 1),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    ),
-    );
-  }
-
-  // Helper for memories pill button below capture button
-  Widget _memoriesPillButton({required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
-        ),
-        child: const Text(
-          'memories',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.8,
+            ],
           ),
         ),
       ),
     );
   }
 
-  // Helper for icon buttons overlaid on the camera preview
-  Widget _overlayIconButton({required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Icon(icon, color: Colors.white, size: 28),
-    );
-  }
-
-  // Profile settings icon button for top-right (single icon instead of twin user icon)
-  Widget _overlayProfileSettingsButton({required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: const Icon(
-        Icons.person_rounded,
-        color: Colors.white,
-        size: 28,
+  Widget _fullBleedCameraPreview() {
+    if (_hasRecording) {
+      if (_videoPlayerController != null && _videoPlayerController!.value.isInitialized) {
+        return FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: _videoPlayerController!.value.size.width,
+            height: _videoPlayerController!.value.size.height,
+            child: VideoPlayer(_videoPlayerController!),
+          ),
+        );
+      }
+      return Container(
+        color: Colors.black,
+        child: const Center(child: CircularProgressIndicator(color: kYellow)),
+      );
+    }
+    if (_isCameraInitialized && _cameraController != null) {
+      return FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: _cameraController!.value.previewSize?.height ?? 1080,
+          height: _cameraController!.value.previewSize?.width ?? 1920,
+          child: CameraPreview(_cameraController!),
+        ),
+      );
+    }
+    if (_cameras.isEmpty) {
+      return Container(
+        color: const Color(0xFF111111),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.videocam_off_rounded,
+                  color: Colors.white.withValues(alpha: 0.25), size: 52),
+              const SizedBox(height: 16),
+              Text(
+                'No camera detected',
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Container(
+      color: const Color(0xFF0A0A0A),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 36,
+              height: 36,
+              child: CircularProgressIndicator(color: kYellow, strokeWidth: 2.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Starting camera...',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // Message icon button for bottom-right with unread badge overlay
-  Widget _overlayCircleMessageButton({required VoidCallback onTap, required int unreadCount}) {
+  Widget _vignetteOverlay() {
+    return Column(
+      children: [
+        Container(
+          height: 180,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xB2000000), Colors.transparent],
+            ),
+          ),
+        ),
+        const Spacer(),
+        Container(
+          height: 260,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [Color(0xCC000000), Colors.transparent],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _topHud(int memberCount, UserProfile user) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (memberCount > 0) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.18), width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                          color: Color(0xFF5ED6B3), shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      memberCount == 1
+                          ? '1 in your circle'
+                          : '$memberCount in your circle',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+        const Spacer(),
+        GestureDetector(
+          onTap: () => _showProfileSheet(context),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.22), width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    user.firstName?.isNotEmpty == true
+                        ? user.firstName![0].toUpperCase()
+                        : user.username?.isNotEmpty == true
+                            ? user.username![0].toUpperCase()
+                            : '?',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _recIndicator() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _PulseRedDot(),
+              const SizedBox(width: 7),
+              const Text(
+                'REC',
+                style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _recordingTimeLabel,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _memoriesSwipeHint() {
+    return AnimatedBuilder(
+      animation: _bounceAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _bounceAnimation.value),
+          child: child,
+        );
+      },
+      child: GestureDetector(
+        onTap: () => context.go('/feed'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 3,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'memories',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _glassIconButton(
+      {required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(999),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.2), width: 1.2),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _circleMessageButton(int unreadCount) {
+    return GestureDetector(
+      onTap: () => context.go('/circle'),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Icon(
-            Icons.mark_unread_chat_alt_rounded,
-            color: Colors.white,
-            size: 28,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2), width: 1.2),
+                ),
+                child: const Icon(Icons.mark_unread_chat_alt_rounded,
+                    color: Colors.white, size: 24),
+              ),
+            ),
           ),
           if (unreadCount > 0)
             Positioned(
               right: -3,
               top: -3,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                constraints: const BoxConstraints(
-                  minWidth: 16,
-                  minHeight: 16,
-                ),
+                    color: Colors.red, shape: BoxShape.circle),
+                constraints:
+                    const BoxConstraints(minWidth: 18, minHeight: 18),
                 alignment: Alignment.center,
                 child: Text(
                   '$unreadCount',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -648,29 +871,97 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     );
   }
 
-  Widget _sendToCircleButton(bool dark) {
-    final uploadState = ref.watch(uploadProvider);
-    final isUploading = uploadState.status == UploadStatus.preparing ||
-                        uploadState.status == UploadStatus.validating ||
-                        uploadState.status == UploadStatus.uploading ||
-                        uploadState.status == UploadStatus.waitingForResponse;
+  Widget _captureButton() {
+    return GestureDetector(
+      onTap: _toggleRecording,
+      child: AnimatedBuilder(
+        animation: _pulseAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _isRecording ? 1.0 : _pulseAnimation.value,
+            child: child,
+          );
+        },
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 92,
+              height: 92,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _isRecording
+                      ? Colors.red.withValues(alpha: 0.7)
+                      : Colors.white.withValues(alpha: 0.4),
+                  width: 2,
+                ),
+              ),
+            ),
+            ClipOval(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeInOut,
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isRecording
+                        ? Colors.red.withValues(alpha: 0.85)
+                        : Colors.white.withValues(alpha: 0.15),
+                    border: Border.all(
+                      color: _isRecording
+                          ? Colors.red
+                          : Colors.white.withValues(alpha: 0.55),
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: _isRecording
+                        ? Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                          )
+                        : Image.asset(
+                            'assets/images/memory-logo.png',
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.contain,
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _sendToCircleButton(bool isUploading, UploadState uploadState) {
     return GestureDetector(
       onTap: isUploading
           ? () => ref.read(uploadProvider.notifier).cancelUpload()
           : _sendToCircle,
       child: Container(
-        width: 76,
-        height: 76,
+        width: 82,
+        height: 82,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: kYellow,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.22),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
+              color: kYellow.withValues(alpha: 0.38),
+              blurRadius: 24,
+              spreadRadius: 2,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -679,294 +970,124 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                 alignment: Alignment.center,
                 children: [
                   CircularProgressIndicator(
-                    value: uploadState.status == UploadStatus.uploading ? uploadState.progress : null,
+                    value: uploadState.status == UploadStatus.uploading
+                        ? uploadState.progress
+                        : null,
                     color: kBlack,
                     strokeWidth: 3,
                   ),
-                  const Icon(
-                    Icons.close_rounded,
-                    color: kBlack,
-                    size: 20,
-                  ),
+                  const Icon(Icons.close_rounded, color: kBlack, size: 20),
                 ],
               )
-            : const Icon(
-                Icons.send_rounded,
-                color: kBlack,
-                size: 32,
-              ),
+            : const Icon(Icons.send_rounded, color: kBlack, size: 32),
       ),
     );
   }
 
-  Widget _captureReflectionBackground() {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF151515), Color(0xFF2B2618), Color(0xFF0E0E0E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(color: Colors.black.withValues(alpha: 0.28)),
-      ),
-    );
-  }
-
-  Widget _capturePreview() {
-    final dark = ref.watch(isDarkProvider);
-    final uploadState = ref.watch(uploadProvider);
-    final isUploading = uploadState.status == UploadStatus.preparing ||
-                        uploadState.status == UploadStatus.validating ||
-                        uploadState.status == UploadStatus.uploading ||
-                        uploadState.status == UploadStatus.waitingForResponse;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final size = constraints.maxWidth;
-        final radius = size * 0.20;
-        final borderRadius = BorderRadius.circular(radius);
-
-        return Container(
-          width: double.infinity,
-          height: double.infinity,
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            border: Border.all(color: kYellow, width: 3),
-            color: Colors.white.withValues(alpha: 0.12),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius - 8),
-            child: GestureDetector(
-              onTap: _hasRecording ? () => setState(() => _captureCaptionOpen = true) : null,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // 1. Live camera preview, video preview playback, or fallback
-                  if (_hasRecording)
-                    _videoPlayerController != null && _videoPlayerController!.value.isInitialized
-                        ? FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width: _videoPlayerController!.value.size.width,
-                              height: _videoPlayerController!.value.size.height,
-                              child: VideoPlayer(_videoPlayerController!),
-                            ),
-                          )
-                        : Container(
-                            color: Colors.black,
-                            child: Center(
-                              child: _recordedVideoPath != null
-                                  ? CircularProgressIndicator(color: dark ? kYellow : kBlack)
-                                  : const Text(
-                                      'Mock Video Preview\n(Looping Simulation)',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
-                          )
-                  else if (_isCameraInitialized && _cameraController != null)
-                    FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: _cameraController!.value.previewSize?.height ?? 1080,
-                        height: _cameraController!.value.previewSize?.width ?? 1920,
-                        child: CameraPreview(_cameraController!),
-                      ),
-                    )
-                  else if (_cameras.isEmpty)
-                    // Fallback for emulators with no camera hardware
-                    Container(
-                      color: Colors.black87,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.videocam_off_rounded,
-                              color: Colors.white.withValues(alpha: 0.3),
-                              size: 48,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'No camera detected',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    // Premium loader while initializing
-                    Container(
-                      color: Colors.black,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 36,
-                              height: 36,
-                              child: CircularProgressIndicator(
-                                color: dark ? kYellow : kBlack,
-                                strokeWidth: 3,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Starting camera...',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+  Widget _uploadOverlay(UploadState uploadState) {
+    return Positioned.fill(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.55),
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 32),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15), width: 1),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _getUploadStageMessage(uploadState.status),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800),
                     ),
-
-                  // 2. REC overlay indicator if recording
-                  if (_isRecording)
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: Row(
-                        children: [
-                          const _PulseRedDot(),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black38,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              'REC',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 20),
+                    if (uploadState.status == UploadStatus.uploading) ...[
+                      LinearProgressIndicator(
+                        value: uploadState.progress,
+                        color: kYellow,
+                        backgroundColor:
+                            Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        minHeight: 6,
                       ),
-                    ),
-
-                  // 4. Caption editor overlay
-                  if (_hasRecording && _captureCaptionOpen) _captureCaptionEditor(),
-
-                  // 5. Upload progress overlay
-                  if (isUploading)
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black54,
-                        child: Center(
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 24),
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: dark ? kBlack : Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _getUploadStageMessage(uploadState.status),
-                                  style: TextStyle(
-                                    color: dark ? kCream : kCharcoal,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                if (uploadState.status == UploadStatus.uploading) ...[
-                                  LinearProgressIndicator(
-                                    value: uploadState.progress,
-                                    color: kYellow,
-                                    backgroundColor: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    '${(uploadState.progress * 100).toInt()}%',
-                                    style: TextStyle(
-                                      color: dark ? kYellow : kBlack,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ] else ...[
-                                  LinearProgressIndicator(
-                                    color: kYellow,
-                                    backgroundColor: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '${(uploadState.progress * 100).toInt()}%',
+                        style: const TextStyle(
+                            color: kYellow,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900),
                       ),
-                    ),
-                ],
+                    ] else ...[
+                      LinearProgressIndicator(
+                        color: kYellow,
+                        backgroundColor:
+                            Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        minHeight: 6,
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   Widget _captureCaptionEditor() {
-    return Positioned(
-      left: _captureCaptionOffset.dx,
-      top: _captureCaptionOffset.dy,
-      child: GestureDetector(
-        onScaleUpdate: (details) => setState(() {
-          _captureCaptionOffset += details.focalPointDelta;
-          _captureCaptionSize = (_captureCaptionSize * details.scale).clamp(16, 42);
-        }),
-        child: SizedBox(
-          width: 210,
-          child: TextField(
-            controller: _captureCaption,
-            autofocus: true,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: _captureCaptionSize,
-              fontWeight: FontWeight.w900,
-              height: 1.05,
+    return GestureDetector(
+      onScaleUpdate: (details) => setState(() {
+        _captureCaptionOffset += details.focalPointDelta;
+        _captureCaptionSize =
+            (_captureCaptionSize * details.scale).clamp(16, 42);
+      }),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            width: 220,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.38),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15), width: 1),
             ),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintText: 'Add caption',
-              hintStyle: TextStyle(color: Colors.white70),
+            child: TextField(
+              controller: _captureCaption,
+              autofocus: true,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: _captureCaptionSize,
+                fontWeight: FontWeight.w900,
+                height: 1.1,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: 'Add caption...',
+                hintStyle: TextStyle(
+                    color: Colors.white54, fontWeight: FontWeight.w500),
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
           ),
         ),
@@ -1023,7 +1144,8 @@ class _PulseRedDot extends StatefulWidget {
   State<_PulseRedDot> createState() => _PulseRedDotState();
 }
 
-class _PulseRedDotState extends State<_PulseRedDot> with SingleTickerProviderStateMixin {
+class _PulseRedDotState extends State<_PulseRedDot>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -1046,12 +1168,10 @@ class _PulseRedDotState extends State<_PulseRedDot> with SingleTickerProviderSta
     return FadeTransition(
       opacity: _controller,
       child: Container(
-        width: 12,
-        height: 12,
+        width: 10,
+        height: 10,
         decoration: const BoxDecoration(
-          color: Colors.red,
-          shape: BoxShape.circle,
-        ),
+            color: Colors.red, shape: BoxShape.circle),
       ),
     );
   }
