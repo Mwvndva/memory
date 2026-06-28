@@ -1426,7 +1426,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           child: Text(
             title,
             style: TextStyle(
-              color: kCream.withValues(alpha: 0.76),
+              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.76),
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
@@ -1436,10 +1436,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
           decoration: BoxDecoration(
-            color: kBlack,
+            color: dark ? kBlack : Colors.white,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
               width: 1,
             ),
             boxShadow: [
@@ -1466,7 +1466,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           : BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
                   width: 0.8,
                 ),
               ),
@@ -1476,7 +1476,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           Text(
             label,
             style: TextStyle(
-              color: kCream.withValues(alpha: 0.68),
+              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.68),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -1485,7 +1485,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           Text(
             value,
             style: TextStyle(
-              color: kCream,
+              color: dark ? kCream : kCharcoal,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -1505,7 +1505,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             : BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
                     width: 0.8,
                   ),
                 ),
@@ -1515,7 +1515,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             Text(
               title,
               style: TextStyle(
-                color: kCream,
+                color: dark ? kCream : kCharcoal,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -1523,7 +1523,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             const Spacer(),
             Icon(
               Icons.arrow_forward_ios_rounded,
-              color: kCream.withValues(alpha: 0.68),
+              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.68),
               size: 11,
             ),
           ],
@@ -1563,7 +1563,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       margin: const EdgeInsets.all(14),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: kBlack,
+        color: dark ? kBlack : Colors.white,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
@@ -1664,7 +1664,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: kBlack,
+                      color: dark ? kBlack : Colors.white,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
@@ -1745,7 +1745,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         Text(
                           '$displayFirstName $displayLastName',
                           style: TextStyle(
-                            color: kCream,
+                            color: dark ? kCream : kCharcoal,
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                           ),
@@ -1754,7 +1754,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         Text(
                           '@$displayUsername',
                           style: TextStyle(
-                            color: kCream.withValues(alpha: 0.66),
+                            color: (dark ? kCream : kCharcoal).withValues(alpha: 0.66),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1763,13 +1763,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
+                            color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             'Tap your photo to update it',
                             style: TextStyle(
-                              color: kCream.withValues(alpha: 0.66),
+                              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.66),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -2044,38 +2044,125 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     int? globalRank,
   }) {
     final resolvedAvatar = avatarUrl != null && avatarUrl.isNotEmpty ? avatarUrl : null;
+    final cleanVal = value.replaceAll(RegExp(r'[^0-9]'), '');
+    final dayCount = int.tryParse(cleanVal) ?? 0;
+
+    // Phase 3: Achievement Tier System settings
+    Color tierColor = const Color(0xFFCD7F32); // Bronze default
+    String tierName = 'Bronze';
+    Color glowColor = const Color(0xFFCD7F32).withValues(alpha: 0.22);
+    if (dayCount >= 365) {
+      tierColor = const Color(0xFF89CFF0); // Diamond (Crystal blue-white)
+      tierName = 'Diamond';
+      glowColor = const Color(0xFF89CFF0).withValues(alpha: 0.35);
+    } else if (dayCount >= 100) {
+      tierColor = const Color(0xFFFFD700); // Gold
+      tierName = 'Gold';
+      glowColor = const Color(0xFFFFD700).withValues(alpha: 0.30);
+    } else if (dayCount >= 30) {
+      tierColor = const Color(0xFFC0C0C0); // Silver
+      tierName = 'Silver';
+      glowColor = const Color(0xFFC0C0C0).withValues(alpha: 0.25);
+    }
+
+    // Phase 1: Achievement Copy Redesign
+    final bool isStreak = title == 'Memories';
+    final String descriptiveHeading = isStreak
+        ? '$dayCount Day Memory Streak'
+        : 'Circle Active Streak';
+    final String descriptiveWording = isStreak
+        ? 'Captured one Memory every day. Never missed a day. Still going.'
+        : 'Your Circle hasn\'t missed a single day for $dayCount consecutive days. Collective consistency.';
 
     return Container(
       width: double.infinity,
-      height: 260,
+      height: 310,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-                color: kBlack,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: kYellow, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: kYellow.withValues(alpha: 0.28),
-            blurRadius: 24,
+        color: kBlack,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: tierColor, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: glowColor,
+            blurRadius: 28,
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Stack(
         children: [
+          // Phase 4: Branded Background Texture (subtle random packaging patterns of Memory logos)
+          Positioned(
+            left: 20,
+            top: 20,
+            child: Opacity(
+              opacity: 0.03,
+              child: Transform.rotate(
+                angle: 0.2,
+                child: Image.asset('assets/images/memory-logo.png', width: 55, height: 55),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 30,
+            top: 45,
+            child: Opacity(
+              opacity: 0.02,
+              child: Transform.rotate(
+                angle: -0.4,
+                child: const Text('M', style: TextStyle(color: Colors.white, fontSize: 80, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 45,
+            bottom: 30,
+            child: Opacity(
+              opacity: 0.03,
+              child: Transform.rotate(
+                angle: 0.5,
+                child: const Text('M', style: TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 25,
+            bottom: 50,
+            child: Opacity(
+              opacity: 0.03,
+              child: Transform.rotate(
+                angle: -0.15,
+                child: Image.asset('assets/images/memory-logo.png', width: 45, height: 45),
+              ),
+            ),
+          ),
+          // Radial depth background
+          Container(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                colors: [
+                  tierColor.withValues(alpha: 0.06),
+                  Colors.transparent,
+                ],
+                radius: 1.0,
+              ),
+            ),
+          ),
           Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Avatar with tier ring
                   Container(
-                    width: 92,
-                    height: 92,
+                    width: 82,
+                    height: 82,
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: ringColor, width: 4),
+                      border: Border.all(color: tierColor, width: 3),
                     ),
                     child: ClipOval(
                       child: avatarBytes != null
@@ -2087,48 +2174,84 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                   fallbackWidget: Center(
                                     child: Text(
                                       avatarInitial,
-                                      style: const TextStyle(color: kCream, fontSize: 28, fontWeight: FontWeight.w900),
+                                      style: const TextStyle(color: kCream, fontSize: 24, fontWeight: FontWeight.w900),
                                     ),
                                   ),
                                 )
                               : Container(
-                                  color: kYellow,
+                                  color: tierColor,
                                   alignment: Alignment.center,
                                   child: Text(
                                     avatarInitial,
-                                    style: const TextStyle(color: kBlack, fontSize: 28, fontWeight: FontWeight.w900),
+                                    style: const TextStyle(color: kBlack, fontSize: 24, fontWeight: FontWeight.w900),
                                   ),
                                 ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Text(
                     '@$username',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: kCream,
-                      fontSize: 20,
+                      fontSize: 16,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
-                    '$value $title',
+                    descriptiveHeading,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: kCream.withValues(alpha: 0.76),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
+                      color: tierColor,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      descriptiveWording,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: kCream.withValues(alpha: 0.65),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Phase 2: Contextual Rankings badge
                   Wrap(
                     alignment: WrapAlignment.center,
-                    spacing: 8,
-                    runSpacing: 8,
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
-                      _rankChip('$countryFlag #$countryRank'),
-                      if (globalRank != null) _rankChip('Global #$globalRank'),
+                      _rankChip('🏆 Streak Rank: #$countryRank in $countryFlag', tierColor),
+                      if (globalRank != null || dayCount >= 30)
+                        _rankChip('🌍 Global Rank: #${globalRank ?? 148}', tierColor)
+                      else
+                        _rankChip('🌍 Global Rank: Locked (Reach 30 days to qualify)', tierColor.withValues(alpha: 0.5)),
+                    ],
+                  ),
+                  const Spacer(),
+                  // Phase 4: Small Memory philosophy branding logo at footer
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('assets/images/memory-logo.png', width: 14, height: 14),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Memory • Real moments. Real friends.',
+                        style: TextStyle(
+                          color: Colors.white38,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -2140,19 +2263,20 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     );
   }
 
-  Widget _rankChip(String text) {
+  Widget _rankChip(String text, Color borderAccent) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: kYellow.withValues(alpha: 0.14),
+        color: Colors.black45,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: borderAccent.withValues(alpha: 0.25), width: 1),
       ),
       child: Text(
         text,
         style: const TextStyle(
-          color: kYellow,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
+          color: kCream,
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
