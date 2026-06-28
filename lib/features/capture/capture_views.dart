@@ -14,6 +14,7 @@ import '../../repositories/chat_repository.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/circles_repository.dart';
 import '../circle/circle_views.dart';
+import '../../models/user_profile.dart';
 
 List<CameraDescription>? _globalCameras;
 
