@@ -17,10 +17,14 @@ import '../core/widget_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'chat_repository.dart';
 import 'optimistic_transaction_manager.dart';
+import 'reaction_repository.dart';
 import '../models/user_profile.dart';
 import '../realtime/realtime_event.dart';
 import '../realtime/realtime_providers.dart';
 import '../media/cache_coordinator.dart';
+import '../services/compression_service.dart';
+import '../services/thumbnail_service.dart';
+
 
 Color parseHexColor(String hexStr) {
   var clean = hexStr.replaceAll('#', '').trim();
@@ -98,8 +102,6 @@ class MemoryRepository {
       final creatorObj = item['creator'] as Map<String, dynamic>?;
       final avatarUrl = creatorObj?['avatar_url'] as String?;
 
-      final isBookmarked = item['is_bookmarked'] as bool? ?? false;
-
       final Map<String, int> reactionsMap = {};
       final reactionsList = item['reactions'] as List? ?? [];
       for (final r in reactionsList) {
@@ -124,7 +126,6 @@ class MemoryRepository {
         ageHours:  (item['age_hours'] as num?)?.toDouble() ?? 0.0,
         videoPath: item['video_url'] as String?,
         avatarUrl: avatarUrl,
-        isBookmarked: isBookmarked,
         reactions: reactionsMap,
       );
     }).toList();
@@ -855,12 +856,7 @@ class FeedStateManager extends StateNotifier<FeedState> {
     updatedList[idx] = optimisticItem;
     state = state.copyWith(memories: updatedList);
     try {
-      if (kUseMockBackend) {
-        await Future.delayed(const Duration(milliseconds: 150));
-      } else {
-        final chatNotifier = _ref.read(chatProvider.notifier);
-        await chatNotifier.sendReactionEvent(memoryId, emoji, isRemoving ? 'remove' : 'add');
-      }
+      await _ref.read(reactionRepositoryProvider).sendReaction(memoryId, emoji, isRemoving: isRemoving);
 
       txManager.resolve(memoryId, txId, TransactionStatus.committed);
     } catch (e) {
@@ -902,6 +898,9 @@ enum UploadStatus {
   idle,
   preparing,
   validating,
+  compressing,
+  generatingThumbnail,
+  queued,
   uploading,
   waitingForResponse,
   succeeded,
@@ -965,6 +964,9 @@ class UploadCoordinator extends StateNotifier<UploadState> {
   }) async {
     if (state.status == UploadStatus.preparing ||
         state.status == UploadStatus.validating ||
+        state.status == UploadStatus.compressing ||
+        state.status == UploadStatus.generatingThumbnail ||
+        state.status == UploadStatus.queued ||
         state.status == UploadStatus.uploading ||
         state.status == UploadStatus.waitingForResponse) {
       return;
@@ -993,22 +995,47 @@ class UploadCoordinator extends StateNotifier<UploadState> {
       return;
     }
 
-    state = state.copyWith(status: UploadStatus.uploading);
+    // Dynamic processing chain
+    String finalPath = videoPath ?? '';
+    try {
+      if (finalPath.isNotEmpty) {
+        // Compressing
+        state = state.copyWith(status: UploadStatus.compressing, progress: 0.1);
+        final compressionService = _ref.read(compressionServiceProvider);
+        final compressResult = await compressionService.compressVideo(
+          path: finalPath,
+          onProgress: (p) => state = state.copyWith(progress: 0.1 + (p * 0.2)),
+        );
+        finalPath = compressResult.compressedPath;
+
+        // Thumbnailing
+        state = state.copyWith(status: UploadStatus.generatingThumbnail, progress: 0.3);
+        final thumbnailService = _ref.read(thumbnailServiceProvider);
+        await thumbnailService.getThumbnail(finalPath);
+        state = state.copyWith(progress: 0.4);
+      }
+    } catch (e, stack) {
+      final mapped = mapException(e, stack);
+      state = state.copyWith(status: UploadStatus.failed, errorMessage: mapped.message, isRetryable: false);
+      return;
+    }
+
+    state = state.copyWith(status: UploadStatus.uploading, progress: 0.4);
 
     try {
       final repository = _ref.read(memoryRepositoryProvider);
       await repository.addMemory(
         caption: caption,
         colors: colors,
-        videoPath: videoPath,
+        videoPath: finalPath.isNotEmpty ? finalPath : null,
         cancelToken: _cancelToken,
         onSendProgress: (sent, total) {
           if (total > 0) {
-            final progress = sent / total;
-            if (progress >= 1.0) {
+            final progress = 0.4 + ((sent / total) * 0.5);
+            if (progress >= 0.9) {
               state = state.copyWith(
                 status: UploadStatus.waitingForResponse,
-                progress: 1.0,
+                progress: 0.9,
               );
             } else {
               if (progress - state.progress > 0.02) {
@@ -1022,14 +1049,14 @@ class UploadCoordinator extends StateNotifier<UploadState> {
         },
       );
 
-      state = state.copyWith(status: UploadStatus.waitingForResponse);
+      state = state.copyWith(status: UploadStatus.waitingForResponse, progress: 0.95);
 
       if (!kUseMockBackend) {
         await _ref.read(sessionProvider.notifier).fetchProfile();
         await _ref.read(feedProvider.notifier).fetchFeed();
       }
 
-      state = state.copyWith(status: UploadStatus.succeeded);
+      state = state.copyWith(status: UploadStatus.succeeded, progress: 1.0);
     } on DioException catch (e, stack) {
       if (e.type == DioExceptionType.cancel) {
         return;

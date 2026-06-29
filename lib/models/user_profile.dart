@@ -14,6 +14,8 @@ class UserProfile {
     this.circlePulseDays = 0,
     this.countryRank = 1,
     this.globalRank,
+    this.country,
+    this.createdAt,
   });
 
   final String firstName;
@@ -28,6 +30,8 @@ class UserProfile {
   final int circlePulseDays;
   final int countryRank;
   final int? globalRank;
+  final String? country;
+  final DateTime? createdAt;
 
   factory UserProfile.empty() {
     return const UserProfile(
@@ -42,6 +46,8 @@ class UserProfile {
       countryRank: 1,
       globalRank: null,
       avatarUrl: null,
+      country: null,
+      createdAt: null,
     );
   }
 
@@ -58,6 +64,8 @@ class UserProfile {
     int? countryRank,
     int? globalRank,
     String? avatarUrl,
+    String? country,
+    DateTime? createdAt,
   }) {
     return UserProfile(
       firstName: firstName ?? this.firstName,
@@ -72,6 +80,8 @@ class UserProfile {
       circlePulseDays: circlePulseDays ?? this.circlePulseDays,
       countryRank: countryRank ?? this.countryRank,
       globalRank: globalRank ?? this.globalRank,
+      country: country ?? this.country,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

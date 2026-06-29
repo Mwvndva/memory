@@ -11,6 +11,7 @@ import '../../core/theme.dart';
 import '../../models/memory_item.dart';
 import '../../repositories/chat_repository.dart';
 import '../../repositories/memory_repository.dart';
+import '../../repositories/download_repository.dart';
 import '../../core/api_config.dart';
 import '../../repositories/auth_repository.dart';
 import '../../core/error_handler.dart';
@@ -1476,9 +1477,6 @@ class MemoryFrame extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const radius = 74.0;
-    // Watch only the properties that can change dynamically inside this specific MemoryFrame.
-    // By using select, this widget will only rebuild if the matching item isLiked, likeCount,
-    // or reactions/bookmark values modify, preventing unrelated card updates.
     final m = ref.watch(feedProvider.select((state) {
       final index = state.memories.indexWhere((item) => item.id == memory.id);
       return index != -1 ? state.memories[index] : memory;
@@ -1534,6 +1532,41 @@ class MemoryFrame extends ConsumerWidget {
                 right: 18,
                 bottom: 18,
                 child: messageInputBuilder(m, dark),
+              ),
+            if (m.username == ref.watch(sessionProvider).user.username)
+              Positioned(
+                top: 18,
+                right: 18,
+                child: GestureDetector(
+                  onTap: () async {
+                    try {
+                      final path = await ref.read(downloadRepositoryProvider).downloadMemoryVideo(m);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Video downloaded successfully to: $path')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.toString())),
+                        );
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.download_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
               ),
           ],
         ),

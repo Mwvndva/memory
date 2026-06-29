@@ -574,72 +574,42 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        // Instagram share
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => _shareCard('Instagram'),
-                            child: Container(
-                              height: 44,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
-                                ),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: _isSharing
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
-                                      ],
-                                    ),
-                            ),
-                          ),
+                    // Single native OS Share button
+                    GestureDetector(
+                      onTap: () => _shareCard('System'),
+                      child: Container(
+                        width: double.infinity,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(999),
                         ),
-                        const SizedBox(width: 8),
-                        // WhatsApp share
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => _shareCard('WhatsApp'),
-                            child: Container(
-                              height: 44,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+                        child: _isSharing
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  color: kBlack,
+                                  strokeWidth: 2,
                                 ),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: _isSharing
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
-                                      ],
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.share_rounded, color: kBlack, size: 16),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Share Card',
+                                    style: TextStyle(
+                                      color: kBlack,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
                                     ),
-                            ),
-                          ),
-                        ),
-                      ],
+                                  ),
+                                ],
+                              ),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     // Close button
@@ -1118,72 +1088,42 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        // Instagram share
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => _shareCard('Instagram'),
-                            child: Container(
-                              height: 44,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
-                                ),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: _isSharing
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
-                                      ],
-                                    ),
-                            ),
-                          ),
+                    // Single native OS Share button
+                    GestureDetector(
+                      onTap: () => _shareCard('System'),
+                      child: Container(
+                        width: double.infinity,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(999),
                         ),
-                        const SizedBox(width: 8),
-                        // WhatsApp share
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => _shareCard('WhatsApp'),
-                            child: Container(
-                              height: 44,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+                        child: _isSharing
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  color: kBlack,
+                                  strokeWidth: 2,
                                 ),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: _isSharing
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
-                                      ],
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.share_rounded, color: kBlack, size: 16),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Share Card',
+                                    style: TextStyle(
+                                      color: kBlack,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
                                     ),
-                            ),
-                          ),
-                        ),
-                      ],
+                                  ),
+                                ],
+                              ),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     // Close button

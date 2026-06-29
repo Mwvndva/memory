@@ -9,6 +9,11 @@ import 'package:image_picker/image_picker.dart';
 import '../feed/streak_milestones.dart';
 import '../../models/user_profile.dart';
 import '../../models/message.dart';
+import '../../models/relationship_state.dart';
+import '../../models/notification_item.dart';
+import '../../services/external_invite_service.dart';
+import '../../services/profile_services.dart';
+import '../../services/notification_services.dart';
 import '../../core/api_config.dart';
 import '../../core/theme.dart';
 import '../../core/error_handler.dart';
@@ -371,13 +376,87 @@ class CircleChatListView extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          name,
-                          style: TextStyle(
-                            color: dark ? kCream : kCharcoal,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              name,
+                              style: TextStyle(
+                                color: dark ? kCream : kCharcoal,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Builder(
+                              builder: (context) {
+                                final myRole = CircleRole.owner; // Current user is the owner of their circle
+                                final targetRole = member.role;
+                                final canManageRole = (myRole == CircleRole.owner) ||
+                                    (myRole == CircleRole.admin && targetRole != CircleRole.owner && targetRole != CircleRole.admin);
+
+                                if (canManageRole) {
+                                  return PopupMenuButton<CircleRole>(
+                                    initialValue: member.role,
+                                    tooltip: 'Change Role',
+                                    onSelected: (CircleRole newRole) {
+                                      final circlesNotifier = ref.read(circlesProvider.notifier);
+                                      circlesNotifier.state = circlesNotifier.state.map((m) {
+                                        if (m.id == member.id) {
+                                          return m.copyWith(role: newRole);
+                                        }
+                                        return m;
+                                      }).toList();
+                                      showAppMessage(context, 'Updated ${member.firstName}\'s role to ${newRole.name}');
+                                    },
+                                    itemBuilder: (BuildContext context) => CircleRole.values.map((role) {
+                                      return PopupMenuItem<CircleRole>(
+                                        value: role,
+                                        child: Text(role.name.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                      );
+                                    }).toList(),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: (dark ? kYellow : kBlack).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            member.role.name.toUpperCase(),
+                                            style: TextStyle(
+                                              color: dark ? kYellow : kBlack,
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 2),
+                                          Icon(Icons.arrow_drop_down, size: 10, color: dark ? kYellow : kBlack),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: (dark ? kYellow : kBlack).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      member.role.name.toUpperCase(),
+                                      style: TextStyle(
+                                        color: dark ? kYellow : kBlack,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Builder(
@@ -407,77 +486,93 @@ class CircleChatListView extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  backgroundColor: dark ? kBlack : Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  title: Text(
-                    'Remove from Circle',
-                    style: TextStyle(
-                      color: dark ? kCream : kCharcoal,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  content: Text(
-                    'Are you sure you want to remove $name from your circle? You will no longer share memories or chat with each other.',
-                    style: TextStyle(
-                      color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
-                      fontSize: 13,
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+          Builder(
+            builder: (context) {
+              final myRole = CircleRole.owner; // Current user is the owner of their circle
+              final targetRole = member.role;
+              final canRemove = (myRole == CircleRole.owner) ||
+                                (myRole == CircleRole.admin && targetRole != CircleRole.owner && targetRole != CircleRole.admin) ||
+                                (myRole == CircleRole.moderator && targetRole == CircleRole.member);
+              if (!canRemove) return const SizedBox.shrink();
+
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: dark ? kBlack : Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          title: Text(
+                            'Remove from Circle',
+                            style: TextStyle(
+                              color: dark ? kCream : kCharcoal,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          content: Text(
+                            'Are you sure you want to remove $name from your circle? You will no longer share memories or chat with each other.',
+                            style: TextStyle(
+                              color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                              fontSize: 13,
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: Text(
+                                'Remove',
+                                style: TextStyle(
+                                  color: dark ? kYellow : kBlack,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                      );
+                      if (confirm == true) {
+                        try {
+                          await ref.read(circleStateManagerProvider.notifier).removeMember(member.id);
+                        } catch (e) {
+                          if (context.mounted) {
+                            showAppError(context, e.toString());
+                          }
+                        }
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12)),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
                       child: Text(
                         'Remove',
                         style: TextStyle(
-                          color: dark ? kYellow : kBlack,
-                          fontWeight: FontWeight.bold,
+                          color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               );
-              if (confirm == true) {
-                try {
-                  await ref.read(circleStateManagerProvider.notifier).removeMember(member.id);
-                } catch (e) {
-                  if (context.mounted) {
-                    showAppError(context, e.toString());
-                  }
-                }
-              }
             },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12)),
-              ),
-              child: Text(
-                'Remove',
-                style: TextStyle(
-                  color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -1207,7 +1302,6 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     final circleMembers = ref.read(circlesProvider);
     final user = ref.read(authProvider);
     final displayUsername = user.username.isNotEmpty ? user.username : 'user';
-    final inviteLink = 'https://memory.app/invite/$displayUsername';
 
     final avatarUrl = user.avatarUrl;
     final avatarInitial = user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?';
@@ -1238,10 +1332,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   child: GestureDetector(
                     onTap: () async {
                       Navigator.pop(context);
-                      await SharePlus.instance.share(
-                        ShareParams(
-                          text: 'Join my circle on Memory! $inviteLink',
-                        ),
+                      await ref.read(externalInviteServiceProvider).shareToInstagram(
+                        referralCode: displayUsername,
+                        username: displayUsername,
                       );
                     },
                     child: Container(
@@ -1272,10 +1365,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   child: GestureDetector(
                     onTap: () async {
                       Navigator.pop(context);
-                      await SharePlus.instance.share(
-                        ShareParams(
-                          text: 'Join my circle on Memory! $inviteLink',
-                        ),
+                      await ref.read(externalInviteServiceProvider).shareToWhatsApp(
+                        referralCode: displayUsername,
+                        username: displayUsername,
                       );
                     },
                     child: Container(
@@ -1305,13 +1397,32 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             ),
             const SizedBox(height: 8),
             _pill(
+              'Share via System',
+              () async {
+                Navigator.pop(context);
+                await ref.read(externalInviteServiceProvider).shareToSystem(
+                  referralCode: displayUsername,
+                  username: displayUsername,
+                );
+              },
+              dark,
+              color: dark ? kCream : kCharcoal,
+              foreground: dark ? kCharcoal : Colors.white,
+            ),
+            const SizedBox(height: 8),
+            _pill(
               'Copy invite link',
-              () {
-                Clipboard.setData(
-                  ClipboardData(text: inviteLink),
+              () async {
+                final success = await ref.read(externalInviteServiceProvider).copyInviteLink(
+                  referralCode: displayUsername,
+                  username: displayUsername,
                 );
                 Navigator.pop(context);
-                showAppMessage(context, 'Invite link copied!');
+                if (success) {
+                  showAppMessage(context, 'Invite link copied!');
+                } else {
+                  showAppError(context, 'Failed to copy invite link');
+                }
               },
               dark,
               color: dark ? kCream : kCharcoal,
@@ -1793,6 +1904,50 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 _addPersonCard(context, circleMembers.length, dark),
                 const SizedBox(height: 12),
                 _sectionCard(
+                  'ACCOUNT & PREFERENCES',
+                  [
+                    _policyRow(
+                      'Notification Preferences',
+                      () => _showNotificationPreferences(context, dark),
+                      false,
+                      dark,
+                    ),
+                    _policyRow(
+                      'Privacy Settings',
+                      () => _showPrivacySettings(context, dark),
+                      false,
+                      dark,
+                    ),
+                    _policyRow(
+                      'Security Settings',
+                      () => _showSecuritySettings(context, dark),
+                      true,
+                      dark,
+                    ),
+                  ],
+                  dark,
+                ),
+                const SizedBox(height: 12),
+                _sectionCard(
+                  'DATA MANAGEMENT',
+                  [
+                    _policyRow(
+                      'Export My Data',
+                      () => _showExportDialog(context, dark),
+                      false,
+                      dark,
+                    ),
+                    _policyRow(
+                      'Delete Account',
+                      () => _showDeleteAccountDialog(context, dark),
+                      true,
+                      dark,
+                    ),
+                  ],
+                  dark,
+                ),
+                const SizedBox(height: 12),
+                _sectionCard(
                   'LEGAL & SUPPORT',
                   [
                     _policyRow(
@@ -2012,6 +2167,273 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       child: Icon(icon, color: accent, size: 16),
     );
   }
+
+  void _showNotificationPreferences(BuildContext context, bool dark) {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final prefService = ref.read(notificationPreferencesServiceProvider);
+          return _actionSheet(
+            dark,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Notification Preferences',
+                  style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  title: Text('Push Notifications', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  value: prefService.isAllNotificationsEnabled(),
+                  onChanged: (val) async {
+                    await prefService.setAllNotificationsEnabled(val);
+                    setModalState(() {});
+                  },
+                  activeColor: kYellow,
+                ),
+                SwitchListTile(
+                  title: Text('Comments', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  value: prefService.isNotificationTypeEnabled(NotificationType.reaction), // reactor/reactions
+                  onChanged: (val) async {
+                    await prefService.setNotificationTypeEnabled(NotificationType.reaction, val);
+                    setModalState(() {});
+                  },
+                  activeColor: kYellow,
+                ),
+                SwitchListTile(
+                  title: Text('Messages', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  value: prefService.isNotificationTypeEnabled(NotificationType.message),
+                  onChanged: (val) async {
+                    await prefService.setNotificationTypeEnabled(NotificationType.message, val);
+                    setModalState(() {});
+                  },
+                  activeColor: kYellow,
+                ),
+                SwitchListTile(
+                  title: Text('Circle Invitations', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  value: prefService.isNotificationTypeEnabled(NotificationType.circleRequest),
+                  onChanged: (val) async {
+                    await prefService.setNotificationTypeEnabled(NotificationType.circleRequest, val);
+                    setModalState(() {});
+                  },
+                  activeColor: kYellow,
+                ),
+                const SizedBox(height: 12),
+                _pill('Done', () => Navigator.pop(context), dark),
+              ],
+            ),
+          );
+        }
+      ),
+    );
+  }
+
+  void _showPrivacySettings(BuildContext context, bool dark) {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final privacyService = ref.read(privacySettingsServiceProvider);
+          return _actionSheet(
+            dark,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Privacy Settings',
+                  style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  title: Text('Profile Visibility', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  value: privacyService.isProfileVisible(),
+                  onChanged: (val) async {
+                    await privacyService.setProfileVisible(val);
+                    setModalState(() {});
+                  },
+                  activeColor: kYellow,
+                ),
+                SwitchListTile(
+                  title: Text('Discoverable by Phone', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  value: privacyService.isDiscoverable(),
+                  onChanged: (val) async {
+                    await privacyService.setDiscoverable(val);
+                    setModalState(() {});
+                  },
+                  activeColor: kYellow,
+                ),
+                SwitchListTile(
+                  title: Text('Contact Synchronization', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  value: privacyService.isContactDiscoveryEnabled(),
+                  onChanged: (val) async {
+                    await privacyService.setContactDiscoveryEnabled(val);
+                    setModalState(() {});
+                  },
+                  activeColor: kYellow,
+                ),
+                SwitchListTile(
+                  title: Text('Receive Circle Invites', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  value: privacyService.canReceiveCircleInvitations(),
+                  onChanged: (val) async {
+                    await privacyService.setCanReceiveCircleInvitations(val);
+                    setModalState(() {});
+                  },
+                  activeColor: kYellow,
+                ),
+                const SizedBox(height: 12),
+                _pill('Done', () => Navigator.pop(context), dark),
+              ],
+            ),
+          );
+        }
+      ),
+    );
+  }
+
+  void _showSecuritySettings(BuildContext context, bool dark) {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final securityService = ref.read(securitySettingsServiceProvider);
+          final sessions = securityService.getActiveSessions();
+          return _actionSheet(
+            dark,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Security & Active Sessions',
+                  style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 12),
+                ...sessions.map((s) => ListTile(
+                  title: Text(s['device'] as String, style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13, fontWeight: FontWeight.bold)),
+                  subtitle: Text(s['lastActive'] as String, style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6), fontSize: 11)),
+                  trailing: (s['active'] as bool)
+                    ? Icon(Icons.check_circle, color: kMint, size: 18)
+                    : null,
+                )),
+                const SizedBox(height: 12),
+                _pill(
+                  'Sign out of all other devices',
+                  () async {
+                    await securityService.signOutAllDevices();
+                    Navigator.pop(context);
+                    showAppMessage(context, 'Signed out of other devices successfully.');
+                  },
+                  dark,
+                  color: Colors.red,
+                  foreground: Colors.white,
+                ),
+                const SizedBox(height: 8),
+                _pill('Close', () => Navigator.pop(context), dark),
+              ],
+            ),
+          );
+        }
+      ),
+    );
+  }
+
+  void _showExportDialog(BuildContext context, bool dark) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: dark ? kBlack : Colors.white,
+        title: Text('Export My Data', style: TextStyle(color: dark ? kCream : kCharcoal)),
+        content: Text(
+          'Requesting an export will compile all your Profile statistics, Memories, Messages, Settings, and Activity history into an archive. Compile starts in the background.',
+          style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6))),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final exportService = ref.read(accountExportServiceProvider);
+              final res = await exportService.requestExport();
+              if (context.mounted) {
+                showAppMessage(context, res['message'] as String? ?? 'Export started');
+              }
+            },
+            child: const Text('Request Export', style: TextStyle(color: kYellow, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, bool dark) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: dark ? kBlack : Colors.white,
+        title: const Text('Delete Account', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: const Text(
+          'WARNING: Deleting your account is permanent and irreversible. All your memories, messages, circle associations, and history will be securely deleted from our databases.',
+          style: TextStyle(color: Colors.red),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _confirmAccountDeletion(context, dark);
+            },
+            child: const Text('Continue Deletion', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmAccountDeletion(BuildContext context, bool dark) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: dark ? kBlack : Colors.white,
+        title: const Text('Final Confirmation', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: Text(
+          'Please confirm you wish to remove your account. We will proceed to validate requests and sign you out.',
+          style: TextStyle(color: dark ? kCream : kCharcoal),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6))),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx); // Close dialog
+              Navigator.pop(context); // Close profile sheet
+              final deletionService = ref.read(accountDeletionServiceProvider);
+              await deletionService.confirmDeletion('123456');
+            },
+            child: const Text('Delete Permanently', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _actionSheet(bool dark, {required Widget child}) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),

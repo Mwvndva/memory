@@ -15,6 +15,8 @@ import '../core/router.dart';
 import '../core/error_handler.dart';
 import '../realtime/realtime_event.dart';
 import '../realtime/realtime_providers.dart';
+import '../models/relationship_state.dart';
+import '../services/circle_invitation_service.dart';
 
 // ─── Circle Member model ─────────────────────────────────────────────────────
 
@@ -25,6 +27,8 @@ class CircleMember {
     required this.firstName,
     this.lastName,
     this.avatarUrl,
+    this.role = CircleRole.member,
+    this.relationshipState = RelationshipState.member,
   });
 
   final String id;
@@ -32,8 +36,32 @@ class CircleMember {
   final String firstName;
   final String? lastName;
   final String? avatarUrl;
+  final CircleRole role;
+  final RelationshipState relationshipState;
 
   factory CircleMember.fromJson(Map<String, dynamic> json) {
+    final roleStr = json['role'] as String?;
+    CircleRole parsedRole = CircleRole.member;
+    if (roleStr == 'owner') {
+      parsedRole = CircleRole.owner;
+    } else if (roleStr == 'admin') {
+      parsedRole = CircleRole.admin;
+    } else if (roleStr == 'moderator') {
+      parsedRole = CircleRole.moderator;
+    }
+
+    final stateStr = json['relationshipState'] as String? ?? json['status'] as String?;
+    RelationshipState parsedState = RelationshipState.member;
+    if (stateStr == 'pending') {
+      parsedState = RelationshipState.pending;
+    } else if (stateStr == 'notConnected') {
+      parsedState = RelationshipState.notConnected;
+    } else if (stateStr == 'removed') {
+      parsedState = RelationshipState.removed;
+    } else if (stateStr == 'unknown') {
+      parsedState = RelationshipState.unknown;
+    }
+
     return CircleMember(
       id:        json['id']         as String? ?? '',
       username:  json['username']   as String? ?? '',
@@ -43,6 +71,28 @@ class CircleMember {
                   ?? json['lastName'] as String?,
       avatarUrl: json['avatar_url'] as String?
                   ?? json['avatarUrl'] as String?,
+      role: parsedRole,
+      relationshipState: parsedState,
+    );
+  }
+
+  CircleMember copyWith({
+    String? id,
+    String? username,
+    String? firstName,
+    String? lastName,
+    String? avatarUrl,
+    CircleRole? role,
+    RelationshipState? relationshipState,
+  }) {
+    return CircleMember(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
+      relationshipState: relationshipState ?? this.relationshipState,
     );
   }
 
@@ -194,47 +244,13 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
 
       return {'ok': true, 'message': 'Added (mock)'};
     }
-    try {
-      final dio = _ref.read(apiClientProvider);
-
-      // Preferred: create a pending request (inbox) on the server if the endpoint exists.
-      try {
-        final resp = await dio.post('/circles/requests', data: {'memberId': memberId});
-        // If the server accepted the request, return success (and don't refresh circle yet).
-        final data = resp.data;
-        return {
-          'ok': true,
-          'message': data is Map && data['message'] != null ? data['message'] : 'Request sent',
-          'status': resp.statusCode,
-        };
-      } catch (e, stack) {
-        // If the requests endpoint is not available (404) or fails, fall back to older behavior.
-        // We'll inspect the error and decide whether to try the fallback.
-        if (e is DioException && e.response?.statusCode == 404) {
-          // fallback below
-        } else {
-          final mapped = mapException(e, stack);
-          return {'ok': false, 'message': mapped.message, 'status': e is DioException ? e.response?.statusCode : null};
-        }
-      }
-
-      // Fallback: older endpoint behavior which may directly add the member (if permitted)
-      final response = await dio.post('/circles/members', data: {'memberId': memberId});
-      await fetchCircle(); // Refresh list
-      final data = response.data;
-      return {
-        'ok': true,
-        'message': data is Map && data['message'] != null ? data['message'] : 'Member added',
-        'status': response.statusCode,
-      };
-    } catch (e, stack) {
-      final mapped = mapException(e, stack);
-      return {
-        'ok': false,
-        'message': mapped.message,
-        'status': e is DioException ? e.response?.statusCode : null,
-      };
+    
+    final inviteService = _ref.read(circleInvitationServiceProvider);
+    final res = await inviteService.inviteMember(memberId);
+    if (res['ok'] == true && res['message'] == 'Member added') {
+      await fetchCircle();
     }
+    return res;
   }
 
   // ─── Remove a member by their user ID ───────────────────────────────────
@@ -244,15 +260,12 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
       state = state.where((m) => m.id != memberId && m.username != memberId).toList();
       return true;
     }
-    try {
-      final dio = _ref.read(apiClientProvider);
-      await dio.delete('/circles/members/$memberId');
+    final inviteService = _ref.read(circleInvitationServiceProvider);
+    final ok = await inviteService.removeMember(memberId);
+    if (ok) {
       state = state.where((m) => m.id != memberId).toList();
-      return true;
-    } catch (e, stack) {
-      final mapped = mapException(e, stack);
-      throw mapped;
     }
+    return ok;
   }
 
   // ─── Simulation Trigger for Circle Milestones in Mock Mode ────────────────
@@ -433,16 +446,13 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
       }
       return true;
     }
-    try {
-      final dio = _ref.read(apiClientProvider);
-      await dio.post('/circles/requests/accept', data: {'senderId': senderId});
+    final inviteService = _ref.read(circleInvitationServiceProvider);
+    final ok = await inviteService.acceptRequest(senderId);
+    if (ok) {
       await fetchPendingRequests();
       await _ref.read(circlesProvider.notifier).fetchCircle();
-      return true;
-    } catch (e, stack) {
-      final mapped = mapException(e, stack);
-      throw mapped;
     }
+    return ok;
   }
 
   Future<bool> declineRequest(String senderId) async {
@@ -450,15 +460,12 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
       state = state.where((m) => m.id != senderId).toList();
       return true;
     }
-    try {
-      final dio = _ref.read(apiClientProvider);
-      await dio.post('/circles/requests/decline', data: {'senderId': senderId});
+    final inviteService = _ref.read(circleInvitationServiceProvider);
+    final ok = await inviteService.declineRequest(senderId);
+    if (ok) {
       await fetchPendingRequests();
-      return true;
-    } catch (e, stack) {
-      final mapped = mapException(e, stack);
-      throw mapped;
     }
+    return ok;
   }
 
   @override

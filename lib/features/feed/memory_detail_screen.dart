@@ -6,6 +6,8 @@ import '../../models/memory_item.dart';
 import '../../models/comment_item.dart';
 import 'memory_detail_provider.dart';
 import 'memory_detail_state.dart';
+import '../../repositories/download_repository.dart';
+import '../../repositories/auth_repository.dart';
 
 class MemoryDetailScreen extends ConsumerStatefulWidget {
   final String memoryId;
@@ -128,6 +130,26 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
           onPressed: () => context.pop(),
         ),
         actions: [
+          if (m.username == ref.watch(sessionProvider).user.username)
+            IconButton(
+              icon: Icon(Icons.download_rounded, color: dark ? Colors.white : kCharcoal),
+              onPressed: () async {
+                try {
+                  final path = await ref.read(downloadRepositoryProvider).downloadMemoryVideo(m);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Video downloaded successfully to: $path')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString())),
+                    );
+                  }
+                }
+              },
+            ),
           // Deletion and Editing permissions: only owner can edit/delete
           IconButton(
             icon: Icon(Icons.edit_rounded, color: dark ? Colors.white : kCharcoal),

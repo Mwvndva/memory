@@ -170,42 +170,46 @@ export class CirclesService {
 
   async acceptRequest(memberId: string, senderId: string) {
     this.logger.log(`[Accept Circle Request] Request by memberId="${memberId}" to accept from senderId="${senderId}"`);
-    this.logger.log(`[Accept Circle Request] Step 1: Finding and updating pending request to accepted`);
+    this.logger.log(`[Accept Circle Request] Step 1: Finding pending request`);
     const membership = await this.prisma.circleMembership.findFirst({
       where: { userId: senderId, memberId, accepted: false },
     });
     if (!membership) throw new NotFoundException('Request not found');
 
-    const updated = await this.prisma.circleMembership.update({
-      where: { id: membership.id },
-      data: { accepted: true },
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // 1. Update pending request to accepted
+      const updatedMembership = await tx.circleMembership.update({
+        where: { id: membership.id },
+        data: { accepted: true },
+      });
+
+      // 2. Ensure reciprocal accepted membership exists so both users see each other
+      try {
+        await tx.circleMembership.create({
+          data: { userId: memberId, memberId: senderId, accepted: true },
+        });
+      } catch (err: any) {
+        // P2002 unique constraint -> already exists; attempt to update to accepted if needed
+        if (err?.code === 'P2002') {
+          const existingReciprocal = await tx.circleMembership.findFirst({
+            where: { userId: memberId, memberId: senderId },
+          });
+          if (existingReciprocal && !existingReciprocal.accepted) {
+            await tx.circleMembership.update({
+              where: { id: existingReciprocal.id },
+              data: { accepted: true },
+            });
+          }
+        } else {
+          throw err;
+        }
+      }
+      return updatedMembership;
     });
 
     // Check and trigger milestone broadcast for the circle owner (senderId) via queue
     this.logger.log(`[Accept Circle Request] Step 2: Queueing circle milestones evaluation for senderId="${senderId}"`);
     await this.jobsService.queueCircleMilestone(senderId);
-
-    // Ensure reciprocal accepted membership exists so both users see each other
-    // in their outgoing circle lists. This makes circles effectively mutual
-    // after acceptance and simplifies client logic.
-    this.logger.log(`[Accept Circle Request] Step 3: Creating reciprocal accepted membership for mutual connection`);
-    try {
-      await this.prisma.circleMembership.create({
-        data: { userId: memberId, memberId: senderId, accepted: true },
-      });
-    } catch (err: any) {
-      // P2002 unique constraint -> already exists; attempt to update to accepted if needed
-      if (err?.code === 'P2002') {
-        try {
-          const existingReciprocal = await this.prisma.circleMembership.findFirst({
-            where: { userId: memberId, memberId: senderId },
-          });
-          if (existingReciprocal && !existingReciprocal.accepted) {
-            await this.prisma.circleMembership.update({ where: { id: existingReciprocal.id }, data: { accepted: true } });
-          }
-        } catch (_) {}
-      }
-    }
 
     this.logger.log(`[Accept Circle Request] Request accepted successfully: userId="${senderId}" <=> memberId="${memberId}"`);
     return updated;

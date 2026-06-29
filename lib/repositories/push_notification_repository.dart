@@ -71,7 +71,7 @@ class PushNotificationRepository {
   Future<void> _uploadToken(String token) async {
     try {
       final dio = _ref.read(apiClientProvider);
-      await dio.patch('/users/profile', data: {
+      await dio.post('/users/me/fcm', data: {
         'fcmToken': token,
       });
       debugPrint('Firebase FCM device token registered successfully.');
@@ -83,40 +83,44 @@ class PushNotificationRepository {
   void _subscribeToMessages() {
     if (kIsWeb) return;
 
-    _foregroundMessageSubscription?.cancel();
-    _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final notification = message.notification;
-      if (notification != null) {
-        final title = notification.title ?? 'Memory Alert';
-        final body = notification.body ?? '';
+    try {
+      _foregroundMessageSubscription?.cancel();
+      _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        final notification = message.notification;
+        if (notification != null) {
+          final title = notification.title ?? 'Memory Alert';
+          final body = notification.body ?? '';
 
-        // Route to the Notification State Manager
-        _ref.read(notificationProvider.notifier).handlePushNotification(
-          title,
-          body,
-          message.data,
-        );
+          // Route to the Notification State Manager
+          _ref.read(notificationProvider.notifier).handlePushNotification(
+            title,
+            body,
+            message.data,
+          );
 
-        showGlobalNotification(
-          title: title,
-          body: body,
-          onTap: () {
-            final context = rootNavigatorKey.currentContext;
-            if (context != null) {
-              final event = message.data['event'] as String?;
-              if (event == 'new_message') {
-                final sender = message.data['sender'] as String?;
-                if (sender != null) {
-                  context.push('/chat/$sender');
-                  return;
+          showGlobalNotification(
+            title: title,
+            body: body,
+            onTap: () {
+              final context = rootNavigatorKey.currentContext;
+              if (context != null) {
+                final event = message.data['event'] as String?;
+                if (event == 'new_message') {
+                  final sender = message.data['sender'] as String?;
+                  if (sender != null) {
+                    context.push('/chat/$sender');
+                    return;
+                  }
                 }
+                context.go('/feed');
               }
-              context.go('/feed');
-            }
-          },
-        );
-      }
-    });
+            },
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint('Error subscribing to Firebase foreground messages: $e');
+    }
   }
 
   void _unsubscribe() {

@@ -286,6 +286,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         return 'Preparing your memory...';
       case UploadStatus.validating:
         return 'Checking your upload...';
+      case UploadStatus.compressing:
+        return 'Compressing video...';
+      case UploadStatus.generatingThumbnail:
+        return 'Generating preview...';
       case UploadStatus.uploading:
         return 'Uploading your memory...';
       case UploadStatus.waitingForResponse:
@@ -734,6 +738,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     final uploadState = ref.watch(uploadProvider);
     final isUploading = uploadState.status == UploadStatus.preparing ||
                         uploadState.status == UploadStatus.validating ||
+                        uploadState.status == UploadStatus.compressing ||
+                        uploadState.status == UploadStatus.generatingThumbnail ||
+                        uploadState.status == UploadStatus.queued ||
                         uploadState.status == UploadStatus.uploading ||
                         uploadState.status == UploadStatus.waitingForResponse;
 

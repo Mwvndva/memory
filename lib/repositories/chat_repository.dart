@@ -10,10 +10,12 @@ import '../core/error_handler.dart';
 import '../core/router.dart';
 import '../core/theme.dart';
 import '../models/message.dart';
+import '../models/message_status.dart';
 import '../realtime/realtime_event.dart';
 import '../realtime/realtime_providers.dart';
 import 'auth_repository.dart';
 import 'circles_repository.dart';
+import 'message_repositories.dart';
 
 // ─── Chat state ──────────────────────────────────────────────────────────────
 
@@ -363,12 +365,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
   /// Send a reaction event over the WebSocket.
   Future<void> sendReactionEvent(
       String memoryId, String emoji, String action) async {
-    if (kUseMockBackend) return;
     try {
-      _ref.read(realtimeCoordinatorProvider).emit({
-        'event': 'send_reaction',
-        'data': {'memory_id': memoryId, 'emoji': emoji, 'action': action},
-      });
+      await _ref.read(messageRepositoryProvider).sendReactionEvent(memoryId, emoji, action);
     } catch (e, stack) {
       final mapped = mapException(e, stack);
       debugPrint('Failed to transmit reaction: $mapped');
@@ -378,12 +376,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// Send typing indicator over the WebSocket.
   Future<void> sendTypingIndicator(String contactName, bool isTyping) async {
-    if (kUseMockBackend) return;
     try {
-      _ref.read(realtimeCoordinatorProvider).emit({
-        'event': 'typing',
-        'data': {'receiver': contactName, 'isTyping': isTyping},
-      });
+      await _ref.read(typingRepositoryProvider).sendTypingIndicator(contactName, isTyping);
     } catch (e) {
       debugPrint('Failed to transmit typing indicator: $e');
     }
@@ -391,12 +385,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// Send a read receipt over the WebSocket.
   Future<void> sendReadReceipt(String contactName) async {
-    if (kUseMockBackend) return;
     try {
-      _ref.read(realtimeCoordinatorProvider).emit({
-        'event': 'read_receipt',
-        'data': {'receiver': contactName},
-      });
+      await _ref.read(messageRepositoryProvider).sendReadReceipt(contactName);
     } catch (e) {
       debugPrint('Failed to transmit read receipt: $e');
     }
@@ -415,6 +405,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       timestamp: DateTime.now(),
       isMine: true,
       isPending: true,
+      status: MessageStatus.sending,
     );
 
     _appendMessage(contactName, newMessage);
@@ -429,13 +420,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
-  void _transmitMessage(String contactName, String tempId, String text) {
-    final coordinator = _ref.read(realtimeCoordinatorProvider);
+  void _transmitMessage(String contactName, String tempId, String text) async {
     try {
-      coordinator.emit({
-        'event': 'send_message',
-        'data': {'receiver': contactName, 'text': text},
-      });
+      await _ref.read(messageRepositoryProvider).sendMessage(contactName, text);
       _confirmDelivery(contactName, tempId);
     } catch (e) {
       _markFailed(contactName, tempId);
@@ -445,7 +432,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void _confirmDelivery(String contactName, String tempId) {
     final list = state.messagesByContact[contactName] ?? [];
     final updated = list.map((msg) {
-      if (msg.id == tempId) return msg.copyWith(isPending: false, isFailed: false);
+      if (msg.id == tempId) return msg.copyWith(isPending: false, isFailed: false, status: MessageStatus.sent);
       return msg;
     }).toList();
     final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
@@ -456,7 +443,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void _markFailed(String contactName, String tempId) {
     final list = state.messagesByContact[contactName] ?? [];
     final updated = list.map((msg) {
-      if (msg.id == tempId) return msg.copyWith(isPending: false, isFailed: true);
+      if (msg.id == tempId) return msg.copyWith(isPending: false, isFailed: true, status: MessageStatus.draft);
       return msg;
     }).toList();
     final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);

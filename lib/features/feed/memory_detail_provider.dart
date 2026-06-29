@@ -9,6 +9,7 @@ import '../../models/memory_item.dart';
 import '../../models/comment_item.dart';
 import '../../repositories/memory_repository.dart';
 import '../../repositories/auth_repository.dart';
+import '../../repositories/comment_repository.dart';
 import 'memory_detail_state.dart';
 
 class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
@@ -65,7 +66,6 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
           ageHours: (raw['age_hours'] as num?)?.toDouble() ?? 0.0,
           videoPath: raw['video_url'] as String?,
           avatarUrl: creator?['avatar_url'] as String?,
-          isBookmarked: raw['is_bookmarked'] as bool? ?? false,
           reactions: (raw['reactions'] as List? ?? []).fold<Map<String, int>>({}, (map, r) {
             final emoji = r['emoji'] as String? ?? '';
             final count = r['count'] as int? ?? 0;
@@ -101,69 +101,9 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
 
     try {
       final cursor = replaceAll ? null : state.commentCursor;
-      List<CommentItem> fetchedComments = [];
-      String? nextCursor;
-
-      if (kUseMockBackend) {
-        // Mock comments load
-        await Future.delayed(const Duration(milliseconds: 150));
-        if (replaceAll) {
-          fetchedComments = [
-            CommentItem(
-              id: 'mock-c1',
-              memoryId: _memoryId,
-              person: 'Amara',
-              username: 'amara',
-              text: 'Oh my days! This is amazing!',
-              timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-            ),
-            CommentItem(
-              id: 'mock-c2',
-              memoryId: _memoryId,
-              person: 'Leo',
-              username: 'leo',
-              text: 'Love the gradient colors here',
-              timestamp: DateTime.now().subtract(const Duration(minutes: 2)),
-            ),
-          ];
-          nextCursor = 'mock-comment-page-2';
-        } else if (cursor == 'mock-comment-page-2') {
-          fetchedComments = [
-            CommentItem(
-              id: 'mock-c3',
-              memoryId: _memoryId,
-              person: 'Nia',
-              username: 'nia',
-              text: 'Absolutely stunning visual vibe',
-              timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-            ),
-          ];
-          nextCursor = null; // No more
-        }
-      } else {
-        final dio = _ref.read(apiClientProvider);
-        final params = {
-          'limit': 15,
-          if (cursor != null) 'cursor': cursor,
-        };
-        final response = await dio.get('/memories/$_memoryId/comments', queryParameters: params);
-        final rawList = response.data['comments'] as List? ?? [];
-        fetchedComments = rawList.map((item) {
-          final creator = item['creator'] as Map<String, dynamic>?;
-          return CommentItem(
-            id: item['id'] as String? ?? '',
-            memoryId: _memoryId,
-            person: item['person'] as String? ?? creator?['first_name'] as String? ?? 'Friend',
-            username: creator?['username'] as String? ?? '',
-            text: item['text'] as String? ?? '',
-            timestamp: DateTime.tryParse(item['timestamp']?.toString() ?? '') ?? DateTime.now(),
-            avatarUrl: creator?['avatar_url'] as String?,
-          );
-        }).toList();
-
-        final meta = response.data['meta'] as Map<String, dynamic>?;
-        nextCursor = meta?['nextCursor'] as String?;
-      }
+      final result = await _ref.read(commentRepositoryProvider).fetchComments(_memoryId, cursor: cursor, limit: 15);
+      final fetchedComments = result.comments;
+      final nextCursor = result.nextCursor;
 
       final newList = replaceAll ? fetchedComments : [...state.comments, ...fetchedComments];
       // Deduplicate comments by ID
@@ -215,33 +155,15 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
     );
 
     try {
-      if (kUseMockBackend) {
-        await Future.delayed(const Duration(milliseconds: 150));
-      } else {
-        final dio = _ref.read(apiClientProvider);
-        final response = await dio.post('/memories/$_memoryId/comments', data: {
-          'text': text.trim(),
-        });
-        final raw = response.data;
-        final creator = raw['creator'] as Map<String, dynamic>?;
-        final realComment = CommentItem(
-          id: raw['id'] as String? ?? '',
-          memoryId: _memoryId,
-          person: raw['person'] as String? ?? creator?['first_name'] as String? ?? 'You',
-          username: creator?['username'] as String? ?? '',
-          text: raw['text'] as String? ?? '',
-          timestamp: DateTime.tryParse(raw['timestamp']?.toString() ?? '') ?? DateTime.now(),
-          avatarUrl: creator?['avatar_url'] as String?,
-        );
+      final realComment = await _ref.read(commentRepositoryProvider).postComment(_memoryId, text.trim());
 
-        // Replace optimistic representation with the confirmed backend item
-        final updated = List<CommentItem>.from(state.comments);
-        final idx = updated.indexWhere((c) => c.id == optimisticId);
-        if (idx != -1) {
-          updated[idx] = realComment;
-        }
-        state = state.copyWith(comments: updated);
+      // Replace optimistic representation with the confirmed backend item
+      final updated = List<CommentItem>.from(state.comments);
+      final idx = updated.indexWhere((c) => c.id == optimisticId);
+      if (idx != -1) {
+        updated[idx] = realComment.copyWith(memoryId: _memoryId);
       }
+      state = state.copyWith(comments: updated);
 
       state = state.copyWith(isPostingComment: false);
       _commentsBackup = null; // Clear backup on success

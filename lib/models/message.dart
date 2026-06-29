@@ -1,3 +1,5 @@
+import 'message_status.dart';
+
 class Message {
   const Message({
     required this.id,
@@ -11,6 +13,7 @@ class Message {
     this.attachmentUrl,
     this.attachmentLocalPath,
     this.uploadProgress,
+    this.status,
   });
 
   final String id;
@@ -24,6 +27,15 @@ class Message {
   final String? attachmentUrl;
   final String? attachmentLocalPath;
   final double? uploadProgress;
+  final MessageStatus? status;
+
+  MessageStatus get messageStatus {
+    if (status != null) return status!;
+    if (isFailed) return MessageStatus.draft;
+    if (isPending) return MessageStatus.sending;
+    if (isRead) return MessageStatus.read;
+    return MessageStatus.sent;
+  }
 
   Message copyWith({
     String? id,
@@ -37,6 +49,7 @@ class Message {
     String? attachmentUrl,
     String? attachmentLocalPath,
     double? uploadProgress,
+    MessageStatus? status,
   }) {
     return Message(
       id: id ?? this.id,
@@ -50,6 +63,8 @@ class Message {
       attachmentUrl: attachmentUrl ?? this.attachmentUrl,
       attachmentLocalPath: attachmentLocalPath ?? this.attachmentLocalPath,
       uploadProgress: uploadProgress ?? this.uploadProgress,
+      status: status ?? this.status,
     );
   }
 }
+

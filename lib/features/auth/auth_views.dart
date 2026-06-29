@@ -15,6 +15,7 @@ import '../../repositories/auth_repository.dart';
 import '../../repositories/circles_repository.dart';
 import '../circle/circle_state_manager.dart';
 import '../../core/error_handler.dart';
+import 'auth_background_painter.dart';
 
 String _formatImageUrl(String url) {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
@@ -79,29 +80,86 @@ class LoginView extends ConsumerStatefulWidget {
   ConsumerState<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends ConsumerState<LoginView> {
+class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProviderStateMixin {
   final _loginId = TextEditingController();
   final _loginPassword = TextEditingController();
   String _errorMessage = '';
   bool _loginLoading = false;
   bool _loginObscure = true;
 
+  late AnimationController _breathingController;
+  late Animation<double> _breathingAnimation;
+  Timer? _blinkTimer;
+  bool _isBlinking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _breathingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3500),
+    )..repeat(reverse: true);
+
+    _breathingAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
+      CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut),
+    );
+
+    // Blinking schedule: every 9 seconds, perform a quick double-blink simulation
+    _blinkTimer = Timer.periodic(const Duration(seconds: 9), (timer) {
+      if (mounted) {
+        setState(() => _isBlinking = true);
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (mounted) {
+            setState(() => _isBlinking = false);
+            // double blink pattern
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (mounted) {
+                setState(() => _isBlinking = true);
+                Future.delayed(const Duration(milliseconds: 150), () {
+                  if (mounted) setState(() => _isBlinking = false);
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
     _loginId.dispose();
     _loginPassword.dispose();
+    _breathingController.dispose();
+    _blinkTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _onLogin() async {
+    final identity = _loginId.text;
+    final password = _loginPassword.text;
+
+    if (identity.trim().isEmpty) {
+      setState(() => _errorMessage = 'Username or email is required.');
+      return;
+    }
+    if (password.isEmpty) {
+      setState(() => _errorMessage = 'Password is required.');
+      return;
+    }
+    if (password.length < 8) {
+      setState(() => _errorMessage = 'Password must be at least 8 characters long.');
+      return;
+    }
+
     setState(() {
       _loginLoading = true;
       _errorMessage = '';
     });
     try {
       final success = await ref.read(sessionProvider.notifier).login(
-            _loginId.text,
-            _loginPassword.text,
+            identity,
+            password,
           );
       if (!mounted) return;
       if (success) {
@@ -127,70 +185,142 @@ class _LoginViewState extends ConsumerState<LoginView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    const bg = kYellow;
     final fg = dark ? kCream : kCharcoal;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: bg,
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: EdgeInsets.fromLTRB(26, 44, 26, 28 + keyboard),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.sizeOf(context).height -
-                  MediaQuery.paddingOf(context).vertical -
-                  72,
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 28),
-                Image.asset(
-                  'assets/images/memory-logo.png',
-                  width: 150,
-                  height: 150,
-                  fit: BoxFit.contain,
-                ),
-                Text('Memory', style: _headline(fg, 34)),
-                const SizedBox(height: 8),
-                Text(
-                  'Your circle is waiting.',
-                  style: _small(fg.withValues(alpha: .68)),
-                ),
-                const SizedBox(height: 28),
-                _field('Email or username', _loginId, '', dark),
-                const SizedBox(height: 12),
-                _field('Password', _loginPassword, '', dark, obscure: _loginObscure, onToggleObscure: () => setState(() => _loginObscure = !_loginObscure)),
-                if (_errorMessage.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    _errorMessage,
-                    style: TextStyle(color: kBlack, fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                _pill(
-                  'Continue',
-                  _onLogin,
-                  dark,
-                  color: _loginLoading ? kBlack.withValues(alpha: 0.9) : (dark ? kYellow : kBlack),
-                  foreground: Colors.white,
-                  isLoading: _loginLoading,
-                ),
-                const SizedBox(height: 18),
-                _pill(
-                  'Create account',
-                  () => context.push('/create'),
-                  dark,
-                  color: dark ? kBlack : kCream,
-                  foreground: dark ? kCream : kCharcoal,
-                ),
-              ],
+      body: Stack(
+        children: [
+          // 1. Premium Textured Background
+          Positioned.fill(
+            child: CustomPaint(
+              painter: AuthBackgroundPainter(),
             ),
           ),
-        ),
+          
+          // 2. Main Login Form Layout
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(26, 44, 26, 28 + keyboard),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 18),
+                    // Breathing & Blinking Animated Mascot
+                    ScaleTransition(
+                      scale: _breathingAnimation,
+                      child: Container(
+                        width: 140,
+                        height: 140,
+                        alignment: Alignment.center,
+                        child: AnimatedCrossFade(
+                          duration: const Duration(milliseconds: 100),
+                          crossFadeState: _isBlinking
+                              ? CrossFadeState.showSecond
+                              : CrossFadeState.showFirst,
+                          firstChild: Image.asset(
+                            'assets/images/memory-logo.png',
+                            width: 140,
+                            height: 140,
+                            fit: BoxFit.contain,
+                          ),
+                          secondChild: Opacity(
+                            opacity: 0.15, // Simple blink fade simulation
+                            child: Image.asset(
+                              'assets/images/memory-logo.png',
+                              width: 140,
+                              height: 140,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24), // Increased spacing
+                    Text('Memory', style: _headline(fg, 36)),
+                    const SizedBox(height: 10), // Increased spacing
+                    Text(
+                      'Share memories with your circle', // Canonical tagline
+                      style: TextStyle(
+                        color: fg.withValues(alpha: .55), // Softer tagline color
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 36),
+                    
+                    // Auth card with premium spacing, elevation & rounded geometries
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 24,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _field('Email or username', _loginId, '', dark),
+                          const SizedBox(height: 14),
+                          _field(
+                            'Password',
+                            _loginPassword,
+                            '',
+                            dark,
+                            obscure: _loginObscure,
+                            onToggleObscure: () => setState(() => _loginObscure = !_loginObscure),
+                          ),
+                          if (_errorMessage.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              _errorMessage,
+                              style: TextStyle(
+                                color: Colors.redAccent.shade700,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          _pill(
+                            'Continue',
+                            _onLogin,
+                            dark,
+                            color: _loginLoading
+                                ? kBlack.withValues(alpha: 0.9)
+                                : kBlack,
+                            foreground: Colors.white,
+                            isLoading: _loginLoading,
+                          ),
+                          const SizedBox(height: 12),
+                          _pill(
+                            'Create account',
+                            () => context.push('/create'),
+                            dark,
+                            color: kCream,
+                            foreground: kCharcoal,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -211,6 +341,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   final _phone = TextEditingController();
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
+
+  int _currentStep = 1; // 1 = Identity, 2 = Account, 3 = Finish
 
   String usernameStatus = 'Choose something people recognize.';
   bool usernameOk = false;
@@ -266,13 +398,64 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     });
   }
 
+  void _goNext() async {
+    if (_currentStep == 1) {
+      final fName = _firstName.text.trim();
+      final lName = _lastName.text.trim();
+      final uName = _username.text.trim();
+
+      if (fName.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('First name is required.'), backgroundColor: kBlack));
+        return;
+      }
+      if (lName.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Last name is required.'), backgroundColor: kBlack));
+        return;
+      }
+      if (uName.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username is required.'), backgroundColor: kBlack));
+        return;
+      }
+      await _validateUsername();
+      if (!usernameOk) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(usernameStatus), backgroundColor: kBlack));
+        return;
+      }
+      setState(() => _currentStep = 2);
+    } else if (_currentStep == 2) {
+      final emailVal = _email.text.trim();
+      final phoneVal = _phone.text.trim();
+      final passVal = _password.text;
+      final confPassVal = _confirmPassword.text;
+
+      if (emailVal.isEmpty || !RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(emailVal)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid email address.'), backgroundColor: kBlack));
+        return;
+      }
+      if (phoneVal.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phone number is required.'), backgroundColor: kBlack));
+        return;
+      }
+      if (passVal.length < 8) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password must be at least 8 characters.'), backgroundColor: kBlack));
+        return;
+      }
+      if (passVal != confPassVal) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwords do not match.'), backgroundColor: kBlack));
+        return;
+      }
+      _validatePassword();
+      if (!passwordOk) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(passwordStatus), backgroundColor: kBlack));
+        return;
+      }
+      setState(() => _currentStep = 3);
+    }
+  }
+
   Future<void> _onSubmit() async {
     // Prevent duplicate submissions
     if (_createLoading) return;
-
-    await _validateUsername();
-    _validatePassword();
-    if (!usernameOk || !passwordOk) return;
 
     if (!acceptedTerms) {
       if (!mounted) return;
@@ -320,83 +503,116 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    const bg = kYellow;
     final fg = dark ? kCream : kCharcoal;
 
     return Scaffold(
-      backgroundColor: bg,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Fixed header (stationary) with inline Back button
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 58,
-                          height: 34,
-                          child: _pill(
-                            'Back',
-                            () => context.pop(),
-                            dark,
-                            compact: true,
-                          ),
+      body: Stack(
+        children: [
+          // 1. Premium Textured Background
+          Positioned.fill(
+            child: CustomPaint(
+              painter: AuthBackgroundPainter(),
+            ),
+          ),
+
+          // 2. Guided Form Layout
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Guided Onboarding Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 58,
+                        height: 34,
+                        child: _pill(
+                          'Back',
+                          () {
+                            if (_currentStep > 1) {
+                              setState(() => _currentStep--);
+                            } else {
+                              context.pop();
+                            }
+                          },
+                          dark,
+                          compact: true,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Create account', style: _headline(fg, 26)),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Start your circle with the real you.',
-                                style: _small(fg.withValues(alpha: .68)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Step $_currentStep of 3', // Simple step indicator
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                color: fg.withValues(alpha: 0.5),
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _currentStep == 1
+                                  ? 'Identity'
+                                  : _currentStep == 2
+                                      ? 'Account Details'
+                                      : 'Terms & Finish',
+                              style: _headline(fg, 24),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Step Forms Container
+                Expanded(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.fromLTRB(
+                      18,
+                      0,
+                      18,
+                      28 + MediaQuery.viewInsetsOf(context).bottom,
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 24,
+                                offset: const Offset(0, 12),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Scrollable form area
-                  Expanded(
-                    child: SingleChildScrollView(
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: EdgeInsets.fromLTRB(
-                        18,
-                        0,
-                        18,
-                        28 + MediaQuery.viewInsetsOf(context).bottom,
-                      ),
-                      child: Column(
-                        children: [
-                          // Form container: visually groups all fields and controls
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Step 1 - Identity
+                              if (_currentStep == 1) ...[
+                                const Text(
+                                  'The best memories start with real people.',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey,
+                                  ),
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
+                                const SizedBox(height: 18),
                                 Row(
                                   children: [
                                     Expanded(child: _field('First name', _firstName, '', dark)),
@@ -404,14 +620,19 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     Expanded(child: _field('Last name', _lastName, '', dark)),
                                   ],
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 12),
                                 _field('Username', _username, '', dark),
                                 _status(usernameStatus, usernameOk),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 20),
+                                _pill('Continue', _goNext, dark, color: kBlack, foreground: Colors.white),
+                              ],
+
+                              // Step 2 - Account Details
+                              if (_currentStep == 2) ...[
                                 _field('Email', _email, '', dark, keyboard: TextInputType.emailAddress),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 12),
                                 _phoneField(dark),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 12),
                                 Row(
                                   children: [
                                     Expanded(child: _field('Password', _password, '', dark, obscure: _passwordObscure, onToggleObscure: () => setState(() => _passwordObscure = !_passwordObscure))),
@@ -419,33 +640,48 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     Expanded(child: _field('Confirm password', _confirmPassword, '', dark, obscure: _confirmObscure, onToggleObscure: () => setState(() => _confirmObscure = !_confirmObscure))),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 14),
+                                // Real-time validation checklist
                                 _passwordRequirements(_password.text, _confirmPassword.text),
                                 const SizedBox(height: 8),
                                 _status(passwordStatus, passwordOk),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 20),
+                                _pill('Continue', _goNext, dark, color: kBlack, foreground: Colors.white),
+                              ],
+
+                              // Step 3 - Finish Consent & Submit
+                              if (_currentStep == 3) ...[
+                                const Text(
+                                  'Confirm your registration below to agree and complete registration.',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
                                 GestureDetector(
                                   onTap: () => setState(() => acceptedTerms = !acceptedTerms),
                                   child: Row(
                                     children: [
                                       Container(
-                                        width: 20,
-                                        height: 20,
+                                        width: 22,
+                                        height: 22,
                                         decoration: BoxDecoration(
-                                          color: acceptedTerms ? kBlack : kYellow,
+                                          color: acceptedTerms ? kBlack : kCream,
                                           borderRadius: BorderRadius.circular(6),
                                           border: Border.all(
                                             color: acceptedTerms ? Colors.transparent : kBlack.withValues(alpha: 0.2),
                                             width: 1.5,
                                           ),
                                         ),
-                                        child: acceptedTerms ? Icon(Icons.check_rounded, color: kYellow, size: 14) : null,
+                                        child: acceptedTerms ? const Icon(Icons.check_rounded, color: kYellow, size: 14) : null,
                                       ),
-                                      const SizedBox(width: 10),
+                                      const SizedBox(width: 12),
                                       Expanded(
                                         child: RichText(
                                           text: TextSpan(
-                                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: kCharcoal),
+                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kCharcoal),
                                             children: [
                                               const TextSpan(text: 'I agree to the '),
                                               WidgetSpan(
@@ -462,8 +698,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 14),
-                                // Create button
+                                const SizedBox(height: 24),
                                 _pill(
                                   'Create account',
                                   _onSubmit,
@@ -474,19 +709,17 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                   disabled: _createLoading,
                                 ),
                               ],
-                            ),
+                            ],
                           ),
-                          const SizedBox(height: 18),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // Back button moved inline in header
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -785,21 +1018,47 @@ class AvatarUploadView extends ConsumerStatefulWidget {
 class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
   Uint8List? _avatarBytes;
 
+  bool _uploading = false;
+
   Future<void> _pickAvatar() async {
-    final file = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 82,
-    );
-    if (file == null) return;
-    final bytes = await file.readAsBytes();
-    setState(() {
-      _avatarBytes = bytes;
-    });
+    if (_uploading) return;
     try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 65, // Enforce compression constraint
+      );
+      if (file == null) return;
+
+      final length = await file.length();
+      if (length > 5 * 1024 * 1024) {
+        if (mounted) {
+          showAppError(context, 'Image must be less than 5 MB.');
+        }
+        return;
+      }
+
+      final ext = file.path.split('.').last.toLowerCase();
+      if (ext != 'jpg' && ext != 'jpeg' && ext != 'png' && ext != 'webp') {
+        if (mounted) {
+          showAppError(context, 'Only JPEG, PNG, or WebP formats are supported.');
+        }
+        return;
+      }
+
+      final bytes = await file.readAsBytes();
+      setState(() {
+        _avatarBytes = bytes;
+        _uploading = true;
+      });
+
       await ref.read(sessionProvider.notifier).updateAvatar(bytes);
     } catch (e) {
       if (mounted) {
         showAppError(context, e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _uploading = false);
       }
     }
   }
@@ -835,39 +1094,47 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
               InkWell(
                 onTap: _pickAvatar,
                 borderRadius: BorderRadius.circular(28),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: fg.withValues(alpha: .08),
-                    borderRadius: BorderRadius.circular(28),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: fg.withValues(alpha: .08),
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: Column(
+                      children: [
+                        if (_uploading) ...[
+                          const SizedBox(height: 12),
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber),
+                          ),
+                        ],
+                        CircleAvatar(
+                          radius: 54,
+                          backgroundColor: kAmber,
+                          backgroundImage: _avatarBytes == null ? null : MemoryImage(_avatarBytes!),
+                          child: _avatarBytes == null
+                              ? Text(
+                                  initialText,
+                                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _uploading ? 'Uploading picture...' : 'Upload profile picture',
+                          style: TextStyle(color: fg, fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'You can update it later from your profile.',
+                          style: _small(fg.withValues(alpha: .62)),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 54,
-                        backgroundColor: kAmber,
-                        backgroundImage: _avatarBytes == null ? null : MemoryImage(_avatarBytes!),
-                        child: _avatarBytes == null
-                            ? Text(
-                                initialText,
-                                style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Upload profile picture',
-                        style: TextStyle(color: fg, fontWeight: FontWeight.w900),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'You can update it later from your profile.',
-                        style: _small(fg.withValues(alpha: .62)),
-                      ),
-                    ],
-                  ),
-                ),
               ),
               const Spacer(),
               _pill(
@@ -937,18 +1204,16 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
             ),
           ];
         } else {
-          final phoneNumbers = contacts
-              .expand((c) => c.phones.map((p) => p.number))
+          // Deduplicate and normalize phone numbers locally on the client side
+          final normalizedList = contacts
+              .expand((c) => c.phones.map((p) => p.number.replaceAll(RegExp(r'\s+'), '')))
               .where((phoneNum) => phoneNum.isNotEmpty)
+              .toSet() // Deduplicate
               .toList();
-              
-          if (phoneNumbers.isNotEmpty) {
-            final dio = ref.read(apiClientProvider);
-            final response = await dio.post('/users/sync-contacts', data: {'phones': phoneNumbers});
-            final rawList = response.data as List? ?? [];
-            matched = rawList
-                .map((item) => CircleMember.fromJson(item as Map<String, dynamic>))
-                .toList();
+
+          if (normalizedList.isNotEmpty) {
+            final authRepo = ref.read(authRepositoryProvider);
+            matched = await authRepo.syncContacts(normalizedList);
           }
         }
 
@@ -1385,56 +1650,38 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () async {
-                    await SharePlus.instance.share(
-                      ShareParams(
-                        text: 'Join my circle on Memory! https://memory.app/invite/roy',
-                      ),
-                    );
-                  },
-                  child: Container(
-                    height: 34,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE4405F),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: const Text(
-                      'Instagram',
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
+          GestureDetector(
+            onTap: () async {
+              await SharePlus.instance.share(
+                ShareParams(
+                  text: 'Join my circle on Memory! https://memory.app/invite',
+                ),
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.share_rounded, color: kBlack, size: 16),
+                  SizedBox(width: 8),
+                  Text(
+                    'Invite a Friend',
+                    style: TextStyle(
+                      color: kBlack,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () async {
-                    await SharePlus.instance.share(
-                      ShareParams(
-                        text: 'Join my circle on Memory! https://memory.app/invite/roy',
-                      ),
-                    );
-                  },
-                  child: Container(
-                    height: 34,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF25D366),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: const Text(
-                      'WhatsApp',
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),

@@ -13,7 +13,6 @@ class MemoryItem {
     required this.ageHours,
     this.videoPath,
     this.avatarUrl,
-    this.isBookmarked = false,
     this.reactions = const {},
   });
 
@@ -30,7 +29,6 @@ class MemoryItem {
   final double ageHours;
   final String? videoPath;
   final String? avatarUrl;
-  final bool isBookmarked;
   final Map<String, int> reactions;
 
   MemoryItem copyWith({
@@ -45,7 +43,6 @@ class MemoryItem {
     double? ageHours,
     String? videoPath,
     String? avatarUrl,
-    bool? isBookmarked,
     Map<String, int>? reactions,
   }) {
     return MemoryItem(
@@ -60,7 +57,6 @@ class MemoryItem {
       ageHours: ageHours ?? this.ageHours,
       videoPath: videoPath ?? this.videoPath,
       avatarUrl: avatarUrl ?? this.avatarUrl,
-      isBookmarked: isBookmarked ?? this.isBookmarked,
       reactions: reactions ?? this.reactions,
     );
   }

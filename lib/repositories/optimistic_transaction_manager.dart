@@ -6,7 +6,7 @@ enum TransactionStatus { pending, committed, rolledBack }
 class OptimisticTransaction {
   final String id;
   final String memoryId;
-  final String actionType; // 'like' | 'bookmark' | 'reaction'
+  final String actionType; // 'like' | 'reaction'
   final Object? originalValue; // E.g., boolean, map, or snapshot
   final Object? optimisticValue;
   final TransactionStatus status;

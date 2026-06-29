@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../repositories/circles_repository.dart';
+import '../../models/relationship_state.dart';
+import '../../services/circle_invitation_service.dart';
 
 class CircleState {
   const CircleState({
@@ -54,8 +56,38 @@ class CircleStateManager extends StateNotifier<CircleState> {
   }
 
   Future<Map<String, dynamic>> inviteMember(String memberId) async {
-    final res = await _ref.read(circlesProvider.notifier).addMember(memberId);
-    return res;
+    final cleanId = memberId.trim().toLowerCase();
+    final username = cleanId.contains('@') ? cleanId.replaceFirst('@', '') : cleanId;
+    final placeholder = CircleMember(
+      id: memberId,
+      username: username,
+      firstName: username.isNotEmpty ? username[0].toUpperCase() + username.substring(1) : 'Member',
+      relationshipState: RelationshipState.pending,
+    );
+
+    // Optimistically update the UI to Pending
+    state = state.copyWith(
+      pendingRequests: [
+        ...state.pendingRequests.where((m) => m.id != memberId && m.username != username),
+        placeholder,
+      ],
+    );
+
+    try {
+      final res = await _ref.read(circlesProvider.notifier).addMember(memberId);
+      if (res['ok'] != true) {
+        // Rollback
+        state = state.copyWith(
+          pendingRequests: state.pendingRequests.where((m) => m.id != memberId && m.username != username).toList(),
+        );
+      }
+      return res;
+    } catch (e) {
+      state = state.copyWith(
+        pendingRequests: state.pendingRequests.where((m) => m.id != memberId && m.username != username).toList(),
+      );
+      rethrow;
+    }
   }
 
   Future<bool> removeMember(String memberId) async {

@@ -514,47 +514,48 @@ export class UsersService implements OnModuleInit {
       throw new NotFoundException('User not found');
     }
 
-    // 2. Anonymize/wipe sensitive fields
+    // 2. Anonymize/wipe sensitive fields + Soft-delete associated user data
     const anonymizedEmail = `deleted-${userId}@erasure.example.com`;
     const anonymizedPhone = `del-${userId.slice(0, 12)}`;
     
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        firstName: 'Deleted',
-        lastName: 'User',
-        username: `deleted_${userId.slice(0, 8)}`,
-        email: anonymizedEmail,
-        phone: anonymizedPhone,
-        phoneNormalized: anonymizedPhone,
-        avatarUrl: null,
-        deletedAt: new Date(),
-      },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          firstName: 'Deleted',
+          lastName: 'User',
+          username: `deleted_${userId.slice(0, 8)}`,
+          email: anonymizedEmail,
+          phone: anonymizedPhone,
+          phoneNormalized: anonymizedPhone,
+          avatarUrl: null,
+          deletedAt: new Date(),
+        },
+      });
 
-    // 3. Soft-delete associated user data
-    // Soft-delete memories
-    await this.prisma.memory.updateMany({
-      where: { creatorId: userId, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
+      // Soft-delete memories
+      await tx.memory.updateMany({
+        where: { creatorId: userId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
 
-    // Soft-delete messages sent or received by this user
-    await this.prisma.message.updateMany({
-      where: {
-        OR: [{ senderId: userId }, { receiverId: userId }],
-        deletedAt: null,
-      },
-      data: { deletedAt: new Date() },
-    });
+      // Soft-delete messages sent or received by this user
+      await tx.message.updateMany({
+        where: {
+          OR: [{ senderId: userId }, { receiverId: userId }],
+          deletedAt: null,
+        },
+        data: { deletedAt: new Date() },
+      });
 
-    // Soft-delete circle memberships
-    await this.prisma.circleMembership.updateMany({
-      where: {
-        OR: [{ userId }, { memberId: userId }],
-        deletedAt: null,
-      },
-      data: { deletedAt: new Date() },
+      // Soft-delete circle memberships
+      await tx.circleMembership.updateMany({
+        where: {
+          OR: [{ userId }, { memberId: userId }],
+          deletedAt: null,
+        },
+        data: { deletedAt: new Date() },
+      });
     });
 
     this.logger.log(`[GDPR Delete] User userId="${userId}" successfully anonymized and soft-deleted.`);

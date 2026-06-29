@@ -93,6 +93,17 @@ export class UsersController {
   }
 
   /**
+   * POST /users/me/fcm
+   * Authenticated — updates/registers the FCM registration token for push notifications.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('me/fcm')
+  updateFcmToken(@Req() req: any, @Body() body: { fcmToken?: string; fcm_token?: string }) {
+    const fcmToken = body.fcmToken ?? body.fcm_token;
+    return this.usersService.updateProfile(req.user.id, { fcmToken });
+  }
+
+  /**
    * POST /users/sync-contacts
    * Authenticated — syncs contact list to find matching users on Memory.
    */
