@@ -10,8 +10,8 @@ import 'core/theme.dart';
 import 'features/capture/capture_views.dart';
 import 'firebase_options.dart';
 import 'realtime/realtime_providers.dart';
+import 'repositories/auth_repository.dart';
 import 'repositories/push_notification_repository.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,10 +49,12 @@ class MemoryApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(pushNotificationRepositoryProvider);
-    // Bootstrap the Realtime Coordinator so it connects as soon as the app
-    // starts (or as soon as the user authenticates).
-    ref.watch(realtimeCoordinatorProvider);
+    final session = ref.watch(sessionProvider);
+    if (session.isAuthenticated) {
+      ref.watch(pushNotificationRepositoryProvider);
+      // Bootstrap the Realtime Coordinator only for authenticated sessions.
+      ref.watch(realtimeCoordinatorProvider);
+    }
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
@@ -63,14 +65,20 @@ class MemoryApp extends ConsumerWidget {
         textTheme: GoogleFonts.plusJakartaSansTextTheme(
           ThemeData.light().textTheme,
         ),
-        colorScheme: ColorScheme.fromSeed(seedColor: kYellow, brightness: Brightness.light),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kYellow,
+          brightness: Brightness.light,
+        ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         textTheme: GoogleFonts.plusJakartaSansTextTheme(
           ThemeData.dark().textTheme,
         ),
-        colorScheme: ColorScheme.fromSeed(seedColor: kYellow, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kYellow,
+          brightness: Brightness.dark,
+        ),
       ),
       routerConfig: router,
       builder: (context, child) {

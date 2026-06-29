@@ -1,13 +1,19 @@
 import '../../core/error_handler.dart';
 
+String normalizeEmail(String input) => input.trim().toLowerCase();
+String normalizeUsername(String input) =>
+    input.trim().replaceFirst(RegExp(r'^@+'), '').toLowerCase();
+String normalizePhone(String input) {
+  final trimmed = input.trim();
+  final digits = trimmed.replaceAll(RegExp(r'\D'), '');
+  return trimmed.startsWith('+') ? '+$digits' : digits;
+}
+
 class LoginRequestDto {
   final String identity;
   final String password;
 
-  LoginRequestDto({
-    required this.identity,
-    required this.password,
-  }) {
+  LoginRequestDto({required this.identity, required this.password}) {
     validate();
   }
 
@@ -25,10 +31,7 @@ class LoginRequestDto {
 
   Map<String, dynamic> toJson() {
     final cleanId = identity.trim().replaceFirst('@', '').toLowerCase();
-    return {
-      'identity': cleanId,
-      'password': password,
-    };
+    return {'identity': cleanId, 'password': password};
   }
 }
 
@@ -60,7 +63,7 @@ class RegisterRequestDto {
     if (lastName.trim().isEmpty) {
       throw ValidationException('Last name is required.');
     }
-    
+
     final cleanUsername = username.trim().replaceFirst('@', '').toLowerCase();
     if (cleanUsername.isEmpty) {
       throw ValidationException('Username is required.');
@@ -72,10 +75,16 @@ class RegisterRequestDto {
       throw ValidationException('Username must be 30 characters or fewer.');
     }
     if (!RegExp(r'^[a-z0-9._]+$').hasMatch(cleanUsername)) {
-      throw ValidationException('Username can only contain letters, numbers, periods, and underscores.');
+      throw ValidationException(
+        'Username can only contain letters, numbers, periods, and underscores.',
+      );
     }
-    if (cleanUsername.startsWith('.') || cleanUsername.endsWith('.') || cleanUsername.contains('..')) {
-      throw ValidationException('Periods in username cannot start, end, or repeat.');
+    if (cleanUsername.startsWith('.') ||
+        cleanUsername.endsWith('.') ||
+        cleanUsername.contains('..')) {
+      throw ValidationException(
+        'Periods in username cannot start, end, or repeat.',
+      );
     }
 
     if (email.trim().isEmpty) {
@@ -94,7 +103,9 @@ class RegisterRequestDto {
     }
 
     if (!acceptedTerms) {
-      throw ValidationException('You must accept the terms and conditions to register.');
+      throw ValidationException(
+        'You must accept the terms and conditions to register.',
+      );
     }
   }
 
@@ -102,9 +113,9 @@ class RegisterRequestDto {
     return {
       'first_name': firstName.trim(),
       'last_name': lastName.trim(),
-      'username': username.trim().replaceFirst('@', '').toLowerCase(),
-      'email': email.trim().toLowerCase(),
-      'phone': phone.trim(),
+      'username': normalizeUsername(username),
+      'email': normalizeEmail(email),
+      'phone': normalizePhone(phone),
       'password': password,
       'accepted_terms': acceptedTerms,
     };
@@ -115,23 +126,23 @@ class TokenDto {
   final String accessToken;
   final String refreshToken;
 
-  TokenDto({
-    required this.accessToken,
-    required this.refreshToken,
-  });
+  TokenDto({required this.accessToken, required this.refreshToken});
 
   factory TokenDto.fromJson(Map<String, dynamic> json) {
     return TokenDto(
-      accessToken: json['access_token'] as String? ?? json['accessToken'] as String? ?? '',
-      refreshToken: json['refresh_token'] as String? ?? json['refreshToken'] as String? ?? '',
+      accessToken:
+          json['access_token'] as String? ??
+          json['accessToken'] as String? ??
+          '',
+      refreshToken:
+          json['refresh_token'] as String? ??
+          json['refreshToken'] as String? ??
+          '',
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'access_token': accessToken,
-      'refresh_token': refreshToken,
-    };
+    return {'access_token': accessToken, 'refresh_token': refreshToken};
   }
 }
 
@@ -154,8 +165,10 @@ class UserDto {
 
   factory UserDto.fromJson(Map<String, dynamic> json) {
     return UserDto(
-      firstName: json['first_name'] as String? ?? json['firstName'] as String? ?? '',
-      lastName: json['last_name'] as String? ?? json['lastName'] as String? ?? '',
+      firstName:
+          json['first_name'] as String? ?? json['firstName'] as String? ?? '',
+      lastName:
+          json['last_name'] as String? ?? json['lastName'] as String? ?? '',
       username: json['username'] as String? ?? '',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
@@ -169,16 +182,12 @@ class AuthResponseDto {
   final UserDto user;
   final String message;
 
-  AuthResponseDto({
-    this.tokens,
-    required this.user,
-    required this.message,
-  });
+  AuthResponseDto({this.tokens, required this.user, required this.message});
 
   factory AuthResponseDto.fromJson(Map<String, dynamic> json) {
     final tokensJson = json['tokens'] as Map<String, dynamic>?;
     final userJson = json['user'] as Map<String, dynamic>? ?? json;
-    
+
     return AuthResponseDto(
       tokens: tokensJson != null ? TokenDto.fromJson(tokensJson) : null,
       user: UserDto.fromJson(userJson),

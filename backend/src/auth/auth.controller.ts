@@ -8,6 +8,8 @@ import {
   Query,
   Req,
   UseGuards,
+  Param,
+  Delete,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { AuthService } from './auth.service';
@@ -120,6 +122,20 @@ export class AuthController {
   async logout(@Req() req: { user: RefreshTokenPayload }) {
     const { sub: userId, jti } = req.user;
     return this.authService.logout(userId, jti);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('sessions')
+  async listSessions(@Req() req: any) {
+    const sessions = await this.redis.listRefreshSessions(req.user.id);
+    return { sessions };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('sessions/:jti')
+  async revokeSession(@Req() req: any, @Param('jti') jti: string) {
+    await this.redis.revokeRefreshToken(req.user.id, jti);
+    return { message: 'Session revoked successfully' };
   }
 
   // ─── POST /auth/ws-ticket ───────────────────────────────────────────────

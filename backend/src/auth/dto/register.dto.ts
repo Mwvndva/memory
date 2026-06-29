@@ -7,6 +7,7 @@ import {
   IsBoolean,
   IsOptional,
 } from 'class-validator';
+import { normalizeEmail, normalizePhone, normalizeUsername, isProtectedUsername } from '../auth-normalization';
 
 export class RegisterDto {
   @IsString()
@@ -55,4 +56,21 @@ export class RegisterDto {
   @IsBoolean()
   @IsOptional()
   accepted_terms?: boolean;
+
+  constructor(partial?: Partial<RegisterDto>) {
+    Object.assign(this, partial);
+    if (typeof this.username === 'string') {
+      this.username = normalizeUsername(this.username);
+    }
+    if (typeof this.email === 'string') {
+      this.email = normalizeEmail(this.email);
+    }
+    if (typeof this.phone === 'string') {
+      this.phone = normalizePhone(this.phone);
+    }
+  }
+
+  isProtectedUsername(): boolean {
+    return isProtectedUsername(this.username);
+  }
 }

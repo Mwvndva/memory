@@ -28,6 +28,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly PREFIX_RL       = 'rl:';          // rl:<userId|ip>          → hit count
   private readonly PREFIX_REACT    = 'react:';       // react:<memoryId>:<emoji> → count
   private readonly PREFIX_RT       = 'rt:';          // rt:<userId>             → SET of active JTIs
+  private readonly PREFIX_RTMETA   = 'rtmeta:';      // rtmeta:<userId>:<jti>   → JSON metadata
   private readonly PREFIX_TICKET   = 'ws:ticket:';   // ws:ticket:<ticket>      → {userId,username} (TTL 30s)
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -322,6 +323,44 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       .exec();
   }
 
+  async storeRefreshSession(
+    userId: string,
+    jti: string,
+    metadata: Record<string, unknown>,
+  ): Promise<void> {
+    const key = `${this.PREFIX_RTMETA}${userId}:${jti}`;
+    await this.client
+      .pipeline()
+      .set(key, JSON.stringify({ ...metadata, userId, jti }), 'EX', REFRESH_TOKEN_TTL_SECONDS)
+      .sadd(`${this.PREFIX_RT}${userId}`, jti)
+      .expire(`${this.PREFIX_RT}${userId}`, REFRESH_TOKEN_TTL_SECONDS)
+      .exec();
+  }
+
+  async listRefreshSessions(userId: string): Promise<Array<Record<string, unknown>>> {
+    const jtis = await this.client.smembers(`${this.PREFIX_RT}${userId}`);
+    if (jtis.length === 0) return [];
+
+    const pipeline = this.client.pipeline();
+    for (const jti of jtis) {
+      pipeline.get(`${this.PREFIX_RTMETA}${userId}:${jti}`);
+    }
+    const results = await pipeline.exec();
+
+    if (!results) return [];
+
+    return results
+      .map((entry) => entry?.[1])
+      .filter(Boolean)
+      .map((raw) => {
+        try {
+          return JSON.parse(raw as string) as Record<string, unknown>;
+        } catch {
+          return {};
+        }
+      });
+  }
+
   /**
    * Returns true if the JTI is present in the user's allowlist
    * (i.e. the refresh token is still valid and not yet revoked).
@@ -335,14 +374,24 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * Remove a single JTI from the allowlist (single-device logout / token rotation).
    */
   async revokeRefreshToken(userId: string, jti: string): Promise<void> {
-    await this.client.srem(`${this.PREFIX_RT}${userId}`, jti);
+    await this.client
+      .pipeline()
+      .srem(`${this.PREFIX_RT}${userId}`, jti)
+      .del(`${this.PREFIX_RTMETA}${userId}:${jti}`)
+      .exec();
   }
 
   /**
    * Delete the entire allowlist SET for a user (logout everywhere / account lock).
    */
   async revokeAllUserTokens(userId: string): Promise<void> {
-    await this.client.del(`${this.PREFIX_RT}${userId}`);
+    const jtis = await this.client.smembers(`${this.PREFIX_RT}${userId}`);
+    const pipeline = this.client.pipeline();
+    pipeline.del(`${this.PREFIX_RT}${userId}`);
+    for (const jti of jtis) {
+      pipeline.del(`${this.PREFIX_RTMETA}${userId}:${jti}`);
+    }
+    await pipeline.exec();
   }
 
   // ─── One-time WebSocket upgrade tickets ───────────────────────────────────────

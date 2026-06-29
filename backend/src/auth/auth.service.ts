@@ -13,7 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { normalizePhone } from '../users/users.service';
+import { normalizeEmail, normalizePhone, normalizeUsername, isProtectedUsername } from './auth-normalization';
 
 /**
  * Argon2id configuration — OWASP recommended minimums:
@@ -61,7 +61,11 @@ export class AuthService {
   // ─── Username availability ─────────────────────────────────────────────────
 
   async checkUsername(username: string): Promise<{ available: boolean }> {
-    const existing = await this.prisma.user.findUnique({ where: { username } });
+    const cleanUsername = normalizeUsername(username);
+    if (!cleanUsername || isProtectedUsername(cleanUsername)) {
+      return { available: false };
+    }
+    const existing = await this.prisma.user.findUnique({ where: { username: cleanUsername } });
     return { available: !existing };
   }
 
@@ -76,17 +80,24 @@ export class AuthService {
       const maskedName = name.length > 2 ? `${name.slice(0, 2)}***` : '***';
       return `${maskedName}@${domain}`;
     };
-    this.logger.log(`[Register] New registration request for username="${dto.username}" email="${maskEmail(dto.email)}"`);
-    if (!dto.acceptedTerms) {
+    const username = normalizeUsername(dto.username);
+    const email = normalizeEmail(dto.email);
+    const phone = normalizePhone(dto.phone);
+    this.logger.log(`[Register] New registration request for username="${username}" email="${maskEmail(email)}"`);
+    const acceptedTerms = dto.acceptedTerms ?? dto.accepted_terms ?? false;
+    if (!acceptedTerms) {
       this.logger.warn(`[Register] Registration failed: Terms and Conditions not accepted`);
       throw new BadRequestException('You must accept the Terms and Conditions to register.');
+    }
+    if (isProtectedUsername(username)) {
+      throw new BadRequestException('That username cannot be used.');
     }
 
     // 1. Uniqueness checks (fast — username and email have unique indexes)
     this.logger.log(`[Register] Step 1: Checking uniqueness`);
     const [existingEmail, existingUsername] = await Promise.all([
-      this.prisma.user.findUnique({ where: { email: dto.email } }),
-      this.prisma.user.findUnique({ where: { username: dto.username } }),
+      this.prisma.user.findUnique({ where: { email } }),
+      this.prisma.user.findUnique({ where: { username } }),
     ]);
 
     if (existingEmail) {
@@ -104,17 +115,17 @@ export class AuthService {
 
     // 3. Persist user
     this.logger.log(`[Register] Step 3: Saving user record in database`);
-    const flagEmoji = dto.phone.split(' ')[0] || '🇰🇪';
+    const flagEmoji = phone.split(' ')[0] || '🇰🇪';
     const firstName = dto.first_name ?? dto.firstName ?? '';
     const lastName = dto.last_name ?? dto.lastName ?? '';
     const user = await this.prisma.user.create({
       data: {
         firstName,
         lastName,
-        username:     dto.username,
-        email:        dto.email,
-        phone:        dto.phone,
-        phoneNormalized: normalizePhone(dto.phone),
+        username,
+        email,
+        phone,
+        phoneNormalized: phone,
         country:      flagEmoji,
         passwordHash,
         acceptedTermsAt: new Date(),
@@ -143,13 +154,13 @@ export class AuthService {
   async login(dto: LoginDto) {
     this.logger.log(`[Login] New login request`);
     // Resolve by email or username (identity or identifier)
-    const identifier = dto.identity ?? dto.identifier ?? '';
+    const identifier = dto.normalizedIdentity;
     const isEmail = identifier.includes('@');
     this.logger.log(`[Login] Step 1: Finding user by ${isEmail ? 'email' : 'username'}`);
     const user = await this.prisma.user.findFirst({
       where: isEmail
-        ? { email: identifier }
-        : { username: identifier },
+        ? { email: normalizeEmail(identifier) }
+        : { username: normalizeUsername(identifier) },
     });
 
     // Constant-time: always verify even if user not found (prevents timing attacks).
@@ -248,7 +259,11 @@ export class AuthService {
 
 
     // Persist JTI in Redis allowlist (enables per-device revocation)
-    await this.redis.storeRefreshToken(userId, jti);
+    await this.redis.storeRefreshSession(userId, jti, {
+      username,
+      issuedAt: now,
+      lastSeenAt: now,
+    });
 
     return { accessToken, refreshToken, expiresAt };
   }

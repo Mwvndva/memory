@@ -9,7 +9,6 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme.dart';
 import '../../core/api_config.dart';
-import '../../core/api_client.dart';
 import '../../core/countries.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/circles_repository.dart';
@@ -18,7 +17,8 @@ import '../../core/error_handler.dart';
 import 'auth_background_painter.dart';
 
 String _formatImageUrl(String url) {
-  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+  if (url.startsWith('http://localhost:') ||
+      url.startsWith('http://127.0.0.1:')) {
     final uri = Uri.parse(url);
     final baseUri = Uri.parse(kBaseUrl);
     return url.replaceFirst(uri.authority, baseUri.authority);
@@ -61,10 +61,7 @@ class _LoadingViewState extends ConsumerState<LoadingView> {
             const SizedBox(
               width: 32,
               height: 32,
-              child: CircularProgressIndicator(
-                color: kBlack,
-                strokeWidth: 3,
-              ),
+              child: CircularProgressIndicator(color: kBlack, strokeWidth: 3),
             ),
           ],
         ),
@@ -80,7 +77,8 @@ class LoginView extends ConsumerStatefulWidget {
   ConsumerState<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProviderStateMixin {
+class _LoginViewState extends ConsumerState<LoginView>
+    with SingleTickerProviderStateMixin {
   final _loginId = TextEditingController();
   final _loginPassword = TextEditingController();
   String _errorMessage = '';
@@ -148,7 +146,9 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
       return;
     }
     if (password.length < 8) {
-      setState(() => _errorMessage = 'Password must be at least 8 characters long.');
+      setState(
+        () => _errorMessage = 'Password must be at least 8 characters long.',
+      );
       return;
     }
 
@@ -157,10 +157,9 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
       _errorMessage = '';
     });
     try {
-      final success = await ref.read(sessionProvider.notifier).login(
-            identity,
-            password,
-          );
+      final success = await ref
+          .read(sessionProvider.notifier)
+          .login(identity, password);
       if (!mounted) return;
       if (success) {
         context.go('/feed');
@@ -193,17 +192,14 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
       body: Stack(
         children: [
           // 1. Premium Textured Background
-          Positioned.fill(
-            child: CustomPaint(
-              painter: AuthBackgroundPainter(),
-            ),
-          ),
-          
+          Positioned.fill(child: CustomPaint(painter: AuthBackgroundPainter())),
+
           // 2. Main Login Form Layout
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: EdgeInsets.fromLTRB(26, 44, 26, 28 + keyboard),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -245,18 +241,23 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                     Text(
                       'Share memories with your circle', // Canonical tagline
                       style: TextStyle(
-                        color: fg.withValues(alpha: .55), // Softer tagline color
+                        color: fg.withValues(
+                          alpha: .55,
+                        ), // Softer tagline color
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.2,
                       ),
                     ),
                     const SizedBox(height: 36),
-                    
+
                     // Auth card with premium spacing, elevation & rounded geometries
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 24,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
@@ -280,7 +281,8 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                             '',
                             dark,
                             obscure: _loginObscure,
-                            onToggleObscure: () => setState(() => _loginObscure = !_loginObscure),
+                            onToggleObscure: () =>
+                                setState(() => _loginObscure = !_loginObscure),
                           ),
                           if (_errorMessage.isNotEmpty) ...[
                             const SizedBox(height: 12),
@@ -351,6 +353,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   bool _createLoading = false;
   bool _passwordObscure = true;
   bool _confirmObscure = true;
+  Timer? _usernameDebounce;
   late CountryInfo selectedCountry;
   bool acceptedTerms = false;
 
@@ -364,13 +367,14 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     _username.addListener(_validateUsername);
     _password.addListener(_validatePassword);
     _confirmPassword.addListener(_validatePassword);
-    
+
     // Initial validation
     _validateUsername();
   }
 
   @override
   void dispose() {
+    _usernameDebounce?.cancel();
     _firstName.dispose();
     _lastName.dispose();
     _username.dispose();
@@ -382,16 +386,29 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   }
 
   Future<void> _validateUsername() async {
-    final result = await ref.read(sessionProvider.notifier).checkUsername(_username.text);
-    if (!mounted) return;
+    _usernameDebounce?.cancel();
+    _usernameDebounce = Timer(const Duration(milliseconds: 450), () async {
+      await _checkUsernameNow();
+    });
+  }
+
+  Future<bool> _checkUsernameNow() async {
+    _usernameDebounce?.cancel();
+    final result = await ref
+        .read(sessionProvider.notifier)
+        .checkUsername(_username.text);
+    if (!mounted) return false;
     setState(() {
       usernameStatus = result['message'];
       usernameOk = result['ok'];
     });
+    return result['ok'] == true;
   }
 
   void _validatePassword() {
-    final result = ref.read(sessionProvider.notifier).checkPassword(_password.text, _confirmPassword.text);
+    final result = ref
+        .read(sessionProvider.notifier)
+        .checkPassword(_password.text, _confirmPassword.text);
     setState(() {
       passwordStatus = result['message'];
       passwordOk = result['ok'];
@@ -402,23 +419,44 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     if (_currentStep == 1) {
       final fName = _firstName.text.trim();
       final lName = _lastName.text.trim();
-      final uName = _username.text.trim();
+      final uName = _username.text
+          .trim()
+          .replaceFirst(RegExp(r'^@+'), '')
+          .toLowerCase();
 
       if (fName.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('First name is required.'), backgroundColor: kBlack));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('First name is required.'),
+            backgroundColor: kBlack,
+          ),
+        );
         return;
       }
       if (lName.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Last name is required.'), backgroundColor: kBlack));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Last name is required.'),
+            backgroundColor: kBlack,
+          ),
+        );
         return;
       }
       if (uName.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username is required.'), backgroundColor: kBlack));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Username is required.'),
+            backgroundColor: kBlack,
+          ),
+        );
         return;
       }
-      await _validateUsername();
-      if (!usernameOk) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(usernameStatus), backgroundColor: kBlack));
+      final isUsernameAvailable = await _checkUsernameNow();
+      if (!mounted) return;
+      if (!isUsernameAvailable) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(usernameStatus), backgroundColor: kBlack),
+        );
         return;
       }
       setState(() => _currentStep = 2);
@@ -428,25 +466,48 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       final passVal = _password.text;
       final confPassVal = _confirmPassword.text;
 
-      if (emailVal.isEmpty || !RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(emailVal)) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid email address.'), backgroundColor: kBlack));
+      if (emailVal.isEmpty ||
+          !RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(emailVal)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid email address.'),
+            backgroundColor: kBlack,
+          ),
+        );
         return;
       }
       if (phoneVal.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phone number is required.'), backgroundColor: kBlack));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Phone number is required.'),
+            backgroundColor: kBlack,
+          ),
+        );
         return;
       }
       if (passVal.length < 8) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password must be at least 8 characters.'), backgroundColor: kBlack));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password must be at least 8 characters.'),
+            backgroundColor: kBlack,
+          ),
+        );
         return;
       }
       if (passVal != confPassVal) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwords do not match.'), backgroundColor: kBlack));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Passwords do not match.'),
+            backgroundColor: kBlack,
+          ),
+        );
         return;
       }
       _validatePassword();
       if (!passwordOk) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(passwordStatus), backgroundColor: kBlack));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(passwordStatus), backgroundColor: kBlack),
+        );
         return;
       }
       setState(() => _currentStep = 3);
@@ -461,7 +522,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You must agree to the Terms & Conditions to register.'),
+          content: Text(
+            'You must agree to the Terms & Conditions to register.',
+          ),
           backgroundColor: kBlack,
         ),
       );
@@ -469,9 +532,14 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     }
 
     setState(() => _createLoading = true);
-    Map<String, dynamic> result = {'ok': false, 'message': 'Registration failed'};
+    Map<String, dynamic> result = {
+      'ok': false,
+      'message': 'Registration failed',
+    };
     try {
-      result = await ref.read(sessionProvider.notifier).createAccount(
+      result = await ref
+          .read(sessionProvider.notifier)
+          .createAccount(
             firstName: _firstName.text.trim(),
             lastName: _lastName.text.trim(),
             username: _username.text.trim(),
@@ -490,12 +558,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     } else {
       if (mounted) {
         final msg = result['message']?.toString() ?? 'Registration failed.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: kBlack,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: kBlack));
       }
     }
   }
@@ -509,11 +574,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       body: Stack(
         children: [
           // 1. Premium Textured Background
-          Positioned.fill(
-            child: CustomPaint(
-              painter: AuthBackgroundPainter(),
-            ),
-          ),
+          Positioned.fill(child: CustomPaint(painter: AuthBackgroundPainter())),
 
           // 2. Guided Form Layout
           SafeArea(
@@ -561,8 +622,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                               _currentStep == 1
                                   ? 'Identity'
                                   : _currentStep == 2
-                                      ? 'Account Details'
-                                      : 'Terms & Finish',
+                                  ? 'Account Details'
+                                  : 'Terms & Finish',
                               style: _headline(fg, 24),
                             ),
                           ],
@@ -576,7 +637,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 // Step Forms Container
                 Expanded(
                   child: SingleChildScrollView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: EdgeInsets.fromLTRB(
                       18,
                       0,
@@ -587,7 +649,10 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       children: [
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 24,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(24),
@@ -615,38 +680,97 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                 const SizedBox(height: 18),
                                 Row(
                                   children: [
-                                    Expanded(child: _field('First name', _firstName, '', dark)),
+                                    Expanded(
+                                      child: _field(
+                                        'First name',
+                                        _firstName,
+                                        '',
+                                        dark,
+                                      ),
+                                    ),
                                     const SizedBox(width: 10),
-                                    Expanded(child: _field('Last name', _lastName, '', dark)),
+                                    Expanded(
+                                      child: _field(
+                                        'Last name',
+                                        _lastName,
+                                        '',
+                                        dark,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
                                 _field('Username', _username, '', dark),
                                 _status(usernameStatus, usernameOk),
                                 const SizedBox(height: 20),
-                                _pill('Continue', _goNext, dark, color: kBlack, foreground: Colors.white),
+                                _pill(
+                                  'Continue',
+                                  _goNext,
+                                  dark,
+                                  color: kBlack,
+                                  foreground: Colors.white,
+                                ),
                               ],
 
                               // Step 2 - Account Details
                               if (_currentStep == 2) ...[
-                                _field('Email', _email, '', dark, keyboard: TextInputType.emailAddress),
+                                _field(
+                                  'Email',
+                                  _email,
+                                  '',
+                                  dark,
+                                  keyboard: TextInputType.emailAddress,
+                                ),
                                 const SizedBox(height: 12),
                                 _phoneField(dark),
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [
-                                    Expanded(child: _field('Password', _password, '', dark, obscure: _passwordObscure, onToggleObscure: () => setState(() => _passwordObscure = !_passwordObscure))),
+                                    Expanded(
+                                      child: _field(
+                                        'Password',
+                                        _password,
+                                        '',
+                                        dark,
+                                        obscure: _passwordObscure,
+                                        onToggleObscure: () => setState(
+                                          () => _passwordObscure =
+                                              !_passwordObscure,
+                                        ),
+                                      ),
+                                    ),
                                     const SizedBox(width: 10),
-                                    Expanded(child: _field('Confirm password', _confirmPassword, '', dark, obscure: _confirmObscure, onToggleObscure: () => setState(() => _confirmObscure = !_confirmObscure))),
+                                    Expanded(
+                                      child: _field(
+                                        'Confirm password',
+                                        _confirmPassword,
+                                        '',
+                                        dark,
+                                        obscure: _confirmObscure,
+                                        onToggleObscure: () => setState(
+                                          () => _confirmObscure =
+                                              !_confirmObscure,
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 14),
                                 // Real-time validation checklist
-                                _passwordRequirements(_password.text, _confirmPassword.text),
+                                _passwordRequirements(
+                                  _password.text,
+                                  _confirmPassword.text,
+                                ),
                                 const SizedBox(height: 8),
                                 _status(passwordStatus, passwordOk),
                                 const SizedBox(height: 20),
-                                _pill('Continue', _goNext, dark, color: kBlack, foreground: Colors.white),
+                                _pill(
+                                  'Continue',
+                                  _goNext,
+                                  dark,
+                                  color: kBlack,
+                                  foreground: Colors.white,
+                                ),
                               ],
 
                               // Step 3 - Finish Consent & Submit
@@ -661,34 +785,65 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                 ),
                                 const SizedBox(height: 18),
                                 GestureDetector(
-                                  onTap: () => setState(() => acceptedTerms = !acceptedTerms),
+                                  onTap: () => setState(
+                                    () => acceptedTerms = !acceptedTerms,
+                                  ),
                                   child: Row(
                                     children: [
                                       Container(
                                         width: 22,
                                         height: 22,
                                         decoration: BoxDecoration(
-                                          color: acceptedTerms ? kBlack : kCream,
-                                          borderRadius: BorderRadius.circular(6),
+                                          color: acceptedTerms
+                                              ? kBlack
+                                              : kCream,
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                           border: Border.all(
-                                            color: acceptedTerms ? Colors.transparent : kBlack.withValues(alpha: 0.2),
+                                            color: acceptedTerms
+                                                ? Colors.transparent
+                                                : kBlack.withValues(alpha: 0.2),
                                             width: 1.5,
                                           ),
                                         ),
-                                        child: acceptedTerms ? const Icon(Icons.check_rounded, color: kYellow, size: 14) : null,
+                                        child: acceptedTerms
+                                            ? const Icon(
+                                                Icons.check_rounded,
+                                                color: kYellow,
+                                                size: 14,
+                                              )
+                                            : null,
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: RichText(
                                           text: TextSpan(
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kCharcoal),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: kCharcoal,
+                                            ),
                                             children: [
-                                              const TextSpan(text: 'I agree to the '),
+                                              const TextSpan(
+                                                text: 'I agree to the ',
+                                              ),
                                               WidgetSpan(
-                                                alignment: PlaceholderAlignment.middle,
+                                                alignment:
+                                                    PlaceholderAlignment.middle,
                                                 child: GestureDetector(
-                                                  onTap: () => _showTermsSheet(context, dark),
-                                                  child: const Text('Terms and Conditions', style: TextStyle(color: kBlack, decoration: TextDecoration.underline)),
+                                                  onTap: () => _showTermsSheet(
+                                                    context,
+                                                    dark,
+                                                  ),
+                                                  child: const Text(
+                                                    'Terms and Conditions',
+                                                    style: TextStyle(
+                                                      color: kBlack,
+                                                      decoration: TextDecoration
+                                                          .underline,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -703,7 +858,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                   'Create account',
                                   _onSubmit,
                                   dark,
-                                  color: _createLoading ? kBlack.withValues(alpha: 0.9) : kBlack,
+                                  color: _createLoading
+                                      ? kBlack.withValues(alpha: 0.9)
+                                      : kBlack,
                                   foreground: Colors.white,
                                   isLoading: _createLoading,
                                   disabled: _createLoading,
@@ -753,7 +910,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 height: 5,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.15),
+                  color: (dark ? Colors.white : kCharcoal).withValues(
+                    alpha: 0.15,
+                  ),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -773,7 +932,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: (dark ? kCream : kCharcoal).withValues(alpha: 0.08),
+                        color: (dark ? kCream : kCharcoal).withValues(
+                          alpha: 0.08,
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -795,33 +956,41 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       Text(
                         'Last Updated: June 2026',
                         style: TextStyle(
-                          color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+                          color: (dark ? kCream : kCharcoal).withValues(
+                            alpha: 0.6,
+                          ),
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 14),
-                      _termsSection('1. Welcome to Memory', 
+                      _termsSection(
+                        '1. Welcome to Memory',
                         'Memory ("we", "us", or "our") provides a private daily social sharing platform for intimate circles. By creating an account or using the Memory app, you agree to comply with and be bound by these Terms & Conditions and all applicable laws of the Republic of Kenya.',
                         dark,
                       ),
-                      _termsSection('2. Privacy & Consent (Kenya Data Protection Act, 2019)', 
+                      _termsSection(
+                        '2. Privacy & Consent (Kenya Data Protection Act, 2019)',
                         'Your privacy is critical to us. By registering an account, you explicitly consent to the collection, storage, and processing of your personal data—including your name, email, phone number, and uploaded media files (memories). All personal data is processed in strict compliance with the Kenya Data Protection Act, 2019 and registration guidelines set by the Office of the Data Protection Commissioner (ODPC). We do not sell or share your personal data with third-party advertising companies.',
                         dark,
                       ),
-                      _termsSection('3. User-Generated Content & Liabilities (Cybercrimes Act, 2018)', 
+                      _termsSection(
+                        '3. User-Generated Content & Liabilities (Cybercrimes Act, 2018)',
                         'You are solely responsible for the video memories and captions you post to your circle. Under the Computer Misuse and Cybercrimes Act, 2018 of Kenya, it is a criminal offense to upload or share content that is pornographic, hateful, harassing, defamatory, or infringes on another person\'s copyright. We reserve the right to suspend or delete your account immediately and report violations to relevant authorities if illegal or prohibited content is detected.',
                         dark,
                       ),
-                      _termsSection('4. Account Security', 
+                      _termsSection(
+                        '4. Account Security',
                         'You are responsible for safeguarding your password and account details. You agree to notify us immediately of any unauthorized use or security breach of your account.',
                         dark,
                       ),
-                      _termsSection('5. Limitation of Liability', 
+                      _termsSection(
+                        '5. Limitation of Liability',
                         'The Memory app is provided "as is" without warranties of any kind. We shall not be liable for any indirect, incidental, or punitive damages arising from your use of the app, service disruptions, or unauthorized access to user data.',
                         dark,
                       ),
-                      _termsSection('6. Dispute Resolution & Governing Law', 
+                      _termsSection(
+                        '6. Dispute Resolution & Governing Law',
                         'These terms are governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes, claims, or controversies arising out of or relating to these terms shall be subject to the exclusive jurisdiction of the competent courts in Nairobi, Kenya.',
                         dark,
                       ),
@@ -877,7 +1046,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           Text(
             body,
             style: TextStyle(
-              color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+              color: dark
+                  ? kCream.withValues(alpha: 0.8)
+                  : kCharcoal.withValues(alpha: 0.8),
               fontSize: 12.5,
               height: 1.45,
             ),
@@ -937,7 +1108,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                               c.dialCode,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+                                color: (dark ? kCream : kCharcoal).withValues(
+                                  alpha: 0.6,
+                                ),
                               ),
                             ),
                           ],
@@ -963,7 +1136,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       ),
                     )
                     .toList(),
-                onChanged: (v) => setState(() => selectedCountry = v ?? kCountries[0]),
+                onChanged: (v) =>
+                    setState(() => selectedCountry = v ?? kCountries[0]),
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: dark ? kDarkCream : kCream,
@@ -997,7 +1171,10 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 14,
+                  ),
                 ),
               ),
             ),
@@ -1040,7 +1217,10 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
       final ext = file.path.split('.').last.toLowerCase();
       if (ext != 'jpg' && ext != 'jpeg' && ext != 'png' && ext != 'webp') {
         if (mounted) {
-          showAppError(context, 'Only JPEG, PNG, or WebP formats are supported.');
+          showAppError(
+            context,
+            'Only JPEG, PNG, or WebP formats are supported.',
+          );
         }
         return;
       }
@@ -1070,7 +1250,9 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
     final fg = dark ? kCream : kCharcoal;
     final user = ref.watch(authProvider);
 
-    final initialText = user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : 'R';
+    final initialText = user.firstName.isNotEmpty
+        ? user.firstName[0].toUpperCase()
+        : 'R';
 
     return Scaffold(
       backgroundColor: bg,
@@ -1094,47 +1276,61 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
               InkWell(
                 onTap: _pickAvatar,
                 borderRadius: BorderRadius.circular(28),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: fg.withValues(alpha: .08),
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: Column(
-                      children: [
-                        if (_uploading) ...[
-                          const SizedBox(height: 12),
-                          const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber),
-                          ),
-                        ],
-                        CircleAvatar(
-                          radius: 54,
-                          backgroundColor: kAmber,
-                          backgroundImage: _avatarBytes == null ? null : MemoryImage(_avatarBytes!),
-                          child: _avatarBytes == null
-                              ? Text(
-                                  initialText,
-                                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white),
-                                )
-                              : null,
-                        ),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: fg.withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Column(
+                    children: [
+                      if (_uploading) ...[
                         const SizedBox(height: 12),
-                        Text(
-                          _uploading ? 'Uploading picture...' : 'Upload profile picture',
-                          style: TextStyle(color: fg, fontWeight: FontWeight.w900),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'You can update it later from your profile.',
-                          style: _small(fg.withValues(alpha: .62)),
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.amber,
+                          ),
                         ),
                       ],
-                    ),
+                      CircleAvatar(
+                        radius: 54,
+                        backgroundColor: kAmber,
+                        backgroundImage: _avatarBytes == null
+                            ? null
+                            : MemoryImage(_avatarBytes!),
+                        child: _avatarBytes == null
+                            ? Text(
+                                initialText,
+                                style: const TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _uploading
+                            ? 'Uploading picture...'
+                            : 'Upload profile picture',
+                        style: TextStyle(
+                          color: fg,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'You can update it later from your profile.',
+                        style: _small(fg.withValues(alpha: .62)),
+                      ),
+                    ],
                   ),
+                ),
               ),
               const Spacer(),
               _pill(
@@ -1181,15 +1377,19 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
 
   Future<void> _fetchContacts() async {
     try {
-      final status = await FlutterContacts.permissions.request(PermissionType.read);
-      final granted = status == PermissionStatus.granted || status == PermissionStatus.limited;
+      final status = await FlutterContacts.permissions.request(
+        PermissionType.read,
+      );
+      final granted =
+          status == PermissionStatus.granted ||
+          status == PermissionStatus.limited;
       if (granted) {
         final contacts = await FlutterContacts.getAll(
           properties: {ContactProperty.phone, ContactProperty.email},
         );
-        
+
         List<CircleMember> matched = [];
-        
+
         if (kUseMockBackend) {
           matched = [
             const CircleMember(
@@ -1206,7 +1406,11 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         } else {
           // Deduplicate and normalize phone numbers locally on the client side
           final normalizedList = contacts
-              .expand((c) => c.phones.map((p) => p.number.replaceAll(RegExp(r'\s+'), '')))
+              .expand(
+                (c) => c.phones.map(
+                  (p) => p.number.replaceAll(RegExp(r'\s+'), ''),
+                ),
+              )
               .where((phoneNum) => phoneNum.isNotEmpty)
               .toSet() // Deduplicate
               .toList();
@@ -1274,16 +1478,15 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                 height: 5,
                 margin: const EdgeInsets.only(bottom: 18),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.15),
+                  color: (dark ? Colors.white : kCharcoal).withValues(
+                    alpha: 0.15,
+                  ),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
               const Text(
                 'No contacts on Memory yet',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 6),
               Text(
@@ -1312,12 +1515,18 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
+                            colors: [
+                              Color(0xFFF058A0),
+                              Color(0xFFBD3EFF),
+                              Color(0xFFFF6B00),
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(999),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFF058A0).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFFF058A0,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
                             ),
@@ -1326,11 +1535,19 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
+                            Icon(
+                              Icons.camera_alt_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Instagram',
-                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ],
                         ),
@@ -1358,7 +1575,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                           borderRadius: BorderRadius.circular(999),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF25D366).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFF25D366,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
                             ),
@@ -1367,11 +1586,19 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 16),
+                            Icon(
+                              Icons.chat_bubble_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'WhatsApp',
-                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ],
                         ),
@@ -1394,13 +1621,19 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                    color: (dark ? Colors.white : kCharcoal).withValues(
+                      alpha: 0.08,
+                    ),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.copy_rounded, color: dark ? kCream : kCharcoal, size: 16),
+                      Icon(
+                        Icons.copy_rounded,
+                        color: dark ? kCream : kCharcoal,
+                        size: 16,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Copy invite link',
@@ -1458,19 +1691,23 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
       for (final matchedUser in _matchedUsers) {
         final name = '${matchedUser.firstName} ${matchedUser.lastName}'.trim();
         final displayName = name.isNotEmpty ? name : matchedUser.username;
-        final initial = matchedUser.firstName.isNotEmpty ? matchedUser.firstName[0].toUpperCase() : '?';
-        
-        listItems.add(_contactRow(
-          initial: initial,
-          name: displayName,
-          subtitle: '@${matchedUser.username}',
-          color: (dark ? kYellow : kBlack).withValues(alpha: 0.6),
-          fg: fg,
-          dark: dark,
-          isMock: kUseMockBackend,
-          userKey: matchedUser.id,
-          avatarUrl: matchedUser.avatarUrl,
-        ));
+        final initial = matchedUser.firstName.isNotEmpty
+            ? matchedUser.firstName[0].toUpperCase()
+            : '?';
+
+        listItems.add(
+          _contactRow(
+            initial: initial,
+            name: displayName,
+            subtitle: '@${matchedUser.username}',
+            color: (dark ? kYellow : kBlack).withValues(alpha: 0.6),
+            fg: fg,
+            dark: dark,
+            isMock: kUseMockBackend,
+            userKey: matchedUser.id,
+            avatarUrl: matchedUser.avatarUrl,
+          ),
+        );
       }
     } else if (_permissionGranted && _matchedUsers.isEmpty && !_isLoading) {
       listItems.add(
@@ -1593,27 +1830,41 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           SizedBox(
             width: 110,
             height: 34,
-              child: _pill(
+            child: _pill(
               isAdded ? 'Requested' : 'Add to circle',
               () async {
                 if (isAdded) return;
                 if (isMock) {
                   _toggleAdded(userKey);
                 } else {
-                  final Map<String, dynamic> result = await ref.read(circleStateManagerProvider.notifier).inviteMember(userKey);
+                  final Map<String, dynamic> result = await ref
+                      .read(circleStateManagerProvider.notifier)
+                      .inviteMember(userKey);
                   final ok = result['ok'] == true;
                   final msg = result['message']?.toString() ?? '';
                   if (ok) {
                     _toggleAdded(userKey);
-                    if (mounted) showAppMessage(context, msg.isNotEmpty ? msg : 'Request sent');
+                    if (mounted) {
+                      showAppMessage(
+                        context,
+                        msg.isNotEmpty ? msg : 'Request sent',
+                      );
+                    }
                   } else {
-                    if (mounted) showAppError(context, msg.isNotEmpty ? msg : 'Failed to send request');
+                    if (mounted) {
+                      showAppError(
+                        context,
+                        msg.isNotEmpty ? msg : 'Failed to send request',
+                      );
+                    }
                   }
                 }
               },
               dark,
               compact: true,
-              color: isAdded ? Colors.grey.withValues(alpha: 0.5) : (dark ? kYellow : kBlack),
+              color: isAdded
+                  ? Colors.grey.withValues(alpha: 0.5)
+                  : (dark ? kYellow : kBlack),
               foreground: Colors.white,
             ),
           ),
@@ -1626,7 +1877,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [ref.watch(isDarkProvider) ? kYellow : kBlack, kAmber]),
+        gradient: LinearGradient(
+          colors: [ref.watch(isDarkProvider) ? kYellow : kBlack, kAmber],
+        ),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -1691,25 +1944,26 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
 
 // Global UI helper methods aligned with main.dart prototypes
 TextStyle _headline(Color color, double size) => TextStyle(
-      color: color,
-      fontSize: size,
-      fontWeight: FontWeight.w900,
-      height: 1,
-    );
+  color: color,
+  fontSize: size,
+  fontWeight: FontWeight.w900,
+  height: 1,
+);
 
-TextStyle _small(Color color) => TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900);
+TextStyle _small(Color color) =>
+    TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900);
 
 Widget _status(String text, bool ok) => Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: ok ? const Color(0xFF20A978) : kBlack,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
+  padding: const EdgeInsets.only(top: 6),
+  child: Text(
+    text,
+    style: TextStyle(
+      color: ok ? const Color(0xFF20A978) : kBlack,
+      fontSize: 10,
+      fontWeight: FontWeight.w900,
+    ),
+  ),
+);
 
 Widget _field(
   String label,
@@ -1719,81 +1973,99 @@ Widget _field(
   bool obscure = false,
   TextInputType? keyboard,
   VoidCallback? onToggleObscure,
-}) =>
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: dark ? kCream : kCharcoal,
-            fontSize: 11,
-            fontWeight: FontWeight.w900,
-          ),
+}) => Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Text(
+      label,
+      style: TextStyle(
+        color: dark ? kCream : kCharcoal,
+        fontSize: 11,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+    const SizedBox(height: 7),
+    TextField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboard,
+      inputFormatters: keyboard == TextInputType.phone
+          ? [FilteringTextInputFormatter.digitsOnly]
+          : null,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+        color: dark ? kBlack : Colors.white,
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: (dark ? kBlack : Colors.white).withValues(alpha: 0.35),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
         ),
-        const SizedBox(height: 7),
-        TextField(
-          controller: controller,
-          obscureText: obscure,
-          keyboardType: keyboard,
-          inputFormatters: keyboard == TextInputType.phone ? [FilteringTextInputFormatter.digitsOnly] : null,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w900,
-            color: dark ? kBlack : Colors.white,
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: (dark ? kBlack : Colors.white).withValues(alpha: 0.35),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-            filled: true,
-            fillColor: dark ? kYellow : kBlack,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 13,
-              vertical: 14,
-            ),
-            suffixIcon: onToggleObscure == null
-                ? null
-                : GestureDetector(
-                    onTap: onToggleObscure,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Icon(
-                        obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        size: 20,
-                        color: (dark ? kBlack : Colors.white).withValues(alpha: 0.8),
-                      ),
+        filled: true,
+        fillColor: dark ? kYellow : kBlack,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 13,
+          vertical: 14,
+        ),
+        suffixIcon: onToggleObscure == null
+            ? null
+            : GestureDetector(
+                onTap: onToggleObscure,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Icon(
+                    obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 20,
+                    color: (dark ? kBlack : Colors.white).withValues(
+                      alpha: 0.8,
                     ),
                   ),
-          ),
-        ),
-      ],
-    );
+                ),
+              ),
+      ),
+    ),
+  ],
+);
 
 Widget _passwordRequirements(String pass, String confirm) {
   final lengthOk = pass.length >= 8;
   final upper = RegExp(r'[A-Z]').hasMatch(pass);
   final lower = RegExp(r'[a-z]').hasMatch(pass);
   final digit = RegExp(r'\d').hasMatch(pass);
-  final special = RegExp(r'[!@#\$%\^&*(),.?":{}|<>~`_\-\\/\[\];\+=]').hasMatch(pass);
+  final special = RegExp(
+    r'[!@#\$%\^&*(),.?":{}|<>~`_\-\\/\[\];\+=]',
+  ).hasMatch(pass);
 
   Widget row(bool ok, String text) => Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Row(
-          children: [
-            Icon(ok ? Icons.check_circle_rounded : Icons.radio_button_unchecked, size: 14, color: ok ? const Color(0xFF20A978) : kBlack),
-            const SizedBox(width: 8),
-            Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kBlack)),
-          ],
+    padding: const EdgeInsets.only(top: 4),
+    child: Row(
+      children: [
+        Icon(
+          ok ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+          size: 14,
+          color: ok ? const Color(0xFF20A978) : kBlack,
         ),
-      );
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: kBlack,
+          ),
+        ),
+      ],
+    ),
+  );
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1806,7 +2078,14 @@ Widget _passwordRequirements(String pass, String confirm) {
       if (pass.isNotEmpty || confirm.isNotEmpty)
         Padding(
           padding: const EdgeInsets.only(top: 6),
-          child: Text(pass == confirm ? 'Passwords match' : 'Passwords do not match', style: TextStyle(color: pass == confirm ? const Color(0xFF20A978) : kBlack, fontWeight: FontWeight.w800, fontSize: 12)),
+          child: Text(
+            pass == confirm ? 'Passwords match' : 'Passwords do not match',
+            style: TextStyle(
+              color: pass == confirm ? const Color(0xFF20A978) : kBlack,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
         ),
     ],
   );
@@ -1822,35 +2101,41 @@ Widget _pill(
   double? width,
   bool isLoading = false,
   bool disabled = false,
-}) =>
-    GestureDetector(
-      onTap: disabled || isLoading ? null : onTap,
-      child: Container(
-        width: width ?? double.infinity,
-        height: compact ? 34 : 46,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: disabled || isLoading
-              ? (dark ? kBlack.withValues(alpha: 0.12) : kCharcoal.withValues(alpha: 0.06))
-              : (color ?? (dark ? kYellow : kBlack)),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Opacity(
-              opacity: isLoading ? 0 : 1,
-              child: Text(
-                text,
-                style: TextStyle(
-                  color: foreground ?? (dark ? kBlack : kYellow),
-                  fontSize: compact ? 10 : 13,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
+}) => GestureDetector(
+  onTap: disabled || isLoading ? null : onTap,
+  child: Container(
+    width: width ?? double.infinity,
+    height: compact ? 34 : 46,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: disabled || isLoading
+          ? (dark
+                ? kBlack.withValues(alpha: 0.12)
+                : kCharcoal.withValues(alpha: 0.06))
+          : (color ?? (dark ? kYellow : kBlack)),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        Opacity(
+          opacity: isLoading ? 0 : 1,
+          child: Text(
+            text,
+            style: TextStyle(
+              color: foreground ?? (dark ? kBlack : kYellow),
+              fontSize: compact ? 10 : 13,
+              fontWeight: FontWeight.w900,
             ),
-            if (isLoading) const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.2)),
-          ],
+          ),
         ),
-      ),
-    );
+        if (isLoading)
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2.2),
+          ),
+      ],
+    ),
+  ),
+);
