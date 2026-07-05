@@ -20,6 +20,34 @@ export class JobsService implements OnApplicationBootstrap {
         removeOnFail: true,
       },
     );
+
+    // Global rankings recalculation, hourly. A repeatable job with a fixed
+    // jobId is deduplicated cluster-wide by BullMQ, so this runs ONCE across
+    // all instances instead of once per instance (was a per-instance
+    // setInterval in UsersService).
+    await this.heavyOpsQueue.add(
+      'recalculate-all-ranks',
+      {},
+      {
+        repeat: { pattern: '0 * * * *' }, // Hourly
+        jobId: 'recalculate-all-ranks-hourly',
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    );
+
+    // Flush Redis reaction counts to Postgres every 15 minutes, cluster-wide
+    // (was a per-instance setInterval in RedisService).
+    await this.heavyOpsQueue.add(
+      'flush-reactions',
+      {},
+      {
+        repeat: { pattern: '*/15 * * * *' }, // Every 15 minutes
+        jobId: 'flush-reactions-15m',
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    );
   }
 
   async queueStatsRecalculation(userId: string) {

@@ -101,9 +101,16 @@ export class MemoriesService {
 
   /**
    * Retrieve a single memory by ID (archival retrieval).
+   * Cached in Redis (30s). The per-caller circle-membership authorization
+   * happens in MemoriesController.getMemory *after* this fetch, so caching the
+   * raw record does not bypass any access check.
    */
   async getById(memoryId: string) {
-    return this.prisma.memory.findUnique({
+    const cacheKey = `memory:${memoryId}`;
+    const cached = await this.redisService.cacheGetJson<any>(cacheKey);
+    if (cached) return cached;
+
+    const memory = await this.prisma.memory.findUnique({
       where: { id: memoryId },
       include: {
         creator: {
@@ -111,6 +118,11 @@ export class MemoriesService {
         },
       },
     });
+
+    if (memory) {
+      await this.redisService.cacheSetJson(cacheKey, memory, 30);
+    }
+    return memory;
   }
 
   /**

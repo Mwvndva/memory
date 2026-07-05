@@ -315,26 +315,44 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnM
 
     const update = { memory_id: payload.memory_id, emoji: payload.emoji, count };
 
-    // Broadcast to all connected clients across all server instances
-    this.logger.log(`[WS send_reaction] Step 2: Broadcasting reaction update to all online clients via Redis bus`);
-    await this.broadcast('reaction_update', update);
+    // Resolve who can actually see this memory (the audience) and fan out only
+    // to them, instead of broadcasting every reaction to every connected socket
+    // on every instance. Fetched once and reused for the creator notification.
+    this.logger.log(`[WS send_reaction] Step 2: Scoping reaction update to the memory's audience`);
+    const memory = await this.prisma.memory.findUnique({
+      where: { id: payload.memory_id },
+      select: { creatorId: true, caption: true },
+    });
+
+    if (!memory) {
+      // Reaction targeted a memory that no longer exists — nothing to deliver.
+      this.logger.warn(`[WS send_reaction] Memory memoryId="${payload.memory_id}" not found; skipping fan-out`);
+      return update;
+    }
+
+    // Audience = the creator + everyone who has accepted the creator into their
+    // circle (i.e. the feed audience). Indexed by idx_circle_member_id.
+    const viewers = await this.prisma.circleMembership.findMany({
+      where: { memberId: memory.creatorId, accepted: true },
+      select: { userId: true },
+    });
+    const audience = new Set<string>([memory.creatorId, ...viewers.map((v) => v.userId)]);
+
+    for (const userId of audience) {
+      await this.sendToUser(userId, 'reaction_update', update);
+    }
+    this.logger.log(`[WS send_reaction] Delivered reaction_update to ${audience.size} audience member(s)`);
 
     // Notify the memory creator of the new reaction (if they are not the reactor)
-    if (payload.action !== 'remove') {
+    if (payload.action !== 'remove' && memory.creatorId !== client.userId) {
       this.logger.log(`[WS send_reaction] Step 3: Notifying memory creator of new reaction`);
       try {
-        const memory = await this.prisma.memory.findUnique({
-          where: { id: payload.memory_id },
-          select: { creatorId: true, caption: true },
+        this.sendToUser(memory.creatorId, 'new_reaction', {
+          reactorName: client.username,
+          emoji: payload.emoji,
+          memoryCaption: memory.caption,
         });
-        if (memory && memory.creatorId !== client.userId) {
-          this.sendToUser(memory.creatorId, 'new_reaction', {
-            reactorName: client.username,
-            emoji: payload.emoji,
-            memoryCaption: memory.caption,
-          });
-          this.logger.log(`[WS send_reaction] Sent 'new_reaction' notification to memory creatorId="${memory.creatorId}"`);
-        }
+        this.logger.log(`[WS send_reaction] Sent 'new_reaction' notification to memory creatorId="${memory.creatorId}"`);
       } catch (err) {
         this.logger.error(`[WS send_reaction] Failed to send reaction notification: ${err.message}`);
       }
