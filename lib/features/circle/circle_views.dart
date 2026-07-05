@@ -16,6 +16,7 @@ import '../../services/profile_services.dart';
 import '../../services/notification_services.dart';
 import '../../core/api_config.dart';
 import '../../core/theme.dart';
+import '../../core/playful.dart';
 import '../../core/error_handler.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/chat_repository.dart';
@@ -234,7 +235,7 @@ class CircleChatListView extends ConsumerWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              GestureDetector(
+              BouncyTap(
                 onTap: () async {
                   try {
                     await ref.read(circleStateManagerProvider.notifier).acceptRequest(req.id);
@@ -261,7 +262,7 @@ class CircleChatListView extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              GestureDetector(
+              BouncyTap(
                 onTap: () async {
                   try {
                     await ref.read(circleStateManagerProvider.notifier).declineRequest(req.id);

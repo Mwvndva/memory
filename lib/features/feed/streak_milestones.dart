@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/error_handler.dart';
 
 import '../../core/theme.dart';
+import '../../core/playful.dart';
 import '../../core/router.dart';
 import '../../core/api_config.dart';
 import '../../models/user_profile.dart';
@@ -485,6 +486,11 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
     _designData = CardDesignData.generate(widget.milestone);
     final messages = widget.milestone == 30 ? _streak30Messages : _streak7Messages;
     _message = messages[Random().nextInt(messages.length)];
+
+    // Celebrate! Fire a confetti burst once the dialog is on screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showConfetti(context);
+    });
   }
 
   Future<void> _shareCard(String platform) async {
@@ -542,13 +548,15 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
             mainAxisSize: MainAxisSize.min,
             children: [
               // Repaint Boundary wraps the MilestoneCardWidget
-              RepaintBoundary(
-                key: _boundaryKey,
-                child: MilestoneCardWidget(
-                  user: widget.user,
-                  milestone: widget.milestone,
-                  designData: _designData,
-                  message: _message,
+              PopIn(
+                child: RepaintBoundary(
+                  key: _boundaryKey,
+                  child: MilestoneCardWidget(
+                    user: widget.user,
+                    milestone: widget.milestone,
+                    designData: _designData,
+                    message: _message,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -996,6 +1004,11 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
     _designData = CardDesignData.generate(widget.milestone);
     final messages = widget.milestone == 30 ? _circle30Messages : _circle7Messages;
     _message = messages[Random().nextInt(messages.length)];
+
+    // Celebrate! Fire a confetti burst once the dialog is on screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showConfetti(context);
+    });
   }
 
   Future<void> _shareCard(String platform) async {
@@ -1055,14 +1068,16 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
             mainAxisSize: MainAxisSize.min,
             children: [
               // Repaint Boundary wraps the CircleMilestoneCardWidget
-              RepaintBoundary(
-                key: _boundaryKey,
-                child: CircleMilestoneCardWidget(
-                  circleOwnerUsername: widget.circleOwnerUsername,
-                  milestone: widget.milestone,
-                  members: widget.members,
-                  designData: _designData,
-                  message: _message,
+              PopIn(
+                child: RepaintBoundary(
+                  key: _boundaryKey,
+                  child: CircleMilestoneCardWidget(
+                    circleOwnerUsername: widget.circleOwnerUsername,
+                    milestone: widget.milestone,
+                    members: widget.members,
+                    designData: _designData,
+                    message: _message,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

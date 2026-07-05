@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/theme.dart';
+import '../../core/playful.dart';
 import '../../models/memory_item.dart';
 import '../../repositories/chat_repository.dart';
 import '../../repositories/memory_repository.dart';
@@ -1346,7 +1347,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     );
   }
 
-  Widget _emojiButton(String emoji, Function(String) onTap) => GestureDetector(
+  Widget _emojiButton(String emoji, Function(String) onTap) => BouncyTap(
+        // Punchier pop for the signature reaction tap; keep the medium haptic.
+        haptic: false,
+        pressedScale: 0.78,
         onTap: () {
           HapticFeedback.mediumImpact();
           onTap(emoji);
@@ -1360,7 +1364,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
         ),
       );
 
-  Widget _roundIcon(IconData icon, VoidCallback onTap, {int badgeCount = 0}) => GestureDetector(
+  Widget _roundIcon(IconData icon, VoidCallback onTap, {int badgeCount = 0}) => BouncyTap(
         onTap: onTap,
         child: Stack(
           clipBehavior: Clip.none,
@@ -1404,7 +1408,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
         ),
       );
 
-  Widget _smallClose(VoidCallback onTap, bool dark) => GestureDetector(
+  Widget _smallClose(VoidCallback onTap, bool dark) => BouncyTap(
         onTap: onTap,
         child: Container(
           width: 34,

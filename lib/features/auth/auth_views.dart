@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme.dart';
+import '../../core/playful.dart';
 import '../../core/api_config.dart';
 import '../../core/countries.dart';
 import '../../repositories/auth_repository.dart';
@@ -2101,7 +2102,7 @@ Widget _pill(
   double? width,
   bool isLoading = false,
   bool disabled = false,
-}) => GestureDetector(
+}) => BouncyTap(
   onTap: disabled || isLoading ? null : onTap,
   child: Container(
     width: width ?? double.infinity,
