@@ -4,10 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme.dart';
+import '../../core/playful.dart';
 import '../../core/api_config.dart';
 import '../../core/api_client.dart';
 import '../../core/countries.dart';
@@ -1277,7 +1279,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           CircleAvatar(
             backgroundColor: color,
             backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                ? NetworkImage(_formatImageUrl(avatarUrl)) as ImageProvider
+                ? CachedNetworkImageProvider(_formatImageUrl(avatarUrl))
                 : null,
             child: (avatarUrl == null || avatarUrl.isEmpty)
                 ? Text(
@@ -1553,7 +1555,7 @@ Widget _pill(
   bool isLoading = false,
   bool disabled = false,
 }) =>
-    GestureDetector(
+    BouncyTap(
       onTap: disabled || isLoading ? null : onTap,
       child: Container(
         width: width ?? double.infinity,

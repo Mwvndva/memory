@@ -1,12 +1,14 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/theme.dart';
+import '../../core/playful.dart';
 import '../../models/memory_item.dart';
 import '../../repositories/chat_repository.dart';
 import '../../repositories/memory_repository.dart';
@@ -18,7 +20,8 @@ import '../../models/user_profile.dart';
 import 'streak_milestones.dart';
 
 String _formatImageUrl(String url) {
-  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+  if (url.startsWith('http://localhost:') ||
+      url.startsWith('http://127.0.0.1:')) {
     final uri = Uri.parse(url);
     final baseUri = Uri.parse(kBaseUrl);
     return url.replaceFirst(uri.authority, baseUri.authority);
@@ -46,10 +49,7 @@ class MainAppScaffold extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: kBlack.withValues(alpha: 0.1),
-          width: 1.5,
-        ),
+        border: Border.all(color: kBlack.withValues(alpha: 0.1), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: kBlack.withValues(alpha: 0.1),
@@ -161,7 +161,9 @@ class MainAppScaffold extends ConsumerWidget {
       width: 22,
       height: 9,
       decoration: BoxDecoration(
-        color: active ? (dark ? kBlack : kYellow) : kBlack.withValues(alpha: 0.4),
+        color: active
+            ? (dark ? kBlack : kYellow)
+            : kBlack.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(3),
       ),
     );
@@ -184,7 +186,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
   VideoPlayerController? _feedVideoController;
   int? _enqueuedIndex;
   bool _isMuted = false;
-  bool _feedReady = false; // gates gradient: prevents purple flash before first video init
+  bool _feedReady =
+      false; // gates gradient: prevents purple flash before first video init
 
   @override
   void initState() {
@@ -244,7 +247,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
 
     if (m.videoPath == null || m.videoPath!.isEmpty) {
       // No video — mark ready immediately so the gradient/caption shows
-      if (mounted) setState(() { _feedReady = true; });
+      if (mounted)
+        setState(() {
+          _feedReady = true;
+        });
       return;
     }
 
@@ -281,7 +287,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
       debugPrint('Error initializing feed video at index $index: $e');
       controller.dispose();
       // Still mark ready so UI doesn't stay permanently black on error
-      if (mounted) setState(() { _feedReady = true; });
+      if (mounted)
+        setState(() {
+          _feedReady = true;
+        });
     }
   }
 
@@ -297,7 +306,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.paddingOf(context).bottom,
+          ),
           child: Container(
             margin: const EdgeInsets.fromLTRB(18, 18, 18, 18),
             padding: const EdgeInsets.all(22),
@@ -335,12 +346,18 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
+                              colors: [
+                                Color(0xFFF058A0),
+                                Color(0xFFBD3EFF),
+                                Color(0xFFFF6B00),
+                              ],
                             ),
                             borderRadius: BorderRadius.circular(999),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFF058A0).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFFF058A0,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -349,7 +366,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+                              Icon(
+                                Icons.camera_alt_rounded,
+                                color: Colors.white,
+                                size: 15,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'Instagram',
@@ -385,7 +406,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                             borderRadius: BorderRadius.circular(999),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF25D366).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFF25D366,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -394,7 +417,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
+                              Icon(
+                                Icons.chat_bubble_rounded,
+                                color: Colors.white,
+                                size: 15,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'WhatsApp',
@@ -488,7 +515,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: (dark ? kYellow : kBlack).withValues(alpha: 0.4),
+                            color: (dark ? kYellow : kBlack).withValues(
+                              alpha: 0.4,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -505,7 +534,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                   Text(
                     'invite friends to share memories',
                     style: TextStyle(
-                      color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                      color: dark
+                          ? kCream.withValues(alpha: 0.8)
+                          : kCharcoal.withValues(alpha: 0.8),
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -546,13 +577,17 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                   Icon(
                     Icons.history_toggle_off_rounded,
                     size: 76,
-                    color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                    color: dark
+                        ? kCream.withValues(alpha: 0.8)
+                        : kCharcoal.withValues(alpha: 0.8),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'no memories posted in last 24hrs',
                     style: TextStyle(
-                      color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                      color: dark
+                          ? kCream.withValues(alpha: 0.8)
+                          : kCharcoal.withValues(alpha: 0.8),
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -571,9 +606,17 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     final activeIndex = isEmptyFeed ? 0 : _activeMemoryIndex % listToUse.length;
     final m = isEmptyFeed ? null : listToUse[activeIndex];
 
-    final isUrlCaption = m != null && (m.caption.startsWith('http://') || m.caption.startsWith('https://'));
-    final isVideoLoading = m != null && m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized);
-    final showCaption = m != null && m.caption.isNotEmpty && !isUrlCaption && !isVideoLoading;
+    final isUrlCaption =
+        m != null &&
+        (m.caption.startsWith('http://') || m.caption.startsWith('https://'));
+    final isVideoLoading =
+        m != null &&
+        m.videoPath != null &&
+        m.videoPath!.isNotEmpty &&
+        (_feedVideoController == null ||
+            !_feedVideoController!.value.isInitialized);
+    final showCaption =
+        m != null && m.caption.isNotEmpty && !isUrlCaption && !isVideoLoading;
 
     // Trigger video initialization if active index changed
     if (!isEmptyFeed && m != null && activeIndex != _enqueuedIndex) {
@@ -584,13 +627,21 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4C430), // golden memory screen background
+      backgroundColor: const Color(
+        0xFFF4C430,
+      ), // golden memory screen background
       body: GestureDetector(
-        onVerticalDragEnd: isEmptyFeed ? null : (details) {
-          if ((details.primaryVelocity ?? 0) < 0) _nextMemory(listToUse.length);
-          if ((details.primaryVelocity ?? 0) > 0) _previousMemory(listToUse.length);
-        },
-        onTap: isEmptyFeed ? null : () => setState(() => _composerOpen = !_composerOpen),
+        onVerticalDragEnd: isEmptyFeed
+            ? null
+            : (details) {
+                if ((details.primaryVelocity ?? 0) < 0)
+                  _nextMemory(listToUse.length);
+                if ((details.primaryVelocity ?? 0) > 0)
+                  _previousMemory(listToUse.length);
+              },
+        onTap: isEmptyFeed
+            ? null
+            : () => setState(() => _composerOpen = !_composerOpen),
         child: Stack(
           children: [
             Positioned.fill(
@@ -612,14 +663,23 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                         ),
                       ),
                     ),
-                  if (!isEmptyFeed && m != null && m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized))
+                  if (!isEmptyFeed &&
+                      m != null &&
+                      m.videoPath != null &&
+                      m.videoPath!.isNotEmpty &&
+                      (_feedVideoController == null ||
+                          !_feedVideoController!.value.isInitialized))
                     Container(
                       color: Colors.black,
                       child: Center(
-                        child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
+                        child: CircularProgressIndicator(
+                          color: dark ? kYellow : kBlack,
+                        ),
                       ),
                     ),
-                  if (!isEmptyFeed && _feedVideoController != null && _feedVideoController!.value.isInitialized)
+                  if (!isEmptyFeed &&
+                      _feedVideoController != null &&
+                      _feedVideoController!.value.isInitialized)
                     FittedBox(
                       fit: BoxFit.cover,
                       child: SizedBox(
@@ -634,7 +694,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                         'No active memories in the last 24h.\nTap the grid icon to view history.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                          color: dark
+                              ? kCream.withValues(alpha: 0.8)
+                              : kCharcoal.withValues(alpha: 0.8),
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           height: 1.4,
@@ -647,18 +709,15 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
             Positioned(
               top: top + 16,
               left: 22,
-              child: _roundIcon(
-                Icons.arrow_back_ios_new_rounded,
-                () {
-                  if (_fromGrid && !_gridOpen) {
-                    _feedVideoController?.pause();
-                    _setGridOpen(true);
-                  } else {
-                    _feedVideoController?.pause();
-                    context.go('/capture');
-                  }
-                },
-              ),
+              child: _roundIcon(Icons.arrow_back_ios_new_rounded, () {
+                if (_fromGrid && !_gridOpen) {
+                  _feedVideoController?.pause();
+                  _setGridOpen(true);
+                } else {
+                  _feedVideoController?.pause();
+                  context.go('/capture');
+                }
+              }),
             ),
             if (!_gridOpen) ...[
               Positioned(
@@ -674,7 +733,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                   top: top + 16,
                   right: 78,
                   child: _roundIcon(
-                    _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                    _isMuted
+                        ? Icons.volume_off_rounded
+                        : Icons.volume_up_rounded,
                     () {
                       setState(() {
                         _isMuted = !_isMuted;
@@ -706,8 +767,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                       CircleAvatar(
                         radius: 23,
                         backgroundColor: m.avatar,
-                        backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty
-                            ? NetworkImage(_formatImageUrl(m.avatarUrl!)) as ImageProvider
+                        backgroundImage:
+                            m.avatarUrl != null && m.avatarUrl!.isNotEmpty
+                            ? CachedNetworkImageProvider(
+                                _formatImageUrl(m.avatarUrl!),
+                              )
                             : null,
                         child: m.avatarUrl == null || m.avatarUrl!.isEmpty
                             ? Text(
@@ -825,7 +889,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                 child: Text(
                   'No archived memories yet.\nMemories older than 24h will appear here.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ),
@@ -839,7 +907,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
-        if ((details.primaryVelocity ?? 0) < 0) setState(() => _gridOpen = false);
+        if ((details.primaryVelocity ?? 0) < 0)
+          setState(() => _gridOpen = false);
       },
       child: Container(
         color: dark ? kBlack : kYellow,
@@ -884,7 +953,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                   final m = gridItems[i];
                   return TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 200 + (i * 30)), // Staggered scale-in!
+                    duration: Duration(
+                      milliseconds: 200 + (i * 30),
+                    ), // Staggered scale-in!
                     curve: Curves.easeOutBack,
                     builder: (context, value, child) => Transform.scale(
                       scale: value,
@@ -929,10 +1000,15 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                               child: CircleAvatar(
                                 radius: 11,
                                 backgroundColor: m.avatar,
-                                backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty
-                                    ? NetworkImage(_formatImageUrl(m.avatarUrl!)) as ImageProvider
+                                backgroundImage:
+                                    m.avatarUrl != null &&
+                                        m.avatarUrl!.isNotEmpty
+                                    ? CachedNetworkImageProvider(
+                                        _formatImageUrl(m.avatarUrl!),
+                                      )
                                     : null,
-                                child: m.avatarUrl == null || m.avatarUrl!.isEmpty
+                                child:
+                                    m.avatarUrl == null || m.avatarUrl!.isEmpty
                                     ? Text(
                                         m.initial,
                                         style: const TextStyle(
@@ -962,11 +1038,16 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     final dark = ref.read(isDarkProvider);
 
     void sendQuickReaction(String emoji) {
-      ref.read(chatProvider.notifier).sendMessage(m.person, "Reacted $emoji to your memory: \"${m.caption}\"");
+      ref
+          .read(chatProvider.notifier)
+          .sendMessage(
+            m.person,
+            "Reacted $emoji to your memory: \"${m.caption}\"",
+          );
       setState(() => _composerOpen = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Reaction sent to ${m.person}!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Reaction sent to ${m.person}!')));
     }
 
     return SizedBox(
@@ -993,7 +1074,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
                       child: Text(
                         'Send ${m.person} a message',
                         style: TextStyle(
-                          color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                          color: dark
+                              ? kCream.withValues(alpha: 0.6)
+                              : kCharcoal.withValues(alpha: 0.6),
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1041,49 +1124,52 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> {
     );
   }
 
-  Widget _emojiButton(String emoji, Function(String) onTap) => GestureDetector(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          onTap(emoji);
-        },
-        child: SizedBox(
-          width: 44,
-          height: 36,
-          child: Center(
-            child: Text(emoji, style: const TextStyle(fontSize: 28, height: 1)),
-          ),
-        ),
-      );
+  Widget _emojiButton(String emoji, Function(String) onTap) => BouncyTap(
+    // Punchier pop for the signature reaction tap; keep the medium haptic.
+    haptic: false,
+    pressedScale: 0.78,
+    onTap: () {
+      HapticFeedback.mediumImpact();
+      onTap(emoji);
+    },
+    child: SizedBox(
+      width: 44,
+      height: 36,
+      child: Center(
+        child: Text(emoji, style: const TextStyle(fontSize: 28, height: 1)),
+      ),
+    ),
+  );
 
-  Widget _roundIcon(IconData icon, VoidCallback onTap) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .22),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: Colors.white, size: 20),
-        ),
-      );
+  Widget _roundIcon(IconData icon, VoidCallback onTap) => BouncyTap(
+    onTap: onTap,
+    child: Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .22),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: Colors.white, size: 20),
+    ),
+  );
 
-  Widget _smallClose(VoidCallback onTap, bool dark) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: dark ? kDarkCream : kCream,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.close_rounded,
-            color: dark ? kCream : kCharcoal,
-            size: 18,
-          ),
-        ),
-      );
+  Widget _smallClose(VoidCallback onTap, bool dark) => BouncyTap(
+    onTap: onTap,
+    child: Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: dark ? kDarkCream : kCream,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.close_rounded,
+        color: dark ? kCream : kCharcoal,
+        size: 18,
+      ),
+    ),
+  );
 }
 
 // ── First-frame video thumbnail for the memory grid ──────────────────────────
@@ -1103,17 +1189,21 @@ class _VideoGridThumbnail extends StatefulWidget {
 
 class _VideoGridThumbnailState extends State<_VideoGridThumbnail> {
   VideoPlayerController? _controller;
+  Timer? _initTimer;
   bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _init();
+    _initTimer = Timer(const Duration(milliseconds: 300), _init);
   }
 
   Future<void> _init() async {
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      if (!mounted) return;
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
+      );
       _controller = controller;
       await controller.initialize();
       await controller.seekTo(Duration.zero);
@@ -1130,6 +1220,7 @@ class _VideoGridThumbnailState extends State<_VideoGridThumbnail> {
 
   @override
   void dispose() {
+    _initTimer?.cancel();
     _controller?.dispose();
     super.dispose();
   }

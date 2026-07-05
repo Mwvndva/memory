@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import '../feed/streak_milestones.dart';
@@ -9,6 +10,7 @@ import '../../models/user_profile.dart';
 import '../../models/message.dart';
 import '../../core/api_config.dart';
 import '../../core/theme.dart';
+import '../../core/playful.dart';
 import '../../core/error_handler.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/chat_repository.dart';
@@ -73,7 +75,7 @@ class CircleChatListView extends ConsumerWidget {
                         backgroundImage: user.avatarBytes != null
                             ? MemoryImage(user.avatarBytes!)
                             : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-                                ? NetworkImage(_formatImageUrl(user.avatarUrl!)) as ImageProvider
+                            ? CachedNetworkImageProvider(_formatImageUrl(user.avatarUrl!))
                                 : null),
                         child: (user.avatarBytes == null && (user.avatarUrl == null || user.avatarUrl!.isEmpty))
                             ? Text(
@@ -203,7 +205,7 @@ class CircleChatListView extends ConsumerWidget {
             radius: 22,
             backgroundColor: dark ? kYellow : kBlack,
             backgroundImage: (req.avatarUrl != null && req.avatarUrl!.isNotEmpty)
-                ? NetworkImage(_formatImageUrl(req.avatarUrl!)) as ImageProvider
+              ? CachedNetworkImageProvider(_formatImageUrl(req.avatarUrl!))
                 : null,
             child: (req.avatarUrl == null || req.avatarUrl!.isEmpty)
                 ? Text(
@@ -244,7 +246,7 @@ class CircleChatListView extends ConsumerWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              GestureDetector(
+              BouncyTap(
                 onTap: () => ref.read(pendingRequestsProvider.notifier).acceptRequest(req.id),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -263,7 +265,7 @@ class CircleChatListView extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              GestureDetector(
+              BouncyTap(
                 onTap: () => ref.read(pendingRequestsProvider.notifier).declineRequest(req.id),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -328,7 +330,7 @@ class CircleChatListView extends ConsumerWidget {
                         radius: 22,
                         backgroundColor: dark ? kYellow : kBlack,
                         backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-                            ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
+                          ? CachedNetworkImageProvider(_formatImageUrl(member.avatarUrl!))
                             : null,
                         child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
                             ? Text(
@@ -612,7 +614,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       radius: 18,
                       backgroundColor: kYellow,
                       backgroundImage: (contactMember.avatarUrl != null && contactMember.avatarUrl!.isNotEmpty)
-                          ? NetworkImage(_formatImageUrl(contactMember.avatarUrl!)) as ImageProvider
+                          ? CachedNetworkImageProvider(_formatImageUrl(contactMember.avatarUrl!))
                           : null,
                       child: (contactMember.avatarUrl == null || contactMember.avatarUrl!.isEmpty)
                           ? Text(
@@ -995,7 +997,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 radius: 14,
                 backgroundColor: dark ? kYellow : kBlack,
                 backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
+                    ? CachedNetworkImageProvider(_formatImageUrl(member.avatarUrl!))
                     : null,
                 child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
                     ? Text(
@@ -1599,7 +1601,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                   backgroundImage: user.avatarBytes != null
                                       ? MemoryImage(user.avatarBytes!)
                                       : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-                                          ? NetworkImage(_formatImageUrl(user.avatarUrl!)) as ImageProvider
+                                        ? CachedNetworkImageProvider(_formatImageUrl(user.avatarUrl!))
                                           : null),
                                   child: (user.avatarBytes == null && (user.avatarUrl == null || user.avatarUrl!.isEmpty))
                                       ? Text(

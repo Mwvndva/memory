@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import '../../core/error_handler.dart';
 
 import '../../core/theme.dart';
 import '../../core/router.dart';
+import '../../core/playful.dart';
 import '../../core/api_config.dart';
 import '../../models/user_profile.dart';
 import '../../repositories/auth_repository.dart';
@@ -39,7 +41,8 @@ const _streak30Messages = [
 
 // Helper to format user avatars
 String _formatImageUrl(String url) {
-  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+  if (url.startsWith('http://localhost:') ||
+      url.startsWith('http://127.0.0.1:')) {
     final uri = Uri.parse(url);
     final baseUri = Uri.parse(kBaseUrl);
     return url.replaceFirst(uri.authority, baseUri.authority);
@@ -91,7 +94,7 @@ class CardDesignData {
       const Color(0xFF00F5FF), // Electric cyan
       const Color(0xFF39FF14), // Neon lime
       const Color(0xFFFF5E00), // Vivid orange
-  const Color(0xFFFADA5E), // Gold yellow (updated)
+      const Color(0xFFFADA5E), // Gold yellow (updated)
       const Color(0xFFFF3366), // Coral red
       const Color(0xFF6C5DD3), // Retro lavender
     ];
@@ -114,63 +117,86 @@ class CardDesignData {
     }
 
     final shapesList = <PatternShape>[];
-    final style = rand.nextInt(3); // 0: Memphis/Confetti, 1: Wavy Lines, 2: Rings/Stars
+    final style = rand.nextInt(
+      3,
+    ); // 0: Memphis/Confetti, 1: Wavy Lines, 2: Rings/Stars
 
     if (style == 0) {
       // Confetti & Memphis shapes
       for (int i = 0; i < 35; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.values[rand.nextInt(ShapeType.values.length - 1)], // skip wave
-          x: rand.nextDouble(),
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 20 + 8,
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.35 + 0.15),
-          rotation: rand.nextDouble() * 2 * pi,
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType
+                .values[rand.nextInt(ShapeType.values.length - 1)], // skip wave
+            x: rand.nextDouble(),
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 20 + 8,
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.35 + 0.15,
+            ),
+            rotation: rand.nextDouble() * 2 * pi,
+          ),
+        );
       }
     } else if (style == 1) {
       // Wavy patterns + sparkles
       for (int i = 0; i < 5; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.wave,
-          x: 0,
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 5 + 2, // stroke width
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.25 + 0.1),
-          rotation: rand.nextDouble() * 8 - 4, // frequency factor or shift
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType.wave,
+            x: 0,
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 5 + 2, // stroke width
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.25 + 0.1,
+            ),
+            rotation: rand.nextDouble() * 8 - 4, // frequency factor or shift
+          ),
+        );
       }
       for (int i = 0; i < 15; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.sparkle,
-          x: rand.nextDouble(),
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 14 + 8,
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.45 + 0.25),
-          rotation: rand.nextDouble() * 2 * pi,
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType.sparkle,
+            x: rand.nextDouble(),
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 14 + 8,
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.45 + 0.25,
+            ),
+            rotation: rand.nextDouble() * 2 * pi,
+          ),
+        );
       }
     } else {
       // Hypnotic Rings & Stars
       for (int i = 0; i < 6; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.ring,
-          x: rand.nextDouble(),
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 80 + 30,
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.2 + 0.05),
-          rotation: 0,
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType.ring,
+            x: rand.nextDouble(),
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 80 + 30,
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.2 + 0.05,
+            ),
+            rotation: 0,
+          ),
+        );
       }
       for (int i = 0; i < 15; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.star,
-          x: rand.nextDouble(),
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 18 + 10,
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.4 + 0.2),
-          rotation: rand.nextDouble() * 2 * pi,
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType.star,
+            x: rand.nextDouble(),
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 18 + 10,
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.4 + 0.2,
+            ),
+            rotation: rand.nextDouble() * 2 * pi,
+          ),
+        );
       }
     }
 
@@ -214,7 +240,11 @@ class MilestoneCardPainter extends CustomPainter {
       switch (shape.type) {
         case ShapeType.rect:
           canvas.drawRect(
-            Rect.fromCenter(center: Offset.zero, width: shape.size, height: shape.size),
+            Rect.fromCenter(
+              center: Offset.zero,
+              width: shape.size,
+              height: shape.size,
+            ),
             shapePaint,
           );
           break;
@@ -283,7 +313,8 @@ class MilestoneCardPainter extends CustomPainter {
 
           for (int i = 0; i <= points; i++) {
             final px = (i / points) * size.width;
-            final py = startY + amplitude * sin((px / wavelength) * 2 * pi + phase);
+            final py =
+                startY + amplitude * sin((px / wavelength) * 2 * pi + phase);
             path.lineTo(px, py);
           }
           canvas.drawPath(path, wavePaint);
@@ -318,8 +349,8 @@ class MilestoneCardWidget extends ConsumerWidget {
     final avatarProvider = user.avatarBytes != null
         ? MemoryImage(user.avatarBytes!) as ImageProvider
         : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
-            ? NetworkImage(_formatImageUrl(user.avatarUrl!)) as ImageProvider
-            : null;
+        ? CachedNetworkImageProvider(_formatImageUrl(user.avatarUrl!))
+        : null;
 
     final nameInitial = user.firstName.isNotEmpty
         ? user.firstName[0].toUpperCase()
@@ -344,23 +375,30 @@ class MilestoneCardWidget extends ConsumerWidget {
           children: [
             // Procedurally painted background pattern
             Positioned.fill(
-              child: CustomPaint(
-                painter: MilestoneCardPainter(designData),
-              ),
+              child: CustomPaint(painter: MilestoneCardPainter(designData)),
             ),
             // Card Content
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22.0,
+                vertical: 24.0,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Top Milestone Banner
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
                     ),
                     child: Text(
                       '$milestone-DAY STREAK!',
@@ -394,7 +432,9 @@ class MilestoneCardWidget extends ConsumerWidget {
                         ),
                         child: CircleAvatar(
                           radius: 50,
-                          backgroundColor: ref.watch(isDarkProvider) ? kYellow : kBlack,
+                          backgroundColor: ref.watch(isDarkProvider)
+                              ? kYellow
+                              : kBlack,
                           backgroundImage: avatarProvider,
                           child: avatarProvider == null
                               ? Text(
@@ -419,7 +459,11 @@ class MilestoneCardWidget extends ConsumerWidget {
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
                           shadows: [
-                            Shadow(color: Colors.black45, offset: Offset(0, 2), blurRadius: 4),
+                            Shadow(
+                              color: Colors.black45,
+                              offset: Offset(0, 2),
+                              blurRadius: 4,
+                            ),
                           ],
                         ),
                       ),
@@ -428,12 +472,18 @@ class MilestoneCardWidget extends ConsumerWidget {
 
                   // Bottom Translucent Congratulatory bubble
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.22),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        width: 1.5,
+                      ),
                     ),
                     child: Text(
                       message,
@@ -444,7 +494,11 @@ class MilestoneCardWidget extends ConsumerWidget {
                         height: 1.35,
                         fontWeight: FontWeight.w700,
                         shadows: [
-                          Shadow(color: Colors.black26, offset: Offset(0, 1), blurRadius: 2),
+                          Shadow(
+                            color: Colors.black26,
+                            offset: Offset(0, 1),
+                            blurRadius: 2,
+                          ),
                         ],
                       ),
                     ),
@@ -470,10 +524,12 @@ class MilestoneCongratulationsDialog extends StatefulWidget {
   });
 
   @override
-  State<MilestoneCongratulationsDialog> createState() => _MilestoneCongratulationsDialogState();
+  State<MilestoneCongratulationsDialog> createState() =>
+      _MilestoneCongratulationsDialogState();
 }
 
-class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulationsDialog> {
+class _MilestoneCongratulationsDialogState
+    extends State<MilestoneCongratulationsDialog> {
   late final CardDesignData _designData;
   late final String _message;
   final GlobalKey _boundaryKey = GlobalKey();
@@ -483,8 +539,15 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
   void initState() {
     super.initState();
     _designData = CardDesignData.generate(widget.milestone);
-    final messages = widget.milestone == 30 ? _streak30Messages : _streak7Messages;
+    final messages = widget.milestone == 30
+        ? _streak30Messages
+        : _streak7Messages;
     _message = messages[Random().nextInt(messages.length)];
+
+    // Celebrate! Fire a confetti burst once the dialog is on screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showConfetti(context);
+    });
   }
 
   Future<void> _shareCard(String platform) async {
@@ -492,7 +555,9 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
     setState(() => _isSharing = true);
 
     try {
-      final boundary = _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _boundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception("RenderRepaintBoundary not found");
       }
@@ -507,7 +572,8 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
 
       // Write bytes to a temp file
       final tempDir = await getTemporaryDirectory();
-      final path = '${tempDir.path}/${widget.milestone}_streak_card_${DateTime.now().millisecondsSinceEpoch}.png';
+      final path =
+          '${tempDir.path}/${widget.milestone}_streak_card_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File(path);
       await file.writeAsBytes(bytes);
 
@@ -515,13 +581,17 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Conquered the ${widget.milestone}-day memory streak! 🌟 Capture and share your daily memories on Memory App!',
+          text:
+              'Conquered the ${widget.milestone}-day memory streak! 🌟 Capture and share your daily memories on Memory App!',
         ),
       );
     } catch (e) {
       debugPrint('Error sharing milestone card: $e');
       if (mounted) {
-        showAppError(context, 'Could not generate shareable card: ${e.toString()}');
+        showAppError(
+          context,
+          'Could not generate shareable card: ${e.toString()}',
+        );
       }
     } finally {
       if (mounted) {
@@ -542,13 +612,15 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
             mainAxisSize: MainAxisSize.min,
             children: [
               // Repaint Boundary wraps the MilestoneCardWidget
-              RepaintBoundary(
-                key: _boundaryKey,
-                child: MilestoneCardWidget(
-                  user: widget.user,
-                  milestone: widget.milestone,
-                  designData: _designData,
-                  message: _message,
+              PopIn(
+                child: RepaintBoundary(
+                  key: _boundaryKey,
+                  child: MilestoneCardWidget(
+                    user: widget.user,
+                    milestone: widget.milestone,
+                    designData: _designData,
+                    message: _message,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -560,7 +632,10 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1.5,
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -585,7 +660,11 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
+                                  colors: [
+                                    Color(0xFFF058A0),
+                                    Color(0xFFBD3EFF),
+                                    Color(0xFFFF6B00),
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
@@ -599,9 +678,14 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                                       ),
                                     )
                                   : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+                                        Icon(
+                                          Icons.camera_alt_rounded,
+                                          color: Colors.white,
+                                          size: 15,
+                                        ),
                                         SizedBox(width: 5),
                                         Text(
                                           'Instagram',
@@ -626,7 +710,10 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+                                  colors: [
+                                    Color(0xFF25D366),
+                                    Color(0xFF128C7E),
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
@@ -640,9 +727,14 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                                       ),
                                     )
                                   : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
+                                        Icon(
+                                          Icons.chat_bubble_rounded,
+                                          color: Colors.white,
+                                          size: 15,
+                                        ),
                                         SizedBox(width: 5),
                                         Text(
                                           'WhatsApp',
@@ -693,7 +785,11 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
 }
 
 // Global Trigger and Milestone Logic Checker
-Future<void> checkMilestones(BuildContext context, WidgetRef ref, int streakDays) async {
+Future<void> checkMilestones(
+  BuildContext context,
+  WidgetRef ref,
+  int streakDays,
+) async {
   if (streakDays <= 0) return;
 
   final prefs = ref.read(sharedPreferencesProvider);
@@ -722,12 +818,14 @@ Future<void> checkMilestones(BuildContext context, WidgetRef ref, int streakDays
     // Show celebratory in-app global notification
     showGlobalNotification(
       title: 'Streak Milestone! 🏆',
-      body: 'You reached a $milestone-day streak! Tap to view your unique shareable card.',
+      body:
+          'You reached a $milestone-day streak! Tap to view your unique shareable card.',
       onTap: () {
         showDialog(
           context: context,
           barrierDismissible: true,
-          builder: (context) => MilestoneCongratulationsDialog(user: user, milestone: milestone),
+          builder: (context) =>
+              MilestoneCongratulationsDialog(user: user, milestone: milestone),
         );
       },
     );
@@ -736,7 +834,8 @@ Future<void> checkMilestones(BuildContext context, WidgetRef ref, int streakDays
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => MilestoneCongratulationsDialog(user: user, milestone: milestone),
+      builder: (context) =>
+          MilestoneCongratulationsDialog(user: user, milestone: milestone),
     );
   }
 
@@ -816,10 +915,10 @@ class CircleMilestoneCardWidget extends StatelessWidget {
     // Determine base avatar size based on count of members
     final baseSize = (120.0 / sqrt(N)).clamp(18.0, 56.0);
     final positions = <Offset>[];
-    
+
     // 1. Center is Offset(0, 0) for the owner
     positions.add(Offset.zero);
-    
+
     // 2. Generate coordinates along Fermat's spiral
     final spacing = baseSize * 1.30;
     for (int i = 1; i < N; i++) {
@@ -827,34 +926,37 @@ class CircleMilestoneCardWidget extends StatelessWidget {
       final r = spacing * sqrt(i);
       positions.add(Offset(r * cos(theta), r * sin(theta)));
     }
-    
+
     // 3. Size is proportional to memory count relative to average memories
-    final totalMemories = members.map((m) => m.memoryCount).fold(0, (a, b) => a + b);
+    final totalMemories = members
+        .map((m) => m.memoryCount)
+        .fold(0, (a, b) => a + b);
     final avgMemories = N > 0 ? (totalMemories / N) : 0.0;
-    
+
     final sizes = <double>[];
     double maxR = 0.0;
-    
+
     for (int i = 0; i < N; i++) {
       final mem = members[i];
       final double multiplier;
       if (avgMemories > 0) {
-        multiplier = 0.65 + 0.95 * (mem.memoryCount / (avgMemories * 2)).clamp(0.0, 1.0);
+        multiplier =
+            0.65 + 0.95 * (mem.memoryCount / (avgMemories * 2)).clamp(0.0, 1.0);
       } else {
         multiplier = 1.0;
       }
       final size = baseSize * multiplier;
       sizes.add(size);
-      
+
       final dist = positions[i].distance + (size / 2);
       if (dist > maxR) {
         maxR = dist;
       }
     }
-    
+
     // Scale factor to make all avatars fit within the 200x200 container bounds
     final double scaleFactor = maxR > 0 ? (100.0 / maxR) : 1.0;
-    
+
     return Container(
       width: 200,
       height: 200,
@@ -865,15 +967,18 @@ class CircleMilestoneCardWidget extends StatelessWidget {
           final member = members[index];
           final size = sizes[index] * scaleFactor;
           final pos = positions[index] * scaleFactor;
-          
-          final avatarProvider = (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-              ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
+
+          final avatarProvider =
+              (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
+              ? CachedNetworkImageProvider(_formatImageUrl(member.avatarUrl!))
               : null;
-              
+
           final initial = member.firstName.isNotEmpty
               ? member.firstName[0].toUpperCase()
-              : (member.username.isNotEmpty ? member.username[0].toUpperCase() : '?');
-              
+              : (member.username.isNotEmpty
+                    ? member.username[0].toUpperCase()
+                    : '?');
+
           return Positioned(
             left: 100.0 + pos.dx - (size / 2),
             top: 100.0 + pos.dy - (size / 2),
@@ -883,7 +988,9 @@ class CircleMilestoneCardWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: index == 0 ? Colors.white : Colors.white.withValues(alpha: 0.8),
+                  color: index == 0
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.8),
                   width: index == 0 ? 3.0 : 1.5,
                 ),
                 boxShadow: [
@@ -937,23 +1044,30 @@ class CircleMilestoneCardWidget extends StatelessWidget {
           children: [
             // Procedurally painted background pattern
             Positioned.fill(
-              child: CustomPaint(
-                painter: MilestoneCardPainter(designData),
-              ),
+              child: CustomPaint(painter: MilestoneCardPainter(designData)),
             ),
             // Card Content
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 14.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22.0,
+                vertical: 14.0,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Top Milestone Banner
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
                     ),
                     child: Text(
                       '$milestone-USER CIRCLE!',
@@ -971,12 +1085,18 @@ class CircleMilestoneCardWidget extends StatelessWidget {
 
                   // Bottom Translucent Congratulatory bubble
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.22),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        width: 1.5,
+                      ),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -999,7 +1119,11 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                             height: 1.35,
                             fontWeight: FontWeight.w700,
                             shadows: [
-                              Shadow(color: Colors.black26, offset: Offset(0, 1), blurRadius: 2),
+                              Shadow(
+                                color: Colors.black26,
+                                offset: Offset(0, 1),
+                                blurRadius: 2,
+                              ),
                             ],
                           ),
                         ),
@@ -1029,10 +1153,12 @@ class CircleMilestoneCongratulationsDialog extends StatefulWidget {
   });
 
   @override
-  State<CircleMilestoneCongratulationsDialog> createState() => _CircleMilestoneCongratulationsDialogState();
+  State<CircleMilestoneCongratulationsDialog> createState() =>
+      _CircleMilestoneCongratulationsDialogState();
 }
 
-class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCongratulationsDialog> {
+class _CircleMilestoneCongratulationsDialogState
+    extends State<CircleMilestoneCongratulationsDialog> {
   late final CardDesignData _designData;
   late final String _message;
   final GlobalKey _boundaryKey = GlobalKey();
@@ -1042,8 +1168,15 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
   void initState() {
     super.initState();
     _designData = CardDesignData.generate(widget.milestone);
-    final messages = widget.milestone == 30 ? _circle30Messages : _circle7Messages;
+    final messages = widget.milestone == 30
+        ? _circle30Messages
+        : _circle7Messages;
     _message = messages[Random().nextInt(messages.length)];
+
+    // Celebrate! Fire a confetti burst once the dialog is on screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showConfetti(context);
+    });
   }
 
   Future<void> _shareCard(String platform) async {
@@ -1051,7 +1184,9 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
     setState(() => _isSharing = true);
 
     try {
-      final boundary = _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _boundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception("RenderRepaintBoundary not found");
       }
@@ -1066,7 +1201,8 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
 
       // Write bytes to a temp file
       final tempDir = await getTemporaryDirectory();
-      final path = '${tempDir.path}/circle_${widget.milestone}_milestone_${DateTime.now().millisecondsSinceEpoch}.png';
+      final path =
+          '${tempDir.path}/circle_${widget.milestone}_milestone_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File(path);
       await file.writeAsBytes(bytes);
 
@@ -1074,7 +1210,8 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Check out @${widget.circleOwnerUsername}\'s circle milestone of ${widget.milestone} users on Memory App! 👥🎉',
+          text:
+              'Check out @${widget.circleOwnerUsername}\'s circle milestone of ${widget.milestone} users on Memory App! 👥🎉',
         ),
       );
     } catch (e) {
@@ -1103,14 +1240,16 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
             mainAxisSize: MainAxisSize.min,
             children: [
               // Repaint Boundary wraps the CircleMilestoneCardWidget
-              RepaintBoundary(
-                key: _boundaryKey,
-                child: CircleMilestoneCardWidget(
-                  circleOwnerUsername: widget.circleOwnerUsername,
-                  milestone: widget.milestone,
-                  members: widget.members,
-                  designData: _designData,
-                  message: _message,
+              PopIn(
+                child: RepaintBoundary(
+                  key: _boundaryKey,
+                  child: CircleMilestoneCardWidget(
+                    circleOwnerUsername: widget.circleOwnerUsername,
+                    milestone: widget.milestone,
+                    members: widget.members,
+                    designData: _designData,
+                    message: _message,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -1122,7 +1261,10 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1.5,
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -1147,7 +1289,11 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
+                                  colors: [
+                                    Color(0xFFF058A0),
+                                    Color(0xFFBD3EFF),
+                                    Color(0xFFFF6B00),
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
@@ -1161,9 +1307,14 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                                       ),
                                     )
                                   : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+                                        Icon(
+                                          Icons.camera_alt_rounded,
+                                          color: Colors.white,
+                                          size: 15,
+                                        ),
                                         SizedBox(width: 5),
                                         Text(
                                           'Instagram',
@@ -1188,7 +1339,10 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+                                  colors: [
+                                    Color(0xFF25D366),
+                                    Color(0xFF128C7E),
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
@@ -1202,9 +1356,14 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                                       ),
                                     )
                                   : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
+                                        Icon(
+                                          Icons.chat_bubble_rounded,
+                                          color: Colors.white,
+                                          size: 15,
+                                        ),
                                         SizedBox(width: 5),
                                         Text(
                                           'WhatsApp',
