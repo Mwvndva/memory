@@ -47,6 +47,7 @@ export class RegisterDto {
 
   @IsString()
   @MinLength(8)
+  @MaxLength(128) // bound input; also avoids pathological hashing cost
   password: string;
 
   @IsBoolean()

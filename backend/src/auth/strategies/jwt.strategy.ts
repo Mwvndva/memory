@@ -22,6 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: secret,
+      algorithms: ['HS256'], // pin algorithm — reject alg confusion / 'none'
     });
   }
 

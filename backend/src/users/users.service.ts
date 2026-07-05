@@ -50,6 +50,24 @@ const USER_SELECT = {
   createdAt: true,
 } as const;
 
+/**
+ * Fields safe to expose about *another* user to any authenticated caller.
+ * Deliberately excludes PII (email, phone) — those belong only to the
+ * owner via /users/me. Used by GET /users/:id.
+ */
+const PUBLIC_USER_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  username: true,
+  avatarUrl: true,
+  country: true,
+  streakDays: true,
+  countryRank: true,
+  globalRank: true,
+  createdAt: true,
+} as const;
+
 @Injectable()
 export class UsersService implements OnModuleInit {
   private readonly logger = new Logger(UsersService.name);
@@ -137,6 +155,28 @@ export class UsersService implements OnModuleInit {
         circlePulseDays,
         countryRank:    user.countryRank,
         globalRank:     user.globalRank ?? null,
+        flagEmoji,
+      },
+    };
+  }
+
+  // ─── Public profile (safe for any authenticated caller) ───────────────────
+  // Returns only non-PII fields — no email, no phone. Used by GET /users/:id.
+  async getPublicProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: PUBLIC_USER_SELECT,
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const flagEmoji = user.country || '🇰🇪';
+
+    return {
+      ...user,
+      stats: {
+        streakDays:  user.streakDays,
+        countryRank: user.countryRank,
+        globalRank:  user.globalRank ?? null,
         flagEmoji,
       },
     };

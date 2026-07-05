@@ -10,13 +10,12 @@ import {
   UseGuards,
   UseInterceptors,
   ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MemoriesService } from './memories.service';
 import { StorageService } from '../storage/storage.service';
+import { videoFileValidators } from '../storage/file-signature.validator';
 import { CreateMemoryDto } from './dto/create-memory.dto';
 import { UploadMemoryDto } from './dto/upload-memory.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -142,10 +141,7 @@ export class MemoriesController {
     @Body() dto: UploadMemoryDto,
     @UploadedFile(
       new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: /(video\/mp4|video\/quicktime|video\/webm)/ }),
-        ],
+        validators: videoFileValidators(50 * 1024 * 1024), // 50 MB, magic-byte checked
       }),
     )
     file: Express.Multer.File,
