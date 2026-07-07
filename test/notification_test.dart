@@ -5,9 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memory_app/models/notification_item.dart';
 import 'package:memory_app/features/notification/notification_provider.dart';
 import 'package:memory_app/repositories/notification_repository.dart';
-import 'package:memory_app/realtime/realtime_coordinator.dart';
-import 'package:memory_app/realtime/realtime_providers.dart';
-import 'package:memory_app/realtime/realtime_event.dart';
 import 'package:memory_app/models/user_profile.dart';
 import 'package:memory_app/repositories/auth_repository.dart';
 import 'package:memory_app/core/theme.dart';
@@ -92,21 +89,7 @@ void main() {
 
       final notifier = container.read(notificationProvider.notifier);
 
-      final event1 = NewMessageEvent(
-        eventId: 'msg-123',
-        id: '123',
-        sender: 'Amara',
-        text: 'Hello!',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-      );
 
-      final event2 = NewMessageEvent(
-        eventId: 'msg-123', // Same ID to test de-duplication
-        id: '123',
-        sender: 'Amara',
-        text: 'Hello duplicate!',
-        timestamp: DateTime.now(),
-      );
 
       // Trigger ingestion from realtime handlers
       notifier.handlePushNotification(
@@ -176,8 +159,6 @@ void main() {
       expect(container.read(notificationProvider).unreadCount, 2);
 
       await notifier.markAsRead('notif-1');
-      print('DEBUG: list state after markAsRead is: ${container.read(notificationProvider).notifications.map((n) => '${n.id}:${n.isRead}').toList()}');
-      print('DEBUG: unreadCount is: ${container.read(notificationProvider).unreadCount}');
       expect(container.read(notificationProvider).unreadCount, 1);
       expect(container.read(notificationProvider).notifications.firstWhere((n) => n.id == 'notif-1').isRead, true);
 

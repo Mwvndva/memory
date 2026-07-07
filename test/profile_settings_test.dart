@@ -13,8 +13,6 @@ class FakeSessionManager extends StateNotifier<SessionState> implements SessionM
   FakeSessionManager() : super(SessionState.empty());
   Uint8List? uploadedAvatarBytes;
 
-  @override
-  Ref get ref => throw UnimplementedError();
 
   @override
   Future<void> updateAvatar(Uint8List bytes) async {

@@ -17,8 +17,7 @@ abstract class MessageQueue {
 }
 
 class AttachmentServiceImpl implements AttachmentService {
-  final Ref _ref;
-  AttachmentServiceImpl(this._ref);
+  AttachmentServiceImpl();
 
   @override
   Future<String?> uploadAttachment(String filePath) async {
@@ -29,8 +28,7 @@ class AttachmentServiceImpl implements AttachmentService {
 }
 
 class VoiceMessageServiceImpl implements VoiceMessageService {
-  final Ref _ref;
-  VoiceMessageServiceImpl(this._ref);
+  VoiceMessageServiceImpl();
 
   @override
   Future<void> startRecording() async {
@@ -51,10 +49,9 @@ class VoiceMessageServiceImpl implements VoiceMessageService {
 }
 
 class MessageQueueImpl implements MessageQueue {
-  final Ref _ref;
   final List<Map<String, String>> _queue = [];
 
-  MessageQueueImpl(this._ref);
+  MessageQueueImpl();
 
   @override
   void enqueueMessage(String contactName, String text) {
@@ -78,13 +75,13 @@ class MessageQueueImpl implements MessageQueue {
 }
 
 final attachmentServiceProvider = Provider<AttachmentService>((ref) {
-  return AttachmentServiceImpl(ref);
+  return AttachmentServiceImpl();
 });
 
 final voiceMessageServiceProvider = Provider<VoiceMessageService>((ref) {
-  return VoiceMessageServiceImpl(ref);
+  return VoiceMessageServiceImpl();
 });
 
 final messageQueueProvider = Provider<MessageQueue>((ref) {
-  return MessageQueueImpl(ref);
+  return MessageQueueImpl();
 });

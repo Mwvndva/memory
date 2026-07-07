@@ -137,7 +137,7 @@ void main() {
         .setMockMethodCallHandler(secureStorageChannel, (_) async => null);
 
     SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
+    await SharedPreferences.getInstance();
   });
 
   group('Feed Reconciliation Engine Tests', () {

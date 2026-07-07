@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import '../../core/api_client.dart';
 import '../../core/api_config.dart';
 import '../../core/error_handler.dart';
@@ -210,6 +208,10 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
 
   void setDraftCaption(String text) {
     state = state.copyWith(draftCaption: text);
+  }
+
+  void setEditing(bool editing) {
+    state = state.copyWith(isEditing: editing);
   }
 
   Future<void> saveCaptionEdit() async {

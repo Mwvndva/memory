@@ -1,13 +1,11 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../core/structured_logger.dart';
 
 class CacheCoordinator {
-  CacheCoordinator(this._ref);
+  CacheCoordinator();
 
-  final Ref _ref;
   final Map<String, dynamic> _memoryCache = {};
 
   Future<void> write(String key, dynamic value) async {
@@ -68,5 +66,5 @@ class CacheCoordinator {
 }
 
 final cacheCoordinatorProvider = Provider<CacheCoordinator>((ref) {
-  return CacheCoordinator(ref);
+  return CacheCoordinator();
 });

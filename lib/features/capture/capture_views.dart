@@ -380,7 +380,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
       },
       child: PopScope(
         canPop: !isUploading,
-        onPopInvoked: (didPop) async {
+        onPopInvokedWithResult: (didPop, result) async {
           if (didPop) return;
           final leave = await showDialog<bool>(
             context: context,
@@ -1105,56 +1105,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     );
   }
 
-  BoxDecoration _softBackground(bool dark) => BoxDecoration(
-        color: dark ? kDarkCream : kCream,
-        gradient: LinearGradient(
-          colors: dark
-              ? const [kDarkCream, kCharcoal]
-              : const [kYellow, kYellow],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-      );
 
-  Widget _pill(
-    String text,
-    VoidCallback onTap,
-    bool dark, {
-    Color? color,
-    Color? foreground,
-    bool compact = false,
-    double? width,
-  }) =>
-      BouncyTap(
-        onTap: onTap,
-        child: Container(
-          width: width ?? double.infinity,
-          height: compact ? 38 : 46,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: color ?? (dark ? kBlack : Colors.white),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: dark ? 0.12 : 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Text(
-            text,
-            style: TextStyle(
-              color: foreground ?? (dark ? kCream : kCharcoal),
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-      );
 }
 
 class _PulseRedDot extends StatefulWidget {

@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 enum NotificationType { message, reaction, memory, circleRequest, circleMilestone }
 

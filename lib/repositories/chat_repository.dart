@@ -8,12 +8,10 @@ import '../core/api_client.dart';
 import '../core/api_config.dart';
 import '../core/error_handler.dart';
 import '../core/router.dart';
-import '../core/theme.dart';
 import '../models/message.dart';
 import '../models/message_status.dart';
 import '../realtime/realtime_event.dart';
 import '../realtime/realtime_providers.dart';
-import 'auth_repository.dart';
 import 'circles_repository.dart';
 import 'message_repositories.dart';
 

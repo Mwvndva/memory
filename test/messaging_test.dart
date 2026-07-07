@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:state_notifier/state_notifier.dart';
 import 'package:memory_app/models/message.dart';
 import 'package:memory_app/models/user_profile.dart';
 import 'package:memory_app/repositories/chat_repository.dart';

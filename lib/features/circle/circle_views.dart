@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,27 +26,25 @@ import 'profile_state_manager.dart';
 class CircleChatListView extends ConsumerWidget {
   const CircleChatListView({super.key});
 
-  void _showProfileSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const ProfilePanel(),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dark = ref.watch(isDarkProvider);
-    final user = ref.watch(authProvider);
-    final circleMembers = ref.watch(circleStateManagerProvider.select((s) => s.circles));
-    final pendingRequests = ref.watch(circleStateManagerProvider.select((s) => s.pendingRequests));
+    final circleMembers = ref.watch(
+      circleStateManagerProvider.select((s) => s.circles),
+    );
+    final pendingRequests = ref.watch(
+      circleStateManagerProvider.select((s) => s.pendingRequests),
+    );
     final topInset = MediaQuery.paddingOf(context).top;
 
     return Scaffold(
       body: Container(
-        padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 18 + MediaQuery.paddingOf(context).bottom),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          topInset + 16,
+          20,
+          18 + MediaQuery.paddingOf(context).bottom,
+        ),
         decoration: _softBackground(dark),
         child: Stack(
           children: [
@@ -87,25 +83,33 @@ class CircleChatListView extends ConsumerWidget {
                     children: [
                       if (pendingRequests.isNotEmpty) ...[
                         Padding(
-                          padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
+                          padding: const EdgeInsets.only(
+                            left: 4,
+                            bottom: 8,
+                            top: 4,
+                          ),
                           child: Text(
                             'SHARE REQUESTS',
                             style: TextStyle(
-                              color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                              color: dark
+                                  ? const Color(0xFFC9B8AA)
+                                  : const Color(0xFF776B62),
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.0,
                             ),
                           ),
                         ),
-                        ...pendingRequests.map((req) => GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                // Open the chat/inbox for this requester (thread placeholder)
-                                context.push('/chat/${req.username}');
-                              },
-                              child: _requestRow(context, req, dark, ref),
-                            )),
+                        ...pendingRequests.map(
+                          (req) => GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              // Open the chat/inbox for this requester (thread placeholder)
+                              context.push('/chat/${req.username}');
+                            },
+                            child: _requestRow(context, req, dark, ref),
+                          ),
+                        ),
                         const SizedBox(height: 18),
                       ],
                       if (circleMembers.isEmpty && pendingRequests.isEmpty)
@@ -118,7 +122,8 @@ class CircleChatListView extends ConsumerWidget {
                               color: dark ? kBlack : Colors.white,
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
-                                color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
+                                color: (dark ? Colors.white : kCharcoal)
+                                    .withValues(alpha: 0.06),
                               ),
                             ),
                             child: Column(
@@ -143,7 +148,9 @@ class CircleChatListView extends ConsumerWidget {
                                   'Open your profile to add someone and start sharing.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                                    color: dark
+                                        ? const Color(0xFFC9B8AA)
+                                        : const Color(0xFF776B62),
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -154,7 +161,9 @@ class CircleChatListView extends ConsumerWidget {
                         )
                       else ...[
                         if (circleMembers.isNotEmpty)
-                          ...circleMembers.map((member) => _chatRow(context, member, dark, ref)),
+                          ...circleMembers.map(
+                            (member) => _chatRow(context, member, dark, ref),
+                          ),
                       ],
                     ],
                   ),
@@ -167,7 +176,12 @@ class CircleChatListView extends ConsumerWidget {
     );
   }
 
-  Widget _requestRow(BuildContext context, CircleMember req, bool dark, WidgetRef ref) {
+  Widget _requestRow(
+    BuildContext context,
+    CircleMember req,
+    bool dark,
+    WidgetRef ref,
+  ) {
     final name = req.firstName.isNotEmpty ? req.firstName : req.username;
     final fg = dark ? kCream : kCharcoal;
     return Container(
@@ -193,7 +207,8 @@ class CircleChatListView extends ConsumerWidget {
           CircleAvatar(
             radius: 22,
             backgroundColor: dark ? kYellow : kBlack,
-            backgroundImage: (req.avatarUrl != null && req.avatarUrl!.isNotEmpty)
+            backgroundImage:
+                (req.avatarUrl != null && req.avatarUrl!.isNotEmpty)
                 ? NetworkImage(_formatImageUrl(req.avatarUrl!)) as ImageProvider
                 : null,
             child: (req.avatarUrl == null || req.avatarUrl!.isEmpty)
@@ -223,7 +238,9 @@ class CircleChatListView extends ConsumerWidget {
                 Text(
                   '@${req.username}',
                   style: TextStyle(
-                    color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                    color: dark
+                        ? const Color(0xFFC9B8AA)
+                        : const Color(0xFF776B62),
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -238,7 +255,9 @@ class CircleChatListView extends ConsumerWidget {
               BouncyTap(
                 onTap: () async {
                   try {
-                    await ref.read(circleStateManagerProvider.notifier).acceptRequest(req.id);
+                    await ref
+                        .read(circleStateManagerProvider.notifier)
+                        .acceptRequest(req.id);
                   } catch (e) {
                     if (context.mounted) {
                       showAppError(context, e.toString());
@@ -246,7 +265,10 @@ class CircleChatListView extends ConsumerWidget {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: dark ? kYellow : kBlack,
                     borderRadius: BorderRadius.circular(999),
@@ -265,7 +287,9 @@ class CircleChatListView extends ConsumerWidget {
               BouncyTap(
                 onTap: () async {
                   try {
-                    await ref.read(circleStateManagerProvider.notifier).declineRequest(req.id);
+                    await ref
+                        .read(circleStateManagerProvider.notifier)
+                        .declineRequest(req.id);
                   } catch (e) {
                     if (context.mounted) {
                       showAppError(context, e.toString());
@@ -273,16 +297,25 @@ class CircleChatListView extends ConsumerWidget {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12)),
+                    border: Border.all(
+                      color: (dark ? Colors.white : kCharcoal).withValues(
+                        alpha: 0.12,
+                      ),
+                    ),
                   ),
                   child: Text(
                     'Ignore',
                     style: TextStyle(
-                      color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                      color: dark
+                          ? const Color(0xFFC9B8AA)
+                          : const Color(0xFF776B62),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
@@ -296,8 +329,15 @@ class CircleChatListView extends ConsumerWidget {
     );
   }
 
-  Widget _chatRow(BuildContext context, CircleMember member, bool dark, WidgetRef ref) {
-    final name = member.firstName.isNotEmpty ? member.firstName : member.username;
+  Widget _chatRow(
+    BuildContext context,
+    CircleMember member,
+    bool dark,
+    WidgetRef ref,
+  ) {
+    final name = member.firstName.isNotEmpty
+        ? member.firstName
+        : member.username;
     // Use username (not display name) as the key so WebSocket routing works
     final chatKey = member.username;
     return Container(
@@ -334,10 +374,15 @@ class CircleChatListView extends ConsumerWidget {
                       CircleAvatar(
                         radius: 22,
                         backgroundColor: dark ? kYellow : kBlack,
-                        backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-                            ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
+                        backgroundImage:
+                            (member.avatarUrl != null &&
+                                member.avatarUrl!.isNotEmpty)
+                            ? NetworkImage(_formatImageUrl(member.avatarUrl!))
+                                  as ImageProvider
                             : null,
-                        child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
+                        child:
+                            (member.avatarUrl == null ||
+                                member.avatarUrl!.isEmpty)
                             ? Text(
                                 name.isNotEmpty ? name[0].toUpperCase() : '?',
                                 style: const TextStyle(
@@ -350,7 +395,8 @@ class CircleChatListView extends ConsumerWidget {
                       Builder(
                         builder: (context) {
                           final chatState = ref.watch(chatProvider);
-                          final hasUnread = (chatState.unreadCounts[chatKey] ?? 0) > 0;
+                          final hasUnread =
+                              (chatState.unreadCounts[chatKey] ?? 0) > 0;
                           if (!hasUnread) return const SizedBox.shrink();
                           return Positioned(
                             top: -2,
@@ -390,35 +436,49 @@ class CircleChatListView extends ConsumerWidget {
                             const SizedBox(width: 6),
                             Builder(
                               builder: (context) {
-                                final myRole = CircleRole.owner; // Current user is the owner of their circle
+                                final myRole = CircleRole
+                                    .owner; // Current user is the owner of their circle
                                 final targetRole = member.role;
-                                final canManageRole = (myRole == CircleRole.owner) ||
-                                    (myRole == CircleRole.admin && targetRole != CircleRole.owner && targetRole != CircleRole.admin);
+                                final canManageRole =
+                                    (myRole == CircleRole.owner) ||
+                                    (myRole == CircleRole.admin &&
+                                        targetRole != CircleRole.owner &&
+                                        targetRole != CircleRole.admin);
 
                                 if (canManageRole) {
                                   return PopupMenuButton<CircleRole>(
                                     initialValue: member.role,
                                     tooltip: 'Change Role',
-                                    onSelected: (CircleRole newRole) {
-                                      final circlesNotifier = ref.read(circlesProvider.notifier);
-                                      circlesNotifier.state = circlesNotifier.state.map((m) {
-                                        if (m.id == member.id) {
-                                          return m.copyWith(role: newRole);
-                                        }
-                                        return m;
-                                      }).toList();
-                                      showAppMessage(context, 'Updated ${member.firstName}\'s role to ${newRole.name}');
-                                    },
-                                    itemBuilder: (BuildContext context) => CircleRole.values.map((role) {
-                                      return PopupMenuItem<CircleRole>(
-                                        value: role,
-                                        child: Text(role.name.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                    onSelected: (newRole) async {
+                                      ref
+                                          .read(circlesProvider.notifier)
+                                          .updateMemberRole(member.id, newRole);
+                                      showAppMessage(
+                                        context,
+                                        'Updated ${member.firstName}\'s role to ${newRole.name}',
                                       );
-                                    }).toList(),
+                                    },
+                                    itemBuilder: (BuildContext context) =>
+                                        CircleRole.values.map((role) {
+                                          return PopupMenuItem<CircleRole>(
+                                            value: role,
+                                            child: Text(
+                                              role.name.toUpperCase(),
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: (dark ? kYellow : kBlack).withValues(alpha: 0.1),
+                                        color: (dark ? kYellow : kBlack)
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Row(
@@ -433,16 +493,24 @@ class CircleChatListView extends ConsumerWidget {
                                             ),
                                           ),
                                           const SizedBox(width: 2),
-                                          Icon(Icons.arrow_drop_down, size: 10, color: dark ? kYellow : kBlack),
+                                          Icon(
+                                            Icons.arrow_drop_down,
+                                            size: 10,
+                                            color: dark ? kYellow : kBlack,
+                                          ),
                                         ],
                                       ),
                                     ),
                                   );
                                 } else {
                                   return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: (dark ? kYellow : kBlack).withValues(alpha: 0.1),
+                                      color: (dark ? kYellow : kBlack)
+                                          .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
@@ -463,20 +531,29 @@ class CircleChatListView extends ConsumerWidget {
                         Builder(
                           builder: (context) {
                             final chatState = ref.watch(chatProvider);
-                            final messages = chatState.messagesByContact[chatKey] ?? [];
-                            final lastMessage = messages.isNotEmpty ? messages.last.text : 'No messages yet';
-                            final hasUnread = (chatState.unreadCounts[chatKey] ?? 0) > 0;
+                            final messages =
+                                chatState.messagesByContact[chatKey] ?? [];
+                            final lastMessage = messages.isNotEmpty
+                                ? messages.last.text
+                                : 'No messages yet';
+                            final hasUnread =
+                                (chatState.unreadCounts[chatKey] ?? 0) > 0;
                             return Text(
                               lastMessage,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: _small(
-                                hasUnread
-                                    ? (dark ? kCream : kCharcoal)
-                                    : (dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62)),
-                              ).copyWith(
-                                fontWeight: hasUnread ? FontWeight.w900 : FontWeight.w500,
-                              ),
+                              style:
+                                  _small(
+                                    hasUnread
+                                        ? (dark ? kCream : kCharcoal)
+                                        : (dark
+                                              ? const Color(0xFFC9B8AA)
+                                              : const Color(0xFF776B62)),
+                                  ).copyWith(
+                                    fontWeight: hasUnread
+                                        ? FontWeight.w900
+                                        : FontWeight.w500,
+                                  ),
                             );
                           },
                         ),
@@ -489,11 +566,16 @@ class CircleChatListView extends ConsumerWidget {
           ),
           Builder(
             builder: (context) {
-              final myRole = CircleRole.owner; // Current user is the owner of their circle
+              final myRole =
+                  CircleRole.owner; // Current user is the owner of their circle
               final targetRole = member.role;
-              final canRemove = (myRole == CircleRole.owner) ||
-                                (myRole == CircleRole.admin && targetRole != CircleRole.owner && targetRole != CircleRole.admin) ||
-                                (myRole == CircleRole.moderator && targetRole == CircleRole.member);
+              final canRemove =
+                  (myRole == CircleRole.owner) ||
+                  (myRole == CircleRole.admin &&
+                      targetRole != CircleRole.owner &&
+                      targetRole != CircleRole.admin) ||
+                  (myRole == CircleRole.moderator &&
+                      targetRole == CircleRole.member);
               if (!canRemove) return const SizedBox.shrink();
 
               return Row(
@@ -506,7 +588,9 @@ class CircleChatListView extends ConsumerWidget {
                         context: context,
                         builder: (context) => AlertDialog(
                           backgroundColor: dark ? kBlack : Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                           title: Text(
                             'Remove from Circle',
                             style: TextStyle(
@@ -517,7 +601,9 @@ class CircleChatListView extends ConsumerWidget {
                           content: Text(
                             'Are you sure you want to remove $name from your circle? You will no longer share memories or chat with each other.',
                             style: TextStyle(
-                              color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                              color: dark
+                                  ? kCream.withValues(alpha: 0.8)
+                                  : kCharcoal.withValues(alpha: 0.8),
                               fontSize: 13,
                             ),
                           ),
@@ -527,7 +613,9 @@ class CircleChatListView extends ConsumerWidget {
                               child: Text(
                                 'Cancel',
                                 style: TextStyle(
-                                  color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                                  color: dark
+                                      ? kCream.withValues(alpha: 0.6)
+                                      : kCharcoal.withValues(alpha: 0.6),
                                 ),
                               ),
                             ),
@@ -546,7 +634,9 @@ class CircleChatListView extends ConsumerWidget {
                       );
                       if (confirm == true) {
                         try {
-                          await ref.read(circleStateManagerProvider.notifier).removeMember(member.id);
+                          await ref
+                              .read(circleStateManagerProvider.notifier)
+                              .removeMember(member.id);
                         } catch (e) {
                           if (context.mounted) {
                             showAppError(context, e.toString());
@@ -555,16 +645,25 @@ class CircleChatListView extends ConsumerWidget {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.transparent,
                         borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12)),
+                        border: Border.all(
+                          color: (dark ? Colors.white : kCharcoal).withValues(
+                            alpha: 0.12,
+                          ),
+                        ),
                       ),
                       child: Text(
                         'Remove',
                         style: TextStyle(
-                          color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+                          color: dark
+                              ? const Color(0xFFC9B8AA)
+                              : const Color(0xFF776B62),
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                         ),
@@ -581,16 +680,17 @@ class CircleChatListView extends ConsumerWidget {
   }
 
   BoxDecoration _softBackground(bool dark) => BoxDecoration(
-        gradient: LinearGradient(
-          colors: dark
-              ? const [kDarkCream, Color(0xFF171717)]
-              : const [kYellow, kYellow],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-      );
+    gradient: LinearGradient(
+      colors: dark
+          ? const [kDarkCream, Color(0xFF171717)]
+          : const [kYellow, kYellow],
+      begin: Alignment.topRight,
+      end: Alignment.bottomLeft,
+    ),
+  );
 
-  TextStyle _small(Color color) => TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900);
+  TextStyle _small(Color color) =>
+      TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900);
 }
 
 class ChatInboxView extends ConsumerStatefulWidget {
@@ -614,12 +714,17 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     _messageController.addListener(() {
       if (mounted) {
         final text = _messageController.text.trim();
-        ref.read(chatProvider.notifier).sendTypingIndicator(widget.contactName, text.isNotEmpty);
+        ref
+            .read(chatProvider.notifier)
+            .sendTypingIndicator(widget.contactName, text.isNotEmpty);
       }
     });
     _scrollController.addListener(() {
-      if (_scrollController.hasClients && _scrollController.position.pixels <= 50) {
-        ref.read(chatProvider.notifier).loadConversation(widget.contactName, loadMore: true);
+      if (_scrollController.hasClients &&
+          _scrollController.position.pixels <= 50) {
+        ref
+            .read(chatProvider.notifier)
+            .loadConversation(widget.contactName, loadMore: true);
       }
     });
     Future.microtask(() {
@@ -634,7 +739,9 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     if (kUseMockBackend) return;
     setState(() => _loadingHistory = true);
     try {
-      await ref.read(chatProvider.notifier).loadConversation(widget.contactName, shouldMarkRead: true);
+      await ref
+          .read(chatProvider.notifier)
+          .loadConversation(widget.contactName, shouldMarkRead: true);
     } catch (_) {}
     if (mounted) setState(() => _loadingHistory = false);
     // scroll to bottom after loading
@@ -681,11 +788,21 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     final messages = chatState.messagesByContact[widget.contactName] ?? [];
     final pending = ref.watch(pendingRequestsProvider);
     final circleMembers = ref.watch(circlesProvider);
-    final isPendingRequest = pending.any((p) => p.username.toLowerCase() == widget.contactName.toLowerCase() || p.id == widget.contactName);
-    final isAccepted = circleMembers.any((m) => m.username.toLowerCase() == widget.contactName.toLowerCase() || m.id == widget.contactName);
+    final isPendingRequest = pending.any(
+      (p) =>
+          p.username.toLowerCase() == widget.contactName.toLowerCase() ||
+          p.id == widget.contactName,
+    );
+    final isAccepted = circleMembers.any(
+      (m) =>
+          m.username.toLowerCase() == widget.contactName.toLowerCase() ||
+          m.id == widget.contactName,
+    );
 
     final contactMember = circleMembers.firstWhere(
-      (m) => m.username.toLowerCase() == widget.contactName.toLowerCase() || m.id == widget.contactName,
+      (m) =>
+          m.username.toLowerCase() == widget.contactName.toLowerCase() ||
+          m.id == widget.contactName,
       orElse: () => CircleMember(
         id: widget.contactName,
         username: widget.contactName,
@@ -719,20 +836,37 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                   children: [
                     IconButton(
                       onPressed: () => context.pop(),
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                       tooltip: 'Back',
                     ),
                     const SizedBox(width: 4),
                     CircleAvatar(
                       radius: 18,
                       backgroundColor: kYellow,
-                      backgroundImage: (contactMember.avatarUrl != null && contactMember.avatarUrl!.isNotEmpty)
-                          ? NetworkImage(_formatImageUrl(contactMember.avatarUrl!)) as ImageProvider
+                      backgroundImage:
+                          (contactMember.avatarUrl != null &&
+                              contactMember.avatarUrl!.isNotEmpty)
+                          ? NetworkImage(
+                                  _formatImageUrl(contactMember.avatarUrl!),
+                                )
+                                as ImageProvider
                           : null,
-                      child: (contactMember.avatarUrl == null || contactMember.avatarUrl!.isEmpty)
+                      child:
+                          (contactMember.avatarUrl == null ||
+                              contactMember.avatarUrl!.isEmpty)
                           ? Text(
-                              contactMember.firstName.isNotEmpty ? contactMember.firstName[0].toUpperCase() : widget.contactName[0].toUpperCase(),
-                              style: const TextStyle(color: kBlack, fontWeight: FontWeight.w900, fontSize: 13),
+                              contactMember.firstName.isNotEmpty
+                                  ? contactMember.firstName[0].toUpperCase()
+                                  : widget.contactName[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: kBlack,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13,
+                              ),
                             )
                           : null,
                     ),
@@ -754,7 +888,9 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                           Text(
                             isAccepted
                                 ? 'Circle Member'
-                                : (isPendingRequest ? 'Wants to share' : 'Not in Circle'),
+                                : (isPendingRequest
+                                      ? 'Wants to share'
+                                      : 'Not in Circle'),
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 10,
@@ -777,13 +913,16 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                     Positioned.fill(
                       child: CustomPaint(
                         painter: ChatPatternPainter(
-                          patternColor: (dark ? Colors.white : kBlack).withValues(alpha: 0.04),
+                          patternColor: (dark ? Colors.white : kBlack)
+                              .withValues(alpha: 0.04),
                         ),
                       ),
                     ),
                     if (_loadingHistory)
                       Center(
-                        child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
+                        child: CircularProgressIndicator(
+                          color: dark ? kYellow : kBlack,
+                        ),
                       )
                     else if (messages.isEmpty)
                       Center(
@@ -812,42 +951,50 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         ),
                       )
                     else
-                      Builder(builder: (context) {
-                        final isTyping = chatState.typingIndicators[widget.contactName] ?? false;
-                        return ListView.builder(
-                          controller: _scrollController,
-                          itemCount: messages.length + (isTyping ? 1 : 0),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          physics: const BouncingScrollPhysics(),
-                          itemBuilder: (context, i) {
-                            if (i == messages.length) {
-                              return Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const SizedBox(width: 36),
-                                      Text(
-                                        '${widget.contactName} is typing...',
-                                        style: TextStyle(
-                                          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.6),
-                                          fontSize: 11,
-                                          fontStyle: FontStyle.italic,
-                                          fontWeight: FontWeight.w600,
+                      Builder(
+                        builder: (context) {
+                          final isTyping =
+                              chatState.typingIndicators[widget.contactName] ??
+                              false;
+                          return ListView.builder(
+                            controller: _scrollController,
+                            itemCount: messages.length + (isTyping ? 1 : 0),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            physics: const BouncingScrollPhysics(),
+                            itemBuilder: (context, i) {
+                              if (i == messages.length) {
+                                return Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const SizedBox(width: 36),
+                                        Text(
+                                          '${widget.contactName} is typing...',
+                                          style: TextStyle(
+                                            color:
+                                                (dark
+                                                        ? Colors.white
+                                                        : kCharcoal)
+                                                    .withValues(alpha: 0.6),
+                                            fontSize: 11,
+                                            fontStyle: FontStyle.italic,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
-                            }
-                            final msg = messages[i];
-                            return _inboxBubble(msg, contactMember, dark);
-                          },
-                        );
-                      }),
+                                );
+                              }
+                              final msg = messages[i];
+                              return _inboxBubble(msg, contactMember, dark);
+                            },
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -921,18 +1068,22 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
-                      final id = pending.firstWhere(
-                        (p) => p.username == widget.contactName,
-                        orElse: () => pending.firstWhere(
-                          (p) => p.id == widget.contactName,
-                          orElse: () => CircleMember(
-                            id: widget.contactName,
-                            username: widget.contactName,
-                            firstName: widget.contactName,
-                          ),
-                        ),
-                      ).id;
-                      await ref.read(pendingRequestsProvider.notifier).declineRequest(id);
+                      final id = pending
+                          .firstWhere(
+                            (p) => p.username == widget.contactName,
+                            orElse: () => pending.firstWhere(
+                              (p) => p.id == widget.contactName,
+                              orElse: () => CircleMember(
+                                id: widget.contactName,
+                                username: widget.contactName,
+                                firstName: widget.contactName,
+                              ),
+                            ),
+                          )
+                          .id;
+                      await ref
+                          .read(pendingRequestsProvider.notifier)
+                          .declineRequest(id);
                       if (!mounted) return;
                       context.pop();
                     },
@@ -958,21 +1109,30 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
-                      final success = await ref.read(pendingRequestsProvider.notifier).acceptRequest(
-                        pending.firstWhere(
-                          (p) => p.username == widget.contactName,
-                          orElse: () => pending.firstWhere(
-                            (p) => p.id == widget.contactName,
-                            orElse: () => CircleMember(
-                              id: widget.contactName,
-                              username: widget.contactName,
-                              firstName: widget.contactName,
-                            ),
-                          ),
-                        ).id,
-                      );
+                      final success = await ref
+                          .read(pendingRequestsProvider.notifier)
+                          .acceptRequest(
+                            pending
+                                .firstWhere(
+                                  (p) => p.username == widget.contactName,
+                                  orElse: () => pending.firstWhere(
+                                    (p) => p.id == widget.contactName,
+                                    orElse: () => CircleMember(
+                                      id: widget.contactName,
+                                      username: widget.contactName,
+                                      firstName: widget.contactName,
+                                    ),
+                                  ),
+                                )
+                                .id,
+                          );
                       if (success) {
-                        await ref.read(chatProvider.notifier).loadConversation(widget.contactName, shouldMarkRead: true);
+                        await ref
+                            .read(chatProvider.notifier)
+                            .loadConversation(
+                              widget.contactName,
+                              shouldMarkRead: true,
+                            );
                       }
                     },
                     child: Container(
@@ -1099,7 +1259,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             GestureDetector(
               onTap: _sendMessage,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: kYellow,
                   borderRadius: BorderRadius.circular(999),
@@ -1127,7 +1290,9 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Row(
-          mainAxisAlignment: mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisAlignment: mine
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1135,13 +1300,21 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
               CircleAvatar(
                 radius: 14,
                 backgroundColor: dark ? kYellow : kBlack,
-                backgroundImage: (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(_formatImageUrl(member.avatarUrl!)) as ImageProvider
+                backgroundImage:
+                    (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
+                    ? NetworkImage(_formatImageUrl(member.avatarUrl!))
+                          as ImageProvider
                     : null,
                 child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
                     ? Text(
-                        member.firstName.isNotEmpty ? member.firstName[0].toUpperCase() : member.username[0].toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10),
+                        member.firstName.isNotEmpty
+                            ? member.firstName[0].toUpperCase()
+                            : member.username[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 10,
+                        ),
                       )
                     : null,
               ),
@@ -1158,19 +1331,38 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           ListTile(
-                            leading: const Icon(Icons.refresh_rounded, color: Colors.white),
-                            title: const Text('Retry sending', style: TextStyle(color: Colors.white)),
+                            leading: const Icon(
+                              Icons.refresh_rounded,
+                              color: Colors.white,
+                            ),
+                            title: const Text(
+                              'Retry sending',
+                              style: TextStyle(color: Colors.white),
+                            ),
                             onTap: () {
                               Navigator.pop(ctx);
-                              ref.read(chatProvider.notifier).retryMessage(widget.contactName, msg.id);
+                              ref
+                                  .read(chatProvider.notifier)
+                                  .retryMessage(widget.contactName, msg.id);
                             },
                           ),
                           ListTile(
-                            leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                            title: const Text('Delete message', style: TextStyle(color: Colors.redAccent)),
+                            leading: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.redAccent,
+                            ),
+                            title: const Text(
+                              'Delete message',
+                              style: TextStyle(color: Colors.redAccent),
+                            ),
                             onTap: () {
                               Navigator.pop(ctx);
-                              ref.read(chatProvider.notifier).deleteMessageOptimistic(widget.contactName, msg.id);
+                              ref
+                                  .read(chatProvider.notifier)
+                                  .deleteMessageOptimistic(
+                                    widget.contactName,
+                                    msg.id,
+                                  );
                             },
                           ),
                         ],
@@ -1180,7 +1372,11 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 },
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 6.0),
-                  child: Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.redAccent,
+                    size: 20,
+                  ),
                 ),
               ),
             Container(
@@ -1205,8 +1401,12 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(20),
                   topRight: const Radius.circular(20),
-                  bottomLeft: mine ? const Radius.circular(20) : const Radius.circular(4),
-                  bottomRight: mine ? const Radius.circular(4) : const Radius.circular(20),
+                  bottomLeft: mine
+                      ? const Radius.circular(20)
+                      : const Radius.circular(4),
+                  bottomRight: mine
+                      ? const Radius.circular(4)
+                      : const Radius.circular(20),
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -1238,9 +1438,11 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       Text(
                         _formatTime(msg.timestamp),
                         style: TextStyle(
-                          color: (mine
-                              ? (dark ? kBlack : Colors.white)
-                              : (dark ? kCream : kCharcoal)).withValues(alpha: 0.5),
+                          color:
+                              (mine
+                                      ? (dark ? kBlack : Colors.white)
+                                      : (dark ? kCream : kCharcoal))
+                                  .withValues(alpha: 0.5),
                           fontSize: 9,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1251,13 +1453,20 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                           const SizedBox(
                             width: 10,
                             height: 10,
-                            child: CircularProgressIndicator(strokeWidth: 1.2, color: kYellow),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.2,
+                              color: kYellow,
+                            ),
                           )
                         else
                           Icon(
-                            msg.isRead ? Icons.done_all_rounded : Icons.done_rounded,
+                            msg.isRead
+                                ? Icons.done_all_rounded
+                                : Icons.done_rounded,
                             size: 11,
-                            color: dark ? kBlack.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5),
+                            color: dark
+                                ? kBlack.withValues(alpha: 0.5)
+                                : Colors.white.withValues(alpha: 0.5),
                           ),
                       ],
                     ],
@@ -1272,15 +1481,13 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   }
 
   BoxDecoration _softBackground(bool dark) => BoxDecoration(
-        color: dark ? kDarkCream : kCream,
-        gradient: LinearGradient(
-          colors: dark
-              ? const [kDarkCream, kCharcoal]
-              : const [kYellow, kYellow],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-      );
+    color: dark ? kDarkCream : kCream,
+    gradient: LinearGradient(
+      colors: dark ? const [kDarkCream, kCharcoal] : const [kYellow, kYellow],
+      begin: Alignment.topRight,
+      end: Alignment.bottomLeft,
+    ),
+  );
 }
 
 class ProfilePanel extends ConsumerStatefulWidget {
@@ -1305,7 +1512,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     final displayUsername = user.username.isNotEmpty ? user.username : 'user';
 
     final avatarUrl = user.avatarUrl;
-    final avatarInitial = user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?';
+    final avatarInitial = user.firstName.isNotEmpty
+        ? user.firstName[0].toUpperCase()
+        : '?';
 
     showModalBottomSheet(
       context: context,
@@ -1321,7 +1530,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               value: '${circleMembers.length} / 30',
               label: 'memory.app/invite/$displayUsername',
               // Mixed pink + green gradient for invite
-              colors: const [Color(0xFFF058A0), Color(0xFF7B61FF), Color(0xFF25D366)],
+              colors: const [
+                Color(0xFFF058A0),
+                Color(0xFF7B61FF),
+                Color(0xFF25D366),
+              ],
               icon: Icons.favorite_rounded,
               avatarUrl: avatarUrl,
               avatarInitial: avatarInitial,
@@ -1333,29 +1546,52 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   child: GestureDetector(
                     onTap: () async {
                       Navigator.pop(context);
-                      await ref.read(externalInviteServiceProvider).shareToInstagram(
-                        referralCode: displayUsername,
-                        username: displayUsername,
-                      );
+                      await ref
+                          .read(externalInviteServiceProvider)
+                          .shareToInstagram(
+                            referralCode: displayUsername,
+                            username: displayUsername,
+                          );
                     },
                     child: Container(
                       height: 44,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
+                          colors: [
+                            Color(0xFFF058A0),
+                            Color(0xFFBD3EFF),
+                            Color(0xFFFF6B00),
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(999),
                         boxShadow: [
-                          BoxShadow(color: const Color(0xFFF058A0).withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4)),
+                          BoxShadow(
+                            color: const Color(
+                              0xFFF058A0,
+                            ).withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+                          Icon(
+                            Icons.camera_alt_rounded,
+                            color: Colors.white,
+                            size: 15,
+                          ),
                           SizedBox(width: 6),
-                          Text('Instagram', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+                          Text(
+                            'Instagram',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1366,10 +1602,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   child: GestureDetector(
                     onTap: () async {
                       Navigator.pop(context);
-                      await ref.read(externalInviteServiceProvider).shareToWhatsApp(
-                        referralCode: displayUsername,
-                        username: displayUsername,
-                      );
+                      await ref
+                          .read(externalInviteServiceProvider)
+                          .shareToWhatsApp(
+                            referralCode: displayUsername,
+                            username: displayUsername,
+                          );
                     },
                     child: Container(
                       height: 44,
@@ -1380,15 +1618,32 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         ),
                         borderRadius: BorderRadius.circular(999),
                         boxShadow: [
-                          BoxShadow(color: const Color(0xFF25D366).withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4)),
+                          BoxShadow(
+                            color: const Color(
+                              0xFF25D366,
+                            ).withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
+                          Icon(
+                            Icons.chat_bubble_rounded,
+                            color: Colors.white,
+                            size: 15,
+                          ),
                           SizedBox(width: 6),
-                          Text('WhatsApp', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+                          Text(
+                            'WhatsApp',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1401,10 +1656,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               'Share via System',
               () async {
                 Navigator.pop(context);
-                await ref.read(externalInviteServiceProvider).shareToSystem(
-                  referralCode: displayUsername,
-                  username: displayUsername,
-                );
+                await ref
+                    .read(externalInviteServiceProvider)
+                    .shareToSystem(
+                      referralCode: displayUsername,
+                      username: displayUsername,
+                    );
               },
               dark,
               color: dark ? kCream : kCharcoal,
@@ -1414,15 +1671,19 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             _pill(
               'Copy invite link',
               () async {
-                final success = await ref.read(externalInviteServiceProvider).copyInviteLink(
-                  referralCode: displayUsername,
-                  username: displayUsername,
-                );
-                Navigator.pop(context);
-                if (success) {
-                  showAppMessage(context, 'Invite link copied!');
-                } else {
-                  showAppError(context, 'Failed to copy invite link');
+                final success = await ref
+                    .read(externalInviteServiceProvider)
+                    .copyInviteLink(
+                      referralCode: displayUsername,
+                      username: displayUsername,
+                    );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  if (success) {
+                    showAppMessage(context, 'Invite link copied!');
+                  } else {
+                    showAppError(context, 'Failed to copy invite link');
+                  }
                 }
               },
               dark,
@@ -1435,14 +1696,27 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     );
   }
 
-  void _showShareCard(BuildContext context, String title, String value, String channel, List<Color> colors, bool dark) {
+  void _showShareCard(
+    BuildContext context,
+    String title,
+    String value,
+    String channel,
+    List<Color> colors,
+    bool dark,
+  ) {
     final isInstagram = channel == 'Instagram';
-    final channelIcon = isInstagram ? Icons.camera_alt_rounded : Icons.chat_bubble_rounded;
-    final channelTagline = isInstagram ? 'Share to your story' : 'Share to status';
+    final channelIcon = isInstagram
+        ? Icons.camera_alt_rounded
+        : Icons.chat_bubble_rounded;
+    final channelTagline = isInstagram
+        ? 'Share to your story'
+        : 'Share to status';
 
     final user = ref.read(authProvider);
     final avatarUrl = user.avatarUrl;
-    final avatarInitial = user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?';
+    final avatarInitial = user.firstName.isNotEmpty
+        ? user.firstName[0].toUpperCase()
+        : '?';
     final displayUsername = user.username.isNotEmpty ? user.username : 'user';
     String flag = 'KE';
     if (user.phone.isNotEmpty) {
@@ -1471,7 +1745,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               avatarBytes: user.avatarBytes,
               avatarInitial: avatarInitial,
               username: displayUsername,
-              ringColor: isInstagram ? const Color(0xFFE1306C) : const Color(0xFF25D366),
+              ringColor: isInstagram
+                  ? const Color(0xFFE1306C)
+                  : const Color(0xFF25D366),
               countryFlag: flag,
               countryRank: user.countryRank,
               globalRank: user.globalRank,
@@ -1482,7 +1758,8 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 Navigator.pop(context);
                 await SharePlus.instance.share(
                   ShareParams(
-                    text: 'My Memory stats for $title: $value\n\nJoin Memory - keep your circle alive! memory.app',
+                    text:
+                        'My Memory stats for $title: $value\n\nJoin Memory - keep your circle alive! memory.app',
                   ),
                 );
               },
@@ -1511,11 +1788,21 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       children: [
                         Text(
                           'Send to $channel',
-                          style: const TextStyle(color: kBlack, fontSize: 14, fontWeight: FontWeight.w900, height: 1.1),
+                          style: const TextStyle(
+                            color: kBlack,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            height: 1.1,
+                          ),
                         ),
                         Text(
                           channelTagline,
-                          style: TextStyle(color: kBlack.withValues(alpha: 0.62), fontSize: 10, fontWeight: FontWeight.w600, height: 1.2),
+                          style: TextStyle(
+                            color: kBlack.withValues(alpha: 0.62),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                          ),
                         ),
                       ],
                     ),
@@ -1562,9 +1849,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               ),
             ],
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
@@ -1578,7 +1863,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           : BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
+                  color: (dark ? Colors.white : kCharcoal).withValues(
+                    alpha: 0.1,
+                  ),
                   width: 0.8,
                 ),
               ),
@@ -1617,7 +1904,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             : BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
+                    color: (dark ? Colors.white : kCharcoal).withValues(
+                      alpha: 0.1,
+                    ),
                     width: 0.8,
                   ),
                 ),
@@ -1705,9 +1994,14 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.05),
+                    color: (dark ? Colors.white : kCharcoal).withValues(
+                      alpha: 0.05,
+                    ),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
@@ -1721,9 +2015,14 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.05),
+                  color: (dark ? Colors.white : kCharcoal).withValues(
+                    alpha: 0.05,
+                  ),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -1779,12 +2078,16 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       color: dark ? kBlack : Colors.white,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                        color: (dark ? Colors.white : kCharcoal).withValues(
+                          alpha: 0.08,
+                        ),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: dark ? 0.16 : 0.04),
+                          color: Colors.black.withValues(
+                            alpha: dark ? 0.16 : 0.04,
+                          ),
                           blurRadius: 14,
                           offset: const Offset(0, 5),
                         ),
@@ -1800,7 +2103,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             );
                             if (file == null) return;
                             final bytes = await file.readAsBytes();
-                            await ref.read(profileStateManagerProvider.notifier).updateAvatar(bytes);
+                            await ref
+                                .read(profileStateManagerProvider.notifier)
+                                .updateAvatar(bytes);
                           },
                           child: Stack(
                             children: [
@@ -1815,12 +2120,24 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                   backgroundColor: dark ? kBlack : Colors.white,
                                   backgroundImage: user.avatarBytes != null
                                       ? MemoryImage(user.avatarBytes!)
-                                      : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-                                          ? NetworkImage(_formatImageUrl(user.avatarUrl!)) as ImageProvider
-                                          : null),
-                                  child: (user.avatarBytes == null && (user.avatarUrl == null || user.avatarUrl!.isEmpty))
+                                      : (user.avatarUrl != null &&
+                                                user.avatarUrl!.isNotEmpty
+                                            ? NetworkImage(
+                                                    _formatImageUrl(
+                                                      user.avatarUrl!,
+                                                    ),
+                                                  )
+                                                  as ImageProvider
+                                            : null),
+                                  child:
+                                      (user.avatarBytes == null &&
+                                          (user.avatarUrl == null ||
+                                              user.avatarUrl!.isEmpty))
                                       ? Text(
-                                          displayFirstName.isNotEmpty ? displayFirstName[0].toUpperCase() : '?',
+                                          displayFirstName.isNotEmpty
+                                              ? displayFirstName[0]
+                                                    .toUpperCase()
+                                              : '?',
                                           style: TextStyle(
                                             color: kYellow,
                                             fontSize: 26,
@@ -1836,7 +2153,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                      color: kBlack,
+                                    color: kBlack,
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: dark ? kYellow : kBlack,
@@ -1866,22 +2183,31 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         Text(
                           '@$displayUsername',
                           style: TextStyle(
-                            color: (dark ? kCream : kCharcoal).withValues(alpha: 0.66),
+                            color: (dark ? kCream : kCharcoal).withValues(
+                              alpha: 0.66,
+                            ),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 10),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
+                            color: (dark ? Colors.white : kCharcoal).withValues(
+                              alpha: 0.08,
+                            ),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             'Tap your photo to update it',
                             style: TextStyle(
-                              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.66),
+                              color: (dark ? kCream : kCharcoal).withValues(
+                                alpha: 0.66,
+                              ),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1891,22 +2217,16 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                _statCards(context, dark),
-                const SizedBox(height: 12),
-                _sectionCard(
-                  'CONTACT',
-                  [
+                  _statCards(context, dark),
+                  const SizedBox(height: 12),
+                  _sectionCard('CONTACT', [
                     _detailRow('Email', displayEmail, false, dark),
                     _detailRow('Phone', displayPhone, true, dark),
-                  ],
-                  dark,
-                ),
-                const SizedBox(height: 12),
-                _addPersonCard(context, circleMembers.length, dark),
-                const SizedBox(height: 12),
-                _sectionCard(
-                  'ACCOUNT & PREFERENCES',
-                  [
+                  ], dark),
+                  const SizedBox(height: 12),
+                  _addPersonCard(context, circleMembers.length, dark),
+                  const SizedBox(height: 12),
+                  _sectionCard('ACCOUNT & PREFERENCES', [
                     _policyRow(
                       'Notification Preferences',
                       () => _showNotificationPreferences(context, dark),
@@ -1925,13 +2245,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       true,
                       dark,
                     ),
-                  ],
-                  dark,
-                ),
-                const SizedBox(height: 12),
-                _sectionCard(
-                  'DATA MANAGEMENT',
-                  [
+                  ], dark),
+                  const SizedBox(height: 12),
+                  _sectionCard('DATA MANAGEMENT', [
                     _policyRow(
                       'Export My Data',
                       () => _showExportDialog(context, dark),
@@ -1944,13 +2260,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       true,
                       dark,
                     ),
-                  ],
-                  dark,
-                ),
-                const SizedBox(height: 12),
-                _sectionCard(
-                  'LEGAL & SUPPORT',
-                  [
+                  ], dark),
+                  const SizedBox(height: 12),
+                  _sectionCard('LEGAL & SUPPORT', [
                     _policyRow(
                       'Privacy Policy',
                       () => _showPolicyDialog(
@@ -1968,53 +2280,53 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       true,
                       dark,
                     ),
-                  ],
-                  dark,
-                ),
-                const SizedBox(height: 20),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    Future.microtask(() {
-                      ref.read(sessionProvider.notifier).logout();
-                    });
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    height: 48,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.logout_rounded, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'Log Out',
-                          style: TextStyle(
+                  ], dark),
+                  const SizedBox(height: 20),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Future.microtask(() {
+                        ref.read(sessionProvider.notifier).logout();
+                      });
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 48,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.logout_rounded,
                             color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
+                            size: 18,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 8),
+                          Text(
+                            'Log Out',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: MediaQuery.paddingOf(context).bottom + 4),
-              ],
+                  SizedBox(height: MediaQuery.paddingOf(context).bottom + 4),
+                ],
+              ),
             ),
-          ),
           ),
         ],
       ),
     );
   }
-
-  
 
   Widget _statCards(BuildContext context, bool dark) {
     final user = ref.watch(authProvider);
@@ -2044,7 +2356,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     );
   }
 
-  Widget _statCard(BuildContext context, String title, String value, List<Color> colors, bool dark) {
+  Widget _statCard(
+    BuildContext context,
+    String title,
+    String value,
+    List<Color> colors,
+    bool dark,
+  ) {
     final isStreak = title == 'Memories';
     final subtitle = isStreak ? 'Day streak' : 'Circle active';
     final accent = colors.first;
@@ -2052,12 +2370,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: dark ? kBlack : Color.alphaBlend(accent.withValues(alpha: 0.08), Colors.white),
+        color: dark
+            ? kBlack
+            : Color.alphaBlend(accent.withValues(alpha: 0.08), Colors.white),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.18),
-          width: 1,
-        ),
+        border: Border.all(color: accent.withValues(alpha: 0.18), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: dark ? 0.12 : 0.04),
@@ -2071,7 +2388,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         children: [
           Row(
             children: [
-              _shareIcon(isStreak ? Icons.camera_alt_rounded : Icons.chat_bubble_rounded, accent),
+              _shareIcon(
+                isStreak ? Icons.camera_alt_rounded : Icons.chat_bubble_rounded,
+                accent,
+              ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -2116,7 +2436,14 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 child: _sharePill(
                   _InstagramMark(color: Colors.white),
                   const Color(0xFFE1306C),
-                  () => _showShareCard(context, title, value, 'Instagram', colors, dark),
+                  () => _showShareCard(
+                    context,
+                    title,
+                    value,
+                    'Instagram',
+                    colors,
+                    dark,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
@@ -2124,7 +2451,14 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 child: _sharePill(
                   _WhatsAppMark(color: Colors.white),
                   const Color(0xFF25D366),
-                  () => _showShareCard(context, title, value, 'WhatsApp', colors, dark),
+                  () => _showShareCard(
+                    context,
+                    title,
+                    value,
+                    'WhatsApp',
+                    colors,
+                    dark,
+                  ),
                 ),
               ),
             ],
@@ -2185,51 +2519,94 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               children: [
                 Text(
                   'Notification Preferences',
-                  style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 16, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: dark ? kCream : kCharcoal,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 SwitchListTile(
-                  title: Text('Push Notifications', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  title: Text(
+                    'Push Notifications',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 13,
+                    ),
+                  ),
                   value: prefService.isAllNotificationsEnabled(),
                   onChanged: (val) async {
                     await prefService.setAllNotificationsEnabled(val);
                     setModalState(() {});
                   },
-                  activeColor: kYellow,
+                  activeThumbColor: kYellow,
                 ),
                 SwitchListTile(
-                  title: Text('Comments', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
-                  value: prefService.isNotificationTypeEnabled(NotificationType.reaction), // reactor/reactions
+                  title: Text(
+                    'Comments',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 13,
+                    ),
+                  ),
+                  value: prefService.isNotificationTypeEnabled(
+                    NotificationType.reaction,
+                  ), // reactor/reactions
                   onChanged: (val) async {
-                    await prefService.setNotificationTypeEnabled(NotificationType.reaction, val);
+                    await prefService.setNotificationTypeEnabled(
+                      NotificationType.reaction,
+                      val,
+                    );
                     setModalState(() {});
                   },
-                  activeColor: kYellow,
+                  activeThumbColor: kYellow,
                 ),
                 SwitchListTile(
-                  title: Text('Messages', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
-                  value: prefService.isNotificationTypeEnabled(NotificationType.message),
+                  title: Text(
+                    'Messages',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 13,
+                    ),
+                  ),
+                  value: prefService.isNotificationTypeEnabled(
+                    NotificationType.message,
+                  ),
                   onChanged: (val) async {
-                    await prefService.setNotificationTypeEnabled(NotificationType.message, val);
+                    await prefService.setNotificationTypeEnabled(
+                      NotificationType.message,
+                      val,
+                    );
                     setModalState(() {});
                   },
-                  activeColor: kYellow,
+                  activeThumbColor: kYellow,
                 ),
                 SwitchListTile(
-                  title: Text('Circle Invitations', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
-                  value: prefService.isNotificationTypeEnabled(NotificationType.circleRequest),
+                  title: Text(
+                    'Circle Invitations',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 13,
+                    ),
+                  ),
+                  value: prefService.isNotificationTypeEnabled(
+                    NotificationType.circleRequest,
+                  ),
                   onChanged: (val) async {
-                    await prefService.setNotificationTypeEnabled(NotificationType.circleRequest, val);
+                    await prefService.setNotificationTypeEnabled(
+                      NotificationType.circleRequest,
+                      val,
+                    );
                     setModalState(() {});
                   },
-                  activeColor: kYellow,
+                  activeThumbColor: kYellow,
                 ),
                 const SizedBox(height: 12),
                 _pill('Done', () => Navigator.pop(context), dark),
               ],
             ),
           );
-        }
+        },
       ),
     );
   }
@@ -2250,51 +2627,79 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               children: [
                 Text(
                   'Privacy Settings',
-                  style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 16, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: dark ? kCream : kCharcoal,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 SwitchListTile(
-                  title: Text('Profile Visibility', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  title: Text(
+                    'Profile Visibility',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 13,
+                    ),
+                  ),
                   value: privacyService.isProfileVisible(),
                   onChanged: (val) async {
                     await privacyService.setProfileVisible(val);
                     setModalState(() {});
                   },
-                  activeColor: kYellow,
+                  activeThumbColor: kYellow,
                 ),
                 SwitchListTile(
-                  title: Text('Discoverable by Phone', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  title: Text(
+                    'Discoverable by Phone',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 13,
+                    ),
+                  ),
                   value: privacyService.isDiscoverable(),
                   onChanged: (val) async {
                     await privacyService.setDiscoverable(val);
                     setModalState(() {});
                   },
-                  activeColor: kYellow,
+                  activeThumbColor: kYellow,
                 ),
                 SwitchListTile(
-                  title: Text('Contact Synchronization', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  title: Text(
+                    'Contact Synchronization',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 13,
+                    ),
+                  ),
                   value: privacyService.isContactDiscoveryEnabled(),
                   onChanged: (val) async {
                     await privacyService.setContactDiscoveryEnabled(val);
                     setModalState(() {});
                   },
-                  activeColor: kYellow,
+                  activeThumbColor: kYellow,
                 ),
                 SwitchListTile(
-                  title: Text('Receive Circle Invites', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13)),
+                  title: Text(
+                    'Receive Circle Invites',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 13,
+                    ),
+                  ),
                   value: privacyService.canReceiveCircleInvitations(),
                   onChanged: (val) async {
                     await privacyService.setCanReceiveCircleInvitations(val);
                     setModalState(() {});
                   },
-                  activeColor: kYellow,
+                  activeThumbColor: kYellow,
                 ),
                 const SizedBox(height: 12),
                 _pill('Done', () => Navigator.pop(context), dark),
               ],
             ),
           );
-        }
+        },
       ),
     );
   }
@@ -2316,23 +2721,49 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               children: [
                 Text(
                   'Security & Active Sessions',
-                  style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 16, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: dark ? kCream : kCharcoal,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                ...sessions.map((s) => ListTile(
-                  title: Text(s['device'] as String, style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13, fontWeight: FontWeight.bold)),
-                  subtitle: Text(s['lastActive'] as String, style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6), fontSize: 11)),
-                  trailing: (s['active'] as bool)
-                    ? Icon(Icons.check_circle, color: kMint, size: 18)
-                    : null,
-                )),
+                ...sessions.map(
+                  (s) => ListTile(
+                    title: Text(
+                      s['device'] as String,
+                      style: TextStyle(
+                        color: dark ? kCream : kCharcoal,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      s['lastActive'] as String,
+                      style: TextStyle(
+                        color: (dark ? kCream : kCharcoal).withValues(
+                          alpha: 0.6,
+                        ),
+                        fontSize: 11,
+                      ),
+                    ),
+                    trailing: (s['active'] as bool)
+                        ? Icon(Icons.check_circle, color: kMint, size: 18)
+                        : null,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 _pill(
                   'Sign out of all other devices',
                   () async {
                     await securityService.signOutAllDevices();
-                    Navigator.pop(context);
-                    showAppMessage(context, 'Signed out of other devices successfully.');
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      showAppMessage(
+                        context,
+                        'Signed out of other devices successfully.',
+                      );
+                    }
                   },
                   dark,
                   color: Colors.red,
@@ -2343,7 +2774,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               ],
             ),
           );
-        }
+        },
       ),
     );
   }
@@ -2353,15 +2784,25 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: dark ? kBlack : Colors.white,
-        title: Text('Export My Data', style: TextStyle(color: dark ? kCream : kCharcoal)),
+        title: Text(
+          'Export My Data',
+          style: TextStyle(color: dark ? kCream : kCharcoal),
+        ),
         content: Text(
           'Requesting an export will compile all your Profile statistics, Memories, Messages, Settings, and Activity history into an archive. Compile starts in the background.',
-          style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.8)),
+          style: TextStyle(
+            color: (dark ? kCream : kCharcoal).withValues(alpha: 0.8),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6))),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+              ),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -2369,10 +2810,16 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               final exportService = ref.read(accountExportServiceProvider);
               final res = await exportService.requestExport();
               if (context.mounted) {
-                showAppMessage(context, res['message'] as String? ?? 'Export started');
+                showAppMessage(
+                  context,
+                  res['message'] as String? ?? 'Export started',
+                );
               }
             },
-            child: const Text('Request Export', style: TextStyle(color: kYellow, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Request Export',
+              style: TextStyle(color: kYellow, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -2384,7 +2831,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: dark ? kBlack : Colors.white,
-        title: const Text('Delete Account', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Delete Account',
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
         content: const Text(
           'WARNING: Deleting your account is permanent and irreversible. All your memories, messages, circle associations, and history will be securely deleted from our databases.',
           style: TextStyle(color: Colors.red),
@@ -2392,14 +2842,22 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6))),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               _confirmAccountDeletion(context, dark);
             },
-            child: const Text('Continue Deletion', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Continue Deletion',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -2411,7 +2869,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: dark ? kBlack : Colors.white,
-        title: const Text('Final Confirmation', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Final Confirmation',
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
         content: Text(
           'Please confirm you wish to remove your account. We will proceed to validate requests and sign you out.',
           style: TextStyle(color: dark ? kCream : kCharcoal),
@@ -2419,7 +2880,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6))),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+              ),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -2428,7 +2894,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               final deletionService = ref.read(accountDeletionServiceProvider);
               await deletionService.confirmDeletion('123456');
             },
-            child: const Text('Delete Permanently', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete Permanently',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -2444,7 +2913,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         decoration: BoxDecoration(
           color: kBlack,
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06)),
+          border: Border.all(
+            color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
+          ),
         ),
         child: child,
       ),
@@ -2466,25 +2937,23 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     int countryRank = 1,
     int? globalRank,
   }) {
-    final resolvedAvatar = avatarUrl != null && avatarUrl.isNotEmpty ? avatarUrl : null;
+    final resolvedAvatar = avatarUrl != null && avatarUrl.isNotEmpty
+        ? avatarUrl
+        : null;
     final cleanVal = value.replaceAll(RegExp(r'[^0-9]'), '');
     final dayCount = int.tryParse(cleanVal) ?? 0;
 
     // Phase 3: Achievement Tier System settings
     Color tierColor = const Color(0xFFCD7F32); // Bronze default
-    String tierName = 'Bronze';
     Color glowColor = const Color(0xFFCD7F32).withValues(alpha: 0.22);
     if (dayCount >= 365) {
       tierColor = const Color(0xFF89CFF0); // Diamond (Crystal blue-white)
-      tierName = 'Diamond';
       glowColor = const Color(0xFF89CFF0).withValues(alpha: 0.35);
     } else if (dayCount >= 100) {
       tierColor = const Color(0xFFFFD700); // Gold
-      tierName = 'Gold';
       glowColor = const Color(0xFFFFD700).withValues(alpha: 0.30);
     } else if (dayCount >= 30) {
       tierColor = const Color(0xFFC0C0C0); // Silver
-      tierName = 'Silver';
       glowColor = const Color(0xFFC0C0C0).withValues(alpha: 0.25);
     }
 
@@ -2523,7 +2992,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               opacity: 0.03,
               child: Transform.rotate(
                 angle: 0.2,
-                child: Image.asset('assets/images/memory-logo.png', width: 55, height: 55),
+                child: Image.asset(
+                  'assets/images/memory-logo.png',
+                  width: 55,
+                  height: 55,
+                ),
               ),
             ),
           ),
@@ -2534,7 +3007,14 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               opacity: 0.02,
               child: Transform.rotate(
                 angle: -0.4,
-                child: const Text('M', style: TextStyle(color: Colors.white, fontSize: 80, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'M',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 80,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ),
@@ -2545,7 +3025,14 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               opacity: 0.03,
               child: Transform.rotate(
                 angle: 0.5,
-                child: const Text('M', style: TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'M',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 50,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ),
@@ -2556,7 +3043,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               opacity: 0.03,
               child: Transform.rotate(
                 angle: -0.15,
-                child: Image.asset('assets/images/memory-logo.png', width: 45, height: 45),
+                child: Image.asset(
+                  'assets/images/memory-logo.png',
+                  width: 45,
+                  height: 45,
+                ),
               ),
             ),
           ),
@@ -2564,10 +3055,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           Container(
             decoration: BoxDecoration(
               gradient: RadialGradient(
-                colors: [
-                  tierColor.withValues(alpha: 0.06),
-                  Colors.transparent,
-                ],
+                colors: [tierColor.withValues(alpha: 0.06), Colors.transparent],
                 radius: 1.0,
               ),
             ),
@@ -2591,24 +3079,32 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       child: avatarBytes != null
                           ? Image.memory(avatarBytes, fit: BoxFit.cover)
                           : resolvedAvatar != null
-                              ? UnifiedImageWidget(
-                                  imageUrl: resolvedAvatar,
-                                  fit: BoxFit.cover,
-                                  fallbackWidget: Center(
-                                    child: Text(
-                                      avatarInitial,
-                                      style: const TextStyle(color: kCream, fontSize: 24, fontWeight: FontWeight.w900),
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  color: tierColor,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    avatarInitial,
-                                    style: const TextStyle(color: kBlack, fontSize: 24, fontWeight: FontWeight.w900),
+                          ? UnifiedImageWidget(
+                              imageUrl: resolvedAvatar,
+                              fit: BoxFit.cover,
+                              fallbackWidget: Center(
+                                child: Text(
+                                  avatarInitial,
+                                  style: const TextStyle(
+                                    color: kCream,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
                                   ),
                                 ),
+                              ),
+                            )
+                          : Container(
+                              color: tierColor,
+                              alignment: Alignment.center,
+                              child: Text(
+                                avatarInitial,
+                                style: const TextStyle(
+                                  color: kBlack,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -2652,11 +3148,20 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      _rankChip('🏆 Streak Rank: #$countryRank in $countryFlag', tierColor),
+                      _rankChip(
+                        '🏆 Streak Rank: #$countryRank in $countryFlag',
+                        tierColor,
+                      ),
                       if (globalRank != null || dayCount >= 30)
-                        _rankChip('🌍 Global Rank: #${globalRank ?? 148}', tierColor)
+                        _rankChip(
+                          '🌍 Global Rank: #${globalRank ?? 148}',
+                          tierColor,
+                        )
                       else
-                        _rankChip('🌍 Global Rank: Locked (Reach 30 days to qualify)', tierColor.withValues(alpha: 0.5)),
+                        _rankChip(
+                          '🌍 Global Rank: Locked (Reach 30 days to qualify)',
+                          tierColor.withValues(alpha: 0.5),
+                        ),
                     ],
                   ),
                   const Spacer(),
@@ -2664,7 +3169,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset('assets/images/memory-logo.png', width: 14, height: 14),
+                      Image.asset(
+                        'assets/images/memory-logo.png',
+                        width: 14,
+                        height: 14,
+                      ),
                       const SizedBox(width: 4),
                       const Text(
                         'Memory • Real moments. Real friends.',
@@ -2692,7 +3201,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       decoration: BoxDecoration(
         color: Colors.black45,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: borderAccent.withValues(alpha: 0.25), width: 1),
+        border: Border.all(
+          color: borderAccent.withValues(alpha: 0.25),
+          width: 1,
+        ),
       ),
       child: Text(
         text,
@@ -2704,7 +3216,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       ),
     );
   }
-  Widget _addPersonCard(BuildContext context, int circleCount, bool dark) => Container(
+
+  Widget _addPersonCard(BuildContext context, int circleCount, bool dark) =>
+      Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: dark ? kBlack : Colors.white,
@@ -2749,7 +3263,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               width: 124,
               child: _pill(
                 'Add someone',
-                circleCount < 30 ? () => _showInviteOptions(context, dark) : () {},
+                circleCount < 30
+                    ? () => _showInviteOptions(context, dark)
+                    : () {},
                 dark,
                 compact: true,
                 color: dark ? Colors.white : kBlack,
@@ -2768,30 +3284,33 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
     Color? foreground,
     bool compact = false,
     double? width,
-  }) =>
-      GestureDetector(
-        onTap: onTap,
-      child: Container(
-          width: width ?? double.infinity,
-          height: compact ? 34 : 46,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: color ?? (dark ? kDarkCream : kCream),
-            borderRadius: BorderRadius.circular(999),
-            border: color == null
-                ? Border.all(color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06))
-                : null,
-          ),
-          child: Text(
-            text,
-            style: TextStyle(
-              color: foreground ?? (dark ? kCream : kCharcoal),
-              fontSize: compact ? 10 : 13,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
+  }) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: width ?? double.infinity,
+      height: compact ? 34 : 46,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color ?? (dark ? kDarkCream : kCream),
+        borderRadius: BorderRadius.circular(999),
+        border: color == null
+            ? Border.all(
+                color: (dark ? Colors.white : kCharcoal).withValues(
+                  alpha: 0.06,
+                ),
+              )
+            : null,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: foreground ?? (dark ? kCream : kCharcoal),
+          fontSize: compact ? 10 : 13,
+          fontWeight: FontWeight.w900,
         ),
-      );
+      ),
+    ),
+  );
 
   void _showFullTermsSheet(BuildContext context, bool dark) {
     showModalBottomSheet(
@@ -2818,23 +3337,42 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           child: Column(
             children: [
               Container(
-                width: 40, height: 5,
+                width: 40,
+                height: 5,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.15),
+                  color: (dark ? Colors.white : kCharcoal).withValues(
+                    alpha: 0.15,
+                  ),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Terms & Conditions', style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 20, fontWeight: FontWeight.w900)),
+                  Text(
+                    'Terms & Conditions',
+                    style: TextStyle(
+                      color: dark ? kCream : kCharcoal,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.08), shape: BoxShape.circle),
-                      child: Icon(Icons.close_rounded, color: dark ? kCream : kCharcoal, size: 18),
+                      decoration: BoxDecoration(
+                        color: (dark ? kCream : kCharcoal).withValues(
+                          alpha: 0.08,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: dark ? kCream : kCharcoal,
+                        size: 18,
+                      ),
                     ),
                   ),
                 ],
@@ -2846,14 +3384,47 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Last Updated: June 2026', style: TextStyle(color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w700)),
+                      Text(
+                        'Last Updated: June 2026',
+                        style: TextStyle(
+                          color: (dark ? kCream : kCharcoal).withValues(
+                            alpha: 0.6,
+                          ),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       const SizedBox(height: 14),
-                      _termsItem('1. Welcome to Memory', 'Memory ("we", "us", or "our") provides a private daily social sharing platform for intimate circles. By creating an account or using the Memory app, you agree to comply with and be bound by these Terms & Conditions and all applicable laws of the Republic of Kenya.', dark),
-                      _termsItem('2. Privacy & Consent (Kenya Data Protection Act, 2019)', 'Your privacy is critical to us. By registering an account, you explicitly consent to the collection, storage, and processing of your personal data—including your name, email, phone number, and uploaded media files (memories). All personal data is processed in strict compliance with the Kenya Data Protection Act, 2019 and registration guidelines set by the Office of the Data Protection Commissioner (ODPC). We do not sell or share your personal data with third-party advertising companies.', dark),
-                      _termsItem('3. User-Generated Content & Liabilities (Cybercrimes Act, 2018)', 'You are solely responsible for the video memories and captions you post to your circle. Under the Computer Misuse and Cybercrimes Act, 2018 of Kenya, it is a criminal offense to upload or share content that is pornographic, hateful, harassing, defamatory, or infringes on another person\'s copyright. We reserve the right to suspend or delete your account immediately and report violations to relevant authorities if illegal or prohibited content is detected.', dark),
-                      _termsItem('4. Account Security', 'You are responsible for safeguarding your password and account details. You agree to notify us immediately of any unauthorized use or security breach of your account.', dark),
-                      _termsItem('5. Limitation of Liability', 'The Memory app is provided "as is" without warranties of any kind. We shall not be liable for any indirect, incidental, or punitive damages arising from your use of the app, service disruptions, or unauthorized access to user data.', dark),
-                      _termsItem('6. Dispute Resolution & Governing Law', 'These terms are governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes, claims, or controversies arising out of or relating to these terms shall be subject to the exclusive jurisdiction of the competent courts in Nairobi, Kenya.', dark),
+                      _termsItem(
+                        '1. Welcome to Memory',
+                        'Memory ("we", "us", or "our") provides a private daily social sharing platform for intimate circles. By creating an account or using the Memory app, you agree to comply with and be bound by these Terms & Conditions and all applicable laws of the Republic of Kenya.',
+                        dark,
+                      ),
+                      _termsItem(
+                        '2. Privacy & Consent (Kenya Data Protection Act, 2019)',
+                        'Your privacy is critical to us. By registering an account, you explicitly consent to the collection, storage, and processing of your personal data—including your name, email, phone number, and uploaded media files (memories). All personal data is processed in strict compliance with the Kenya Data Protection Act, 2019 and registration guidelines set by the Office of the Data Protection Commissioner (ODPC). We do not sell or share your personal data with third-party advertising companies.',
+                        dark,
+                      ),
+                      _termsItem(
+                        '3. User-Generated Content & Liabilities (Cybercrimes Act, 2018)',
+                        'You are solely responsible for the video memories and captions you post to your circle. Under the Computer Misuse and Cybercrimes Act, 2018 of Kenya, it is a criminal offense to upload or share content that is pornographic, hateful, harassing, defamatory, or infringes on another person\'s copyright. We reserve the right to suspend or delete your account immediately and report violations to relevant authorities if illegal or prohibited content is detected.',
+                        dark,
+                      ),
+                      _termsItem(
+                        '4. Account Security',
+                        'You are responsible for safeguarding your password and account details. You agree to notify us immediately of any unauthorized use or security breach of your account.',
+                        dark,
+                      ),
+                      _termsItem(
+                        '5. Limitation of Liability',
+                        'The Memory app is provided "as is" without warranties of any kind. We shall not be liable for any indirect, incidental, or punitive damages arising from your use of the app, service disruptions, or unauthorized access to user data.',
+                        dark,
+                      ),
+                      _termsItem(
+                        '6. Dispute Resolution & Governing Law',
+                        'These terms are governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes, claims, or controversies arising out of or relating to these terms shall be subject to the exclusive jurisdiction of the competent courts in Nairobi, Kenya.',
+                        dark,
+                      ),
                     ],
                   ),
                 ),
@@ -2866,8 +3437,18 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   child: Container(
                     height: 44,
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(color: dark ? kYellow : kBlack, borderRadius: BorderRadius.circular(999)),
-                    child: const Text('Close', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+                    decoration: BoxDecoration(
+                      color: dark ? kYellow : kBlack,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      'Close',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -2884,15 +3465,36 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(heading, style: TextStyle(color: dark ? kYellow : kBlack, fontSize: 13, fontWeight: FontWeight.w800)),
+          Text(
+            heading,
+            style: TextStyle(
+              color: dark ? kYellow : kBlack,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(body, style: TextStyle(color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8), fontSize: 12.5, height: 1.45)),
+          Text(
+            body,
+            style: TextStyle(
+              color: dark
+                  ? kCream.withValues(alpha: 0.8)
+                  : kCharcoal.withValues(alpha: 0.8),
+              fontSize: 12.5,
+              height: 1.45,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  void _showPolicyDialog(BuildContext context, String title, String content, bool dark) {
+  void _showPolicyDialog(
+    BuildContext context,
+    String title,
+    String content,
+    bool dark,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -2908,7 +3510,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           child: Text(
             content,
             style: TextStyle(
-              color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+              color: dark
+                  ? kCream.withValues(alpha: 0.8)
+                  : kCharcoal.withValues(alpha: 0.8),
               fontSize: 13,
             ),
           ),
@@ -2916,7 +3520,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Close', style: TextStyle(color: dark ? kYellow : kBlack, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Close',
+              style: TextStyle(
+                color: dark ? kYellow : kBlack,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -2925,7 +3535,8 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
 }
 
 String _formatImageUrl(String url) {
-  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+  if (url.startsWith('http://localhost:') ||
+      url.startsWith('http://127.0.0.1:')) {
     final uri = Uri.parse(url);
     final baseUri = Uri.parse(kBaseUrl);
     return uri.replace(host: baseUri.host, port: baseUri.port).toString();
@@ -2945,7 +3556,7 @@ class ChatPatternPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     const double spacing = 40.0;
-    
+
     // Diagonal lines top-left to bottom-right
     for (double i = -size.height; i < size.width; i += spacing) {
       canvas.drawLine(
@@ -2954,7 +3565,7 @@ class ChatPatternPainter extends CustomPainter {
         paint,
       );
     }
-    
+
     // Diagonal lines top-right to bottom-left
     for (double i = 0; i < size.width + size.height; i += spacing) {
       canvas.drawLine(
@@ -2988,7 +3599,8 @@ class _InstagramMark extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(painter: _InstagramMarkPainter(color));
+  Widget build(BuildContext context) =>
+      CustomPaint(painter: _InstagramMarkPainter(color));
 }
 
 class _InstagramMarkPainter extends CustomPainter {
@@ -3005,15 +3617,23 @@ class _InstagramMarkPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     final rect = Offset.zero & size;
     canvas.drawRRect(
-      RRect.fromRectAndRadius(rect.deflate(size.width * 0.12), Radius.circular(size.width * 0.26)),
+      RRect.fromRectAndRadius(
+        rect.deflate(size.width * 0.12),
+        Radius.circular(size.width * 0.26),
+      ),
       stroke,
     );
     canvas.drawCircle(size.center(Offset.zero), size.width * 0.18, stroke);
-    canvas.drawCircle(Offset(size.width * 0.72, size.height * 0.28), size.width * 0.045, Paint()..color = color);
+    canvas.drawCircle(
+      Offset(size.width * 0.72, size.height * 0.28),
+      size.width * 0.045,
+      Paint()..color = color,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _InstagramMarkPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _InstagramMarkPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class _WhatsAppMark extends StatelessWidget {
@@ -3022,7 +3642,8 @@ class _WhatsAppMark extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(painter: _WhatsAppMarkPainter(color));
+  Widget build(BuildContext context) =>
+      CustomPaint(painter: _WhatsAppMarkPainter(color));
 }
 
 class _WhatsAppMarkPainter extends CustomPainter {
@@ -3050,12 +3671,18 @@ class _WhatsAppMarkPainter extends CustomPainter {
     canvas.drawPath(tail, fill);
     final phone = Path()
       ..moveTo(size.width * 0.38, size.height * 0.35)
-      ..quadraticBezierTo(size.width * 0.48, size.height * 0.62, size.width * 0.67, size.height * 0.56);
+      ..quadraticBezierTo(
+        size.width * 0.48,
+        size.height * 0.62,
+        size.width * 0.67,
+        size.height * 0.56,
+      );
     canvas.drawPath(phone, stroke);
   }
 
   @override
-  bool shouldRepaint(covariant _WhatsAppMarkPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _WhatsAppMarkPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 String _formatTime(DateTime dt) {
@@ -3063,4 +3690,3 @@ String _formatTime(DateTime dt) {
   final minute = dt.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
 }
-

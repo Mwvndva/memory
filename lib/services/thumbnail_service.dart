@@ -70,7 +70,7 @@ class ThumbnailService {
     canvas.drawRect(const Rect.fromLTWH(0, 0, 320, 240), paint);
 
     final iconPaint = Paint()
-      ..color = Colors.white.withOpacity(0.8)
+      ..color = Colors.white.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
     
     final path = Path()
