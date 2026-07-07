@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/auth/auth_views.dart';
-import '../features/feed/feed_views.dart';
-import '../features/feed/memory_detail_screen.dart';
-import '../features/capture/capture_views.dart';
-import '../features/circle/circle_views.dart';
+import 'package:memory_app/features/auth/auth.dart';
+import 'package:memory_app/features/feed/feed.dart';
+import 'package:memory_app/features/capture/capture.dart';
+import 'package:memory_app/features/circle/circle.dart';
 import '../features/dev/dev_diagnostics.dart';
-import '../features/notification/notification_screen.dart';
-import '../repositories/auth_repository.dart';
+import 'package:memory_app/features/notification/notification.dart';
+import 'package:memory_app/shared/widgets/main_app_scaffold.dart';
 import 'theme.dart';
 
 // Key to hold state across routes

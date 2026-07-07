@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
-import '../core/api_client.dart';
+import 'package:memory_app/core/api_client.dart';
 
 class MediaCacheManager {
   MediaCacheManager(this._ref);

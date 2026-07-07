@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../models/notification_item.dart';
+import 'package:memory_app/features/notification/notification.dart';
 
 class NotificationRouter {
   static void routeToDestination(BuildContext context, NotificationItem item) {

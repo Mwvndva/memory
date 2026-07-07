@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/notification_item.dart';
-import '../../repositories/notification_repository.dart';
-import '../../realtime/realtime_event.dart';
-import '../../realtime/realtime_providers.dart';
-import 'notification_state.dart';
+import 'package:memory_app/features/notification/notification.dart';
+import 'package:memory_app/realtime/realtime_event.dart';
+import 'package:memory_app/realtime/realtime_providers.dart';
 
 class NotificationStateManager extends StateNotifier<NotificationState> {
   NotificationStateManager(this._ref)

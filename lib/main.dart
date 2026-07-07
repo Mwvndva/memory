@@ -5,13 +5,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'core/router.dart';
-import 'core/theme.dart';
-import 'features/capture/capture_views.dart';
+import 'package:memory_app/core/router.dart';
+import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/features/capture/capture.dart';
 import 'firebase_options.dart';
-import 'realtime/realtime_providers.dart';
-import 'repositories/auth_repository.dart';
-import 'repositories/push_notification_repository.dart';
+import 'package:memory_app/realtime/realtime_providers.dart';
+import 'package:memory_app/features/auth/auth.dart';
+import 'package:memory_app/features/notification/notification.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

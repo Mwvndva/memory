@@ -6,7 +6,7 @@ import 'package:home_widget/home_widget.dart';
 import 'package:dio/dio.dart';
 
 import 'api_config.dart';
-import '../models/memory_item.dart';
+import 'package:memory_app/features/feed/feed.dart';
 
 Future<String> _renderMemoryCard(MemoryItem memory) async {
   final recorder = ui.PictureRecorder();

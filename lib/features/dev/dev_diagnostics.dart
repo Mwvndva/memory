@@ -3,10 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/api_client.dart';
-import '../../repositories/circles_repository.dart';
-import '../../repositories/chat_repository.dart';
-import '../../realtime/realtime_providers.dart';
+import 'package:memory_app/core/api_client.dart';
+import 'package:memory_app/features/circle/circle.dart';
+import 'package:memory_app/realtime/realtime_providers.dart';
 
 class DevDiagnosticsView extends ConsumerStatefulWidget {
   const DevDiagnosticsView({super.key});

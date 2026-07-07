@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme.dart';
-import 'memory_detail_provider.dart';
-import 'memory_detail_state.dart';
-import '../../repositories/download_repository.dart';
-import '../../repositories/auth_repository.dart';
+import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/features/feed/feed.dart';
+import 'package:memory_app/features/auth/auth.dart';
 
 class MemoryDetailScreen extends ConsumerStatefulWidget {
   final String memoryId;

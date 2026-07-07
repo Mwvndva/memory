@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:crypto/crypto.dart';
 import 'api_config.dart';
 import 'secure_storage.dart';
-import '../repositories/auth_repository.dart';
+import 'package:memory_app/features/auth/auth.dart';
 import 'structured_logger.dart';
 
 final apiClientProvider = Provider<Dio>((ref) {

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/api_client.dart';
-import '../../core/api_config.dart';
-import '../../core/error_handler.dart';
-import '../../models/memory_item.dart';
-import '../../models/comment_item.dart';
-import '../../repositories/memory_repository.dart';
-import '../../repositories/auth_repository.dart';
-import '../../repositories/comment_repository.dart';
-import 'memory_detail_state.dart';
+import 'package:memory_app/core/api_client.dart';
+import 'package:memory_app/core/api_config.dart';
+import 'package:memory_app/core/error_handler.dart';
+import 'package:memory_app/features/feed/feed.dart';
+import 'package:memory_app/features/auth/auth.dart';
 
 class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
   MemoryDetailStateManager(this._ref, this._memoryId) : super(MemoryDetailState()) {

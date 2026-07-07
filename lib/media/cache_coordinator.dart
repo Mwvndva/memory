@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import '../core/structured_logger.dart';
+import 'package:memory_app/core/structured_logger.dart';
 
 class CacheCoordinator {
   CacheCoordinator();

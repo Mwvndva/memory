@@ -1,5 +1,4 @@
-import '../../models/memory_item.dart';
-import '../../models/comment_item.dart';
+import 'package:memory_app/features/feed/feed.dart';
 
 enum MemoryDetailLoadStatus {
   idle,

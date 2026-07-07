@@ -6,11 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import '../core/api_client.dart';
-import '../core/api_config.dart';
-import '../core/error_handler.dart';
-import '../models/user_profile.dart';
-import '../repositories/auth_repository.dart';
+import 'package:memory_app/core/api_client.dart';
+import 'package:memory_app/core/api_config.dart';
+import 'package:memory_app/core/error_handler.dart';
+import 'package:memory_app/features/circle/circle.dart';
+import 'package:memory_app/features/auth/auth.dart';
 import 'event_deduplicator.dart';
 import 'realtime_event.dart';
 

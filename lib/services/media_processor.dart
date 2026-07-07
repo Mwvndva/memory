@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:video_player/video_player.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/structured_logger.dart';
+import 'package:memory_app/core/structured_logger.dart';
 
 class MediaMetadata {
   final String path;

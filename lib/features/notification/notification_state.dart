@@ -1,4 +1,4 @@
-import '../../models/notification_item.dart';
+import 'package:memory_app/features/notification/notification.dart';
 
 class NotificationState {
   const NotificationState({

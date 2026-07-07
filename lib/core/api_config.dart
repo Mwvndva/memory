@@ -42,3 +42,12 @@ const String kWebSocketUrl = String.fromEnvironment(
 /// instead of making real network requests. Useful for UI development and
 /// automated tests that run without a live backend.
 const bool kUseMockBackend = false;
+
+String formatImageUrl(String url) {
+  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+    final uri = Uri.parse(url);
+    final baseUri = Uri.parse(kBaseUrl);
+    return url.replaceFirst(uri.authority, baseUri.authority);
+  }
+  return url;
+}

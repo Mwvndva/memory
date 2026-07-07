@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/user_profile.dart';
-import '../../repositories/auth_repository.dart';
+import 'package:memory_app/features/circle/circle.dart';
+import 'package:memory_app/features/auth/auth.dart';
 
 class ProfileState {
   const ProfileState({

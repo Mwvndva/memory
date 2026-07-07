@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/api_client.dart';
-import '../core/structured_logger.dart';
+import 'package:memory_app/core/api_client.dart';
+import 'package:memory_app/core/structured_logger.dart';
 
 class UploadProgress {
   final int bytesSent;
