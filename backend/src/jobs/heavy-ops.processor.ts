@@ -58,6 +58,14 @@ export class HeavyOpsProcessor extends WorkerHost {
         await this.archiveOldMessages();
         break;
       }
+      case 'recalculate-all-ranks': {
+        await this.usersService.recalculateAllUserRanks();
+        break;
+      }
+      case 'flush-reactions': {
+        await this.redisService.flushReactionsToDb();
+        break;
+      }
       default:
         this.logger.warn(`Unknown job type: ${job.name}`);
     }

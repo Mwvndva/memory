@@ -31,13 +31,11 @@ export class RateLimitGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
 
-    // Prefer X-Forwarded-For (behind a proxy/load balancer), fall back to socket IP
-    const rawIp: string =
-      (request.headers['x-forwarded-for'] as string)
-        ?.split(',')[0]
-        ?.trim() ??
-      request.ip ??
-      'unknown';
+    // Use Express's resolved client IP. With `trust proxy` configured in
+    // main.ts, request.ip already reflects the correct X-Forwarded-For hop.
+    // Reading the raw XFF header here would let a client spoof it and mint a
+    // fresh rate-limit bucket per forged IP, bypassing the limit entirely.
+    const rawIp: string = request.ip ?? 'unknown';
 
     // Build a bucket key scoped to: class + handler + IP
     // e.g. "AuthController:login:192.168.1.1"

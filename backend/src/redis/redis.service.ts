@@ -42,12 +42,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.client.on('connect', () => this.logger.log('Redis connected'));
     this.client.on('error',   (err) => this.logger.error('Redis error', err));
 
-    // Periodically flush reactions to database every 15 minutes
-    setInterval(() => {
-      this.flushReactionsToDb().catch((err) => {
-        this.logger.error(`[Background Job] Failed to flush reactions to DB: ${err.message}`);
-      });
-    }, 1000 * 60 * 15);
+    // NOTE: reaction flushing is now driven by the cluster-safe BullMQ
+    // repeatable job 'flush-reactions' (see JobsService) so it runs once
+    // across all instances rather than once per instance. flushReactionsToDb()
+    // is invoked by HeavyOpsProcessor.
   }
 
   async onModuleDestroy() {
@@ -446,6 +444,43 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       return JSON.parse(raw) as { userId: string; username: string };
     } catch {
       return null;
+    }
+  }
+
+  // ─── Generic JSON cache helpers ────────────────────────────────────────────
+  //
+  // Thin wrappers around GET / SETEX / DEL for caching serializable read
+  // results (profiles, single memories). All failures are swallowed and logged
+  // so a Redis blip degrades to a cache miss rather than breaking the request —
+  // mirrors the feed cache in MemoriesService.getFeed.
+
+  /** Read and JSON-parse a cached value. Returns null on miss or any error. */
+  async cacheGetJson<T>(key: string): Promise<T | null> {
+    try {
+      const raw = await this.client.get(key);
+      return raw ? (JSON.parse(raw) as T) : null;
+    } catch (err) {
+      this.logger.error(`[Cache] read failed for key="${key}": ${err.message}`);
+      return null;
+    }
+  }
+
+  /** JSON-serialize and cache a value with a TTL (seconds). Best-effort. */
+  async cacheSetJson(key: string, value: unknown, ttlSeconds: number): Promise<void> {
+    try {
+      await this.client.setex(key, ttlSeconds, JSON.stringify(value));
+    } catch (err) {
+      this.logger.error(`[Cache] write failed for key="${key}": ${err.message}`);
+    }
+  }
+
+  /** Delete one or more cache keys (write-through invalidation). Best-effort. */
+  async cacheDel(...keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    try {
+      await this.client.del(...keys);
+    } catch (err) {
+      this.logger.error(`[Cache] delete failed for keys="${keys.join(',')}": ${err.message}`);
     }
   }
 

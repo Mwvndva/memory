@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/theme.dart';
+import '../../core/playful.dart';
 import '../../core/error_handler.dart';
 import '../../repositories/memory_repository.dart';
 import '../../repositories/chat_repository.dart';
@@ -487,8 +488,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                       // Centre: capture button or send button
                       _hasRecording
                           ? _sendToCircleButton(dark)
-                          : GestureDetector(
+                          : BouncyTap(
                               onTap: _toggleRecording,
+                              pressedScale: 0.9,
                               child: Container(
                                 width: 82,
                                 height: 82,
@@ -580,7 +582,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     final friendsList = uniqueFriends.values.toList();
     final friendsCount = friendsList.length;
 
-    return GestureDetector(
+    return BouncyTap(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -693,7 +695,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   // Message icon button for bottom-right with unread badge overlay
   Widget _overlayCircleMessageButton({required VoidCallback onTap, required int unreadCount}) {
     final displayCount = unreadCount > 9 ? '9+' : '$unreadCount';
-    return GestureDetector(
+    return BouncyTap(
       onTap: onTap,
       child: Stack(
         clipBehavior: Clip.none,
@@ -744,7 +746,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                         uploadState.status == UploadStatus.uploading ||
                         uploadState.status == UploadStatus.waitingForResponse;
 
-    return GestureDetector(
+    return BouncyTap(
       onTap: isUploading
           ? () => ref.read(uploadProvider.notifier).cancelUpload()
           : _sendToCircle,
@@ -1123,7 +1125,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     bool compact = false,
     double? width,
   }) =>
-      GestureDetector(
+      BouncyTap(
         onTap: onTap,
         child: Container(
           width: width ?? double.infinity,

@@ -17,8 +17,11 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RateLimitGuard } from '../auth/guards/rate-limit.guard';
+import { RateLimit } from '../auth/decorators/rate-limit.decorator';
 import { UsersService } from './users.service';
 import { StorageService } from '../storage/storage.service';
+import { imageFileValidators } from '../storage/file-signature.validator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { SyncContactsDto } from './dto/sync-contacts.dto';
 
@@ -32,7 +35,10 @@ export class UsersController {
   /**
    * GET /users/check-username?username=john_doe
    * Public — checks whether a username is still available.
+   * Rate-limited to curb username enumeration.
    */
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ limit: 20, windowSeconds: 60 })
   @Get('check-username')
   checkUsername(@Query('username') username: string) {
     return this.usersService.checkUsername(username);
@@ -60,10 +66,7 @@ export class UsersController {
     @Req() req: any,
     @UploadedFile(
       new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5 MB
-          new FileTypeValidator({ fileType: /(image\/jpeg|image\/png|image\/webp)/ }),
-        ],
+        validators: imageFileValidators(5 * 1024 * 1024), // 5 MB, magic-byte checked
       }),
     )
     file: Express.Multer.File,
@@ -74,12 +77,15 @@ export class UsersController {
 
   /**
    * GET /users/:id
-   * Authenticated — retrieve any user's public profile.
+   * Authenticated — retrieve another user's PUBLIC profile.
+   * Excludes PII (email, phone) — those are only returned for /users/me.
    */
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  getUser(@Param('id') id: string) {
-    return this.usersService.getProfile(id);
+  getUser(@Req() req: any, @Param('id') id: string) {
+    // The caller can always see their own full profile.
+    if (id === req.user.id) return this.usersService.getProfile(id);
+    return this.usersService.getPublicProfile(id);
   }
 
   /**
@@ -107,7 +113,8 @@ export class UsersController {
    * POST /users/sync-contacts
    * Authenticated — syncs contact list to find matching users on Memory.
    */
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RateLimitGuard)
+  @RateLimit({ limit: 10, windowSeconds: 3600 })
   @Post('sync-contacts')
   syncContacts(@Body() dto: SyncContactsDto) {
     return this.usersService.findByPhones(dto.phones);

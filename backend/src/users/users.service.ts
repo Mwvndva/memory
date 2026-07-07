@@ -1,7 +1,14 @@
 import { Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+
+// Cache key builders + TTLs for profile reads (see getProfile/getPublicProfile).
+const profileCacheKey = (userId: string) => `profile:${userId}`;
+const publicProfileCacheKey = (userId: string) => `pubprofile:${userId}`;
+const PROFILE_TTL_SECONDS = 60;
+const PUBLIC_PROFILE_TTL_SECONDS = 120;
 
 export function normalizePhone(phone: string): string {
   if (!phone) return '';
@@ -50,28 +57,39 @@ const USER_SELECT = {
   createdAt: true,
 } as const;
 
+/**
+ * Fields safe to expose about *another* user to any authenticated caller.
+ * Deliberately excludes PII (email, phone) — those belong only to the
+ * owner via /users/me. Used by GET /users/:id.
+ */
+const PUBLIC_USER_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  username: true,
+  avatarUrl: true,
+  country: true,
+  streakDays: true,
+  countryRank: true,
+  globalRank: true,
+  createdAt: true,
+} as const;
+
 @Injectable()
 export class UsersService implements OnModuleInit {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   onModuleInit() {
-    // Recalculate ranks once at startup after 10 seconds to avoid blocking main thread bootstrap
-    setTimeout(() => {
-      this.recalculateAllUserRanks().catch((err) => {
-        this.logger.error(`[Startup Job] Failed to run initial rankings recalculation: ${err.message}`);
-      });
-    }, 1000 * 10);
+    // NOTE: global rankings recalculation is now driven by the cluster-safe
+    // BullMQ repeatable job 'recalculate-all-ranks' (see JobsService) so it
+    // runs once across all instances instead of once per instance.
 
-    // Periodically run global rankings recalculation every 1 hour
-    setInterval(() => {
-      this.recalculateAllUserRanks().catch((err) => {
-        this.logger.error(`[Background Job] Failed to recalculate all user ranks: ${err.message}`);
-      });
-    }, 1000 * 60 * 60);
-
-    // Backfill normalized phones for legacy users
+    // Backfill normalized phones for legacy users (idempotent, cheap)
     this.backfillNormalizedPhones().catch((err) => {
       this.logger.error(`[Startup Job] Failed to backfill normalized phone numbers: ${err.message}`);
     });
@@ -114,7 +132,14 @@ export class UsersService implements OnModuleInit {
   }
 
   // ─── Profile retrieval (reads pre-cached stats — O(1)) ────────────────────
+  // Cached in Redis (60s) — this path also runs the unbounded circle-pulse
+  // query, so caching removes it from the hot per-request path. Busted on
+  // updateProfile / deleteAccount.
   async getProfile(userId: string) {
+    const cacheKey = profileCacheKey(userId);
+    const cached = await this.redis.cacheGetJson<Record<string, unknown>>(cacheKey);
+    if (cached) return cached;
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -130,7 +155,7 @@ export class UsersService implements OnModuleInit {
     // Compute circle pulse (consecutive days anyone in circle posted)
     const circlePulseDays = await this._getCirclePulseDays(userId);
 
-    return {
+    const result = {
       ...user,
       stats: {
         streakDays:     user.streakDays,
@@ -140,6 +165,37 @@ export class UsersService implements OnModuleInit {
         flagEmoji,
       },
     };
+    await this.redis.cacheSetJson(cacheKey, result, PROFILE_TTL_SECONDS);
+    return result;
+  }
+
+  // ─── Public profile (safe for any authenticated caller) ───────────────────
+  // Returns only non-PII fields — no email, no phone. Used by GET /users/:id.
+  // Cached in Redis (120s) — public data changes rarely. Busted on writes.
+  async getPublicProfile(userId: string) {
+    const cacheKey = publicProfileCacheKey(userId);
+    const cached = await this.redis.cacheGetJson<Record<string, unknown>>(cacheKey);
+    if (cached) return cached;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: PUBLIC_USER_SELECT,
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const flagEmoji = user.country || '🇰🇪';
+
+    const result = {
+      ...user,
+      stats: {
+        streakDays:  user.streakDays,
+        countryRank: user.countryRank,
+        globalRank:  user.globalRank ?? null,
+        flagEmoji,
+      },
+    };
+    await this.redis.cacheSetJson(cacheKey, result, PUBLIC_PROFILE_TTL_SECONDS);
+    return result;
   }
 
   /**
@@ -202,6 +258,9 @@ export class UsersService implements OnModuleInit {
       data,
       select: { ...USER_SELECT, phone: true },
     });
+
+    // Write-through invalidation so edits are reflected immediately.
+    await this.redis.cacheDel(profileCacheKey(userId), publicProfileCacheKey(userId));
 
     const flagEmoji = user.country || user.phone?.split(' ')[0] || '🇰🇪';
     const circlePulseDays = await this._getCirclePulseDays(userId);
@@ -557,6 +616,9 @@ export class UsersService implements OnModuleInit {
         data: { deletedAt: new Date() },
       });
     });
+
+    // Invalidate any cached profile views for this user.
+    await this.redis.cacheDel(profileCacheKey(userId), publicProfileCacheKey(userId));
 
     this.logger.log(`[GDPR Delete] User userId="${userId}" successfully anonymized and soft-deleted.`);
     return { success: true, message: 'Account deleted and PII anonymized.' };

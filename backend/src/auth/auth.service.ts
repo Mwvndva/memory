@@ -84,6 +84,7 @@ export class AuthService {
     const email = normalizeEmail(dto.email);
     const phone = normalizePhone(dto.phone);
     this.logger.log(`[Register] New registration request for username="${username}" email="${maskEmail(email)}"`);
+    // Accept either camelCase or snake_case from the client.
     const acceptedTerms = dto.acceptedTerms ?? dto.accepted_terms ?? false;
     if (!acceptedTerms) {
       this.logger.warn(`[Register] Registration failed: Terms and Conditions not accepted`);

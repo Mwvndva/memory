@@ -32,6 +32,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: configService.get<string>('REFRESH_TOKEN_SECRET') || (configService.get<string>('JWT_SECRET') ? configService.get<string>('JWT_SECRET') + '-refresh' : 'fallback-refresh-secret'),
+      algorithms: ['HS256'], // pin algorithm — reject alg confusion / 'none'
       passReqToCallback: false,
     });
 
