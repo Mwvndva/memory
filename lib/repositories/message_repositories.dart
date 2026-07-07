@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/message.dart';
 import '../realtime/realtime_event.dart';
 import '../realtime/realtime_providers.dart';
 import '../core/api_config.dart';
@@ -111,7 +110,7 @@ class PresenceRepositoryImpl implements PresenceRepository {
 
   @override
   Stream<PresenceEvent> get presenceEvents {
-    return _ref.read(realtimeEventStreamProvider.stream).where((event) => event is PresenceEvent).cast<PresenceEvent>();
+    return _ref.read(realtimeCoordinatorProvider).eventStream.where((event) => event is PresenceEvent).cast<PresenceEvent>();
   }
 }
 

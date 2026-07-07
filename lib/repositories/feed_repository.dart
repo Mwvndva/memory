@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/memory_item.dart';
 import 'memory_repository.dart';
 
 class FeedRepository {

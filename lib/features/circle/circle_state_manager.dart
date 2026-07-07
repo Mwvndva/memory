@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../repositories/circles_repository.dart';
 import '../../models/relationship_state.dart';
-import '../../services/circle_invitation_service.dart';
 
 class CircleState {
   const CircleState({

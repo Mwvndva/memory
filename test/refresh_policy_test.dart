@@ -1,10 +1,9 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memory_app/models/memory_item.dart';
 import 'package:memory_app/repositories/memory_repository.dart';
-import 'package:memory_app/models/user_profile.dart';
 import 'package:memory_app/repositories/auth_repository.dart';
 import 'package:memory_app/core/theme.dart';
 

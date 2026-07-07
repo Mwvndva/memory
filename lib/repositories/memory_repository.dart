@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
 
 import '../core/api_client.dart';
 import '../core/api_config.dart';
@@ -13,12 +11,9 @@ import '../core/widget_manager.dart';
 import 'auth_repository.dart';
 import '../core/error_handler.dart';
 import '../core/router.dart';
-import '../core/widget_manager.dart';
 import 'package:go_router/go_router.dart';
-import 'chat_repository.dart';
 import 'optimistic_transaction_manager.dart';
 import 'reaction_repository.dart';
-import '../models/user_profile.dart';
 import '../realtime/realtime_event.dart';
 import '../realtime/realtime_providers.dart';
 import '../media/cache_coordinator.dart';
@@ -653,7 +648,6 @@ class FeedStateManager extends StateNotifier<FeedState> {
       }
       
       final reconciled = reconcile(result.memories, replaceAll: true);
-      final isOffline = state.isOffline; // preserve or read connection status if needed
 
       state = state.copyWith(
         status: FeedLoadStatus.loaded,

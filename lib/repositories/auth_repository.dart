@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/error_handler.dart';
@@ -92,7 +91,7 @@ class SessionManager extends StateNotifier<SessionState> {
             isRestoring: false,
           );
           await sessionRepo.saveCachedUserProfile(validatedUser);
-        } catch (e, stack) {
+        } catch (e) {
           // If validation fails, attempt to refresh the session immediately
           try {
             final authService = _ref.read(authServiceProvider);
@@ -273,8 +272,8 @@ class SessionManager extends StateNotifier<SessionState> {
       final authService = _ref.read(authServiceProvider);
       final validatedUser = await authService.fetchProfile(avatarBytes: state.user.avatarBytes);
       state = state.copyWith(user: validatedUser);
-      await _ref.read(sessionRepositoryProvider).saveCachedUserProfile(validatedUser);
     } catch (e, stack) {
+      debugPrint('Failed to fetch profile: $e\n$stack');
     }
   }
 

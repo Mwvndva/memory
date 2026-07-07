@@ -6,7 +6,6 @@ import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memory_app/models/memory_item.dart';
-import 'package:memory_app/models/comment_item.dart';
 import 'package:memory_app/features/feed/memory_detail_state.dart';
 import 'package:memory_app/features/feed/memory_detail_provider.dart';
 import 'package:memory_app/repositories/memory_repository.dart';
@@ -135,7 +134,7 @@ void main() {
       );
       addTearDown(subscription.close);
 
-      final notifier = container.read(memoryDetailProvider('detail-test-uuid').notifier);
+      container.read(memoryDetailProvider('detail-test-uuid').notifier);
       await pumpEventQueue();
 
       final state = container.read(memoryDetailProvider('detail-test-uuid'));

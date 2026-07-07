@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'dart:async';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -266,6 +265,15 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
       state = state.where((m) => m.id != memberId).toList();
     }
     return ok;
+  }
+
+  void updateMemberRole(String memberId, CircleRole newRole) {
+    state = state.map((m) {
+      if (m.id == memberId) {
+        return m.copyWith(role: newRole);
+      }
+      return m;
+    }).toList();
   }
 
   // ─── Simulation Trigger for Circle Milestones in Mock Mode ────────────────

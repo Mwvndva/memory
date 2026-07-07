@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
@@ -84,7 +84,7 @@ void main() {
       container.listen(feedProvider, (previous, next) {}, onError: (err, stack) {});
 
       try {
-        final notifier = container.read(feedProvider.notifier);
+        container.read(feedProvider.notifier);
       } catch (_) {}
       await pumpEventQueue();
 

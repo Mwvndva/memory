@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,7 +8,6 @@ import 'package:video_player/video_player.dart';
 import '../../core/theme.dart';
 import '../../core/playful.dart';
 import '../../models/memory_item.dart';
-import '../../repositories/chat_repository.dart';
 import '../../repositories/memory_repository.dart';
 import '../../repositories/download_repository.dart';
 import '../../core/api_config.dart';
@@ -19,7 +16,6 @@ import '../../core/error_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../repositories/circles_repository.dart';
 import '../../models/user_profile.dart';
-import '../../features/notification/notification_provider.dart';
 import '../../media/playback_coordinator.dart';
 import '../../media/unified_media_widgets.dart';
 import 'streak_milestones.dart';
@@ -41,137 +37,6 @@ class MainAppScaffold extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return child;
-  }
-
-  Widget _tabBar(BuildContext context, String path, bool dark, WidgetRef ref) {
-    final chatState = ref.watch(chatProvider);
-    final unread = chatState.unreadNotifications;
-
-    return Container(
-      height: 58,
-      padding: const EdgeInsets.all(7),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: kBlack.withValues(alpha: 0.1),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: kBlack.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          _tab(
-            context,
-            path == '/feed',
-            '/feed',
-            Icons.view_agenda_rounded, // Stacked rectangles
-            'Memory',
-            dark,
-          ),
-          _tab(
-            context,
-            path == '/capture',
-            '/capture',
-            Icons.radio_button_checked_rounded,
-            'Capture',
-            dark,
-            wide: true,
-          ),
-          _tab(
-            context,
-            path == '/circle',
-            '/circle',
-            Icons.circle_outlined,
-            'Circle',
-            dark,
-            badge: unread > 0 ? '$unread' : null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _tab(
-    BuildContext context,
-    bool active,
-    String route,
-    IconData icon,
-    String label,
-    bool dark, {
-    bool wide = false,
-    String? badge,
-  }) {
-    return Expanded(
-      flex: wide ? 12 : 10,
-      child: GestureDetector(
-        onTap: () => context.go(route),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: active ? (dark ? kYellow : kBlack) : Colors.transparent,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Center(
-                child: icon == Icons.view_agenda_rounded
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _rect(active, dark),
-                          const SizedBox(height: 3),
-                          _rect(active, dark),
-                        ],
-                      )
-                    : Icon(
-                        icon,
-                        size: 24, // Increased size since label is gone
-                        color: active
-                            ? (dark ? kBlack : kYellow)
-                            : kBlack.withValues(alpha: 0.4),
-                      ),
-              ),
-            ),
-            if (badge != null)
-              Positioned(
-                right: 8,
-                top: -3,
-                child: CircleAvatar(
-                  radius: 9,
-                  backgroundColor: Colors.red,
-                  child: Text(
-                    badge,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _rect(bool active, bool dark) {
-    return Container(
-      width: 22,
-      height: 9,
-      decoration: BoxDecoration(
-        color: active ? (dark ? kBlack : kYellow) : kBlack.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(3),
-      ),
-    );
   }
 }
 
@@ -204,7 +69,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
       if (mounted) {
         ref.read(sessionProvider.notifier).fetchProfile();
         ref.read(feedProvider.notifier).fetchFeed(force: true).catchError((err) {
-          if (mounted) {
+          if (mounted && context.mounted) {
             showAppError(context, err.toString());
           }
         });
@@ -255,25 +120,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     super.dispose();
   }
 
-  void _nextMemory(int count) {
-    if (count == 0) return;
-    final isNearEnd = _activeMemoryIndex >= count - 2;
-    if (isNearEnd) {
-      ref.read(feedProvider.notifier).loadMore();
-    }
-    setState(() {
-      _activeMemoryIndex = (_activeMemoryIndex + 1) % count;
-      _feedReady = false;
-    });
-  }
 
-  void _previousMemory(int count) {
-    if (count == 0) return;
-    setState(() {
-      _activeMemoryIndex = (_activeMemoryIndex - 1 + count) % count;
-      _feedReady = false;
-    });
-  }
 
   void _setGridOpen(bool open) {
     setState(() {
@@ -693,9 +540,6 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     final activeIndex = isEmptyFeed ? 0 : _activeMemoryIndex % listToUse.length;
     final m = isEmptyFeed ? null : listToUse[activeIndex];
 
-    final isUrlCaption = m != null && (m.caption.startsWith('http://') || m.caption.startsWith('https://'));
-    final isVideoLoading = m != null && m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized);
-    final showCaption = m != null && m.caption.isNotEmpty && !isUrlCaption && !isVideoLoading;
 
     // Trigger video initialization if active index changed
     if (!isEmptyFeed && m != null && activeIndex != _enqueuedIndex) {
@@ -1236,7 +1080,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
       try {
         await ref.read(feedProvider.notifier).sendReaction(m.id, emoji);
       } catch (err) {
-        if (context.mounted) {
+        if (mounted) {
           showAppError(context, 'Failed to post reaction');
         }
       }

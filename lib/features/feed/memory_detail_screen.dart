@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
-import '../../models/memory_item.dart';
-import '../../models/comment_item.dart';
 import 'memory_detail_provider.dart';
 import 'memory_detail_state.dart';
 import '../../repositories/download_repository.dart';
@@ -156,9 +154,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
             onPressed: () {
               ref.read(memoryDetailProvider(widget.memoryId).notifier).setDraftCaption(m.caption);
               _editCaptionController.text = m.caption;
-              // Toggle edit mode in provider
-              ref.read(memoryDetailProvider(widget.memoryId).notifier).state =
-                  detailState.copyWith(isEditing: !detailState.isEditing);
+              // Toggle edit mode via public notifier method
+              ref.read(memoryDetailProvider(widget.memoryId).notifier).setEditing(!detailState.isEditing);
             },
           ),
           IconButton(
@@ -219,8 +216,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                   children: [
                                     TextButton(
                                       onPressed: () {
-                                        ref.read(memoryDetailProvider(widget.memoryId).notifier).state =
-                                            detailState.copyWith(isEditing: false);
+                                        ref.read(memoryDetailProvider(widget.memoryId).notifier).setEditing(false);
                                       },
                                       child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
                                     ),
