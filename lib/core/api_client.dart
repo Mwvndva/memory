@@ -42,12 +42,18 @@ final apiClientProvider = Provider<Dio>((ref) {
           if (!isAnonymous) {
             final session = ref.read(sessionProvider);
             if (options.path == '/auth/refresh') {
-              final refreshToken = session.refreshToken;
+              var refreshToken = session.refreshToken;
+              if (refreshToken == null || refreshToken.isEmpty) {
+                refreshToken = await ref.read(secureStorageProvider).read(key: 'refresh_token');
+              }
               if (refreshToken != null && refreshToken.isNotEmpty) {
                 options.headers['Authorization'] = 'Bearer $refreshToken';
               }
             } else {
-              final token = session.accessToken;
+              var token = session.accessToken;
+              if (token == null || token.isEmpty) {
+                token = await ref.read(secureStorageProvider).read(key: 'auth_token');
+              }
               if (token != null && token.isNotEmpty) {
                 options.headers['Authorization'] = 'Bearer $token';
               }

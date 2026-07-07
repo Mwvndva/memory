@@ -64,10 +64,14 @@ class SessionManager extends StateNotifier<SessionState> {
       final accessToken = await sessionRepo.getAccessToken();
       final refreshToken = await sessionRepo.getRefreshToken();
 
+      if (!mounted) return;
+
       if (accessToken != null && accessToken.isNotEmpty &&
           refreshToken != null && refreshToken.isNotEmpty) {
         
         final cachedUser = await sessionRepo.getCachedUserProfile() ?? UserProfile.empty();
+
+        if (!mounted) return;
 
         // Optimistically set the cached state to avoid screen flicker
         state = SessionState(
@@ -83,6 +87,8 @@ class SessionManager extends StateNotifier<SessionState> {
           final authService = _ref.read(authServiceProvider);
           final validatedUser = await authService.fetchProfile();
 
+          if (!mounted) return;
+
           state = SessionState(
             isAuthenticated: true,
             user: validatedUser,
@@ -97,10 +103,14 @@ class SessionManager extends StateNotifier<SessionState> {
             final authService = _ref.read(authServiceProvider);
             final tokenDto = await authService.refreshTokens();
 
+            if (!mounted) return;
+
             await sessionRepo.saveTokens(tokenDto.accessToken, tokenDto.refreshToken);
             updateTokens(tokenDto.accessToken, tokenDto.refreshToken);
 
             final validatedUser = await authService.fetchProfile();
+
+            if (!mounted) return;
 
             state = SessionState(
               isAuthenticated: true,
@@ -111,18 +121,26 @@ class SessionManager extends StateNotifier<SessionState> {
             );
             await sessionRepo.saveCachedUserProfile(validatedUser);
           } catch (_) {
-            await logoutSession();
+            if (mounted) {
+              await logoutSession();
+            }
           }
         }
       } else {
-        await logoutSession();
+        if (mounted) {
+          await logoutSession();
+        }
       }
     } catch (e, stack) {
       final mapped = mapException(e, stack);
       debugPrint('Failed to restore session: $mapped');
-      await logoutSession();
+      if (mounted) {
+        await logoutSession();
+      }
     } finally {
-      state = state.copyWith(isRestoring: false);
+      if (mounted) {
+        state = state.copyWith(isRestoring: false);
+      }
     }
   }
 
@@ -148,7 +166,19 @@ class SessionManager extends StateNotifier<SessionState> {
     if (pass.length < 8) {
       return {'message': 'Use at least 8 characters.', 'ok': false};
     }
-    return {'message': 'Looks strong.', 'ok': true};
+    if (!RegExp(r'[A-Z]').hasMatch(pass)) {
+      return {'message': 'Must contain at least one uppercase letter.', 'ok': false};
+    }
+    if (!RegExp(r'[a-z]').hasMatch(pass)) {
+      return {'message': 'Must contain at least one lowercase letter.', 'ok': false};
+    }
+    if (!RegExp(r'[0-9!@#\$%^&*(),.?":{}|<>]').hasMatch(pass)) {
+      return {'message': 'Must contain at least one digit or special character.', 'ok': false};
+    }
+    if (pass != confirm) {
+      return {'message': 'Passwords do not match.', 'ok': false};
+    }
+    return {'message': 'Passwords match.', 'ok': true};
   }
 
   Future<Map<String, dynamic>> createAccount({
@@ -297,6 +327,7 @@ class SessionManager extends StateNotifier<SessionState> {
   }
 
   Future<void> logoutSession() async {
+    if (!mounted) return;
     state = SessionState.empty();
     try {
       await _ref.read(sessionRepositoryProvider).clearSession();

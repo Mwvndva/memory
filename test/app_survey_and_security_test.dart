@@ -84,7 +84,7 @@ void main() {
 
         // Advance time by 1100ms to trigger redirection timer
         await tester.pump(const Duration(milliseconds: 1100));
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 300));
 
         // Verify transition to LoginView has occurred
         expect(find.byType(LoadingView), findsNothing);
@@ -154,7 +154,7 @@ void main() {
         );
         addTearDown(container.dispose);
 
-        final authNotifier = container.read(authProvider.notifier);
+        final authNotifier = container.read(sessionProvider.notifier);
 
         // Too short
         var result = await authNotifier.checkUsername('ab');
@@ -217,7 +217,7 @@ void main() {
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
-        final authNotifier = container.read(authProvider.notifier);
+        final authNotifier = container.read(sessionProvider.notifier);
 
         // Too short
         var result = authNotifier.checkPassword('Short1', 'Short1');
@@ -275,7 +275,7 @@ void main() {
 
         // Simulate interceptor execution
         final interceptor = dioClient.interceptors.firstWhere(
-          (i) => i is InterceptorsWrapper,
+          (i) => i is QueuedInterceptorsWrapper,
         );
 
         final handler = TestRequestInterceptorHandler();

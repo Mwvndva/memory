@@ -7,9 +7,9 @@
 // Endpoint configuration
 // ---------------------------------------------------------------------------
 
-/// Base HTTP URL of the NestJS backend.
-/// Provide at build/run time using --dart-define=API_URL and --dart-define=WS_URL.
-/// Android emulator maps 10.0.2.2 → host localhost when developing locally.
+// Base HTTP URL of the NestJS backend.
+// Provide at build/run time using --dart-define=API_URL and --dart-define=WS_URL.
+// Android emulator maps 10.0.2.2 → host localhost when developing locally.
 
 //DEVELOPMENT
 // const String kBaseUrl = String.fromEnvironment(
