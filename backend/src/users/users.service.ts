@@ -94,6 +94,29 @@ interface ProfileUpdateData {
   country?: string;
 }
 
+/**
+ * True when an error means the database is not reachable *yet* — a transient
+ * boot-time condition (the pg adapter connects lazily, so under pm2 the API can
+ * outrun the Postgres container) — rather than a real query bug worth alerting
+ * on. P1001/P1002 are Prisma's "can't reach"/"timed out" init codes; the message
+ * check is a belt-and-braces fallback in case the code is not surfaced.
+ */
+function isDatabaseUnavailable(err: unknown): boolean {
+  const code =
+    (err as { errorCode?: string; code?: string })?.errorCode ??
+    (err as { code?: string })?.code;
+  if (code === 'P1001' || code === 'P1002') return true;
+  const msg = errorMessage(err).toLowerCase();
+  return (
+    msg.includes("can't reach database server") ||
+    msg.includes('connection refused') ||
+    msg.includes('econnrefused')
+  );
+}
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 @Injectable()
 export class UsersService implements OnModuleInit {
   private readonly logger = new Logger(UsersService.name);
@@ -108,12 +131,45 @@ export class UsersService implements OnModuleInit {
     // BullMQ repeatable job 'recalculate-all-ranks' (see JobsService) so it
     // runs once across all instances instead of once per instance.
 
-    // Backfill normalized phones for legacy users (idempotent, cheap)
-    this.backfillNormalizedPhones().catch((err) => {
-      this.logger.error(
-        `[Startup Job] Failed to backfill normalized phone numbers: ${errorMessage(err)}`,
-      );
-    });
+    // Backfill normalized phones for legacy users (idempotent, cheap). Runs in
+    // the background so it never blocks boot, and tolerates a database that is
+    // not yet accepting connections at startup.
+    void this.runBackfillWhenReady();
+  }
+
+  /**
+   * Runs {@link backfillNormalizedPhones}, waiting out a database that is still
+   * coming up. Under pm2 the API can start before the Postgres container is
+   * ready; because the pg driver adapter connects lazily, that surfaces here as
+   * P1001 on the first query. Rather than logging an error and skipping the
+   * backfill for the whole boot, retry with capped exponential backoff and only
+   * escalate to an error if the database never becomes reachable (or the query
+   * fails for some other, real reason).
+   */
+  private async runBackfillWhenReady(): Promise<void> {
+    const maxAttempts = 10;
+    const baseDelayMs = 3000;
+    const maxDelayMs = 30000;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await this.backfillNormalizedPhones();
+        return;
+      } catch (err) {
+        const lastAttempt = attempt === maxAttempts;
+        if (!isDatabaseUnavailable(err) || lastAttempt) {
+          this.logger.error(
+            `[Startup Job] Failed to backfill normalized phone numbers: ${errorMessage(err)}`,
+          );
+          return;
+        }
+        const delayMs = Math.min(baseDelayMs * 2 ** (attempt - 1), maxDelayMs);
+        this.logger.warn(
+          `[Startup Job] Database not ready (attempt ${attempt}/${maxAttempts}); retrying phone backfill in ${Math.round(delayMs / 1000)}s.`,
+        );
+        await sleep(delayMs);
+      }
+    }
   }
 
   async backfillNormalizedPhones() {
