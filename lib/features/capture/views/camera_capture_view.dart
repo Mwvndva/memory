@@ -269,14 +269,13 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
 
   Future<void> _sendToCircle() async {
     final captionText = _captureCaption.text.trim();
-    ref.read(uploadProvider.notifier).startUpload(
-      captionText,
-      const [
-        Color(0xFF8E2DE2),
-        Color(0xFF4A00E0),
-      ], // Beautiful violet/purple gradient for dynamic captures
-      videoPath: _recordedVideoPath,
-    );
+    ref
+        .read(uploadProvider.notifier)
+        .startUpload(
+          captionText,
+          MemoryColors.captureGradient,
+          videoPath: _recordedVideoPath,
+        );
   }
 
   void _showProfileSheet(BuildContext context) {
@@ -783,7 +782,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
             ),
           )
         else
-          Container(color: const Color(0xFF151515)),
+          Container(color: MemoryColors.inkRaised),
 
         // Dark overlay and blur filter combo
         BackdropFilter(

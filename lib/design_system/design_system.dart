@@ -30,6 +30,7 @@ export 'components/memory_top_bar.dart';
 export 'components/memory_bottom_sheet.dart';
 export 'components/memory_brand_marks.dart';
 export 'components/memory_gradient_surface.dart';
+export 'components/memory_share_button.dart';
 export 'components/memory_button.dart';
 export 'components/memory_card.dart';
 export 'components/memory_divider.dart';

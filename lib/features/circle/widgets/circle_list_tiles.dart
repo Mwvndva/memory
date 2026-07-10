@@ -65,8 +65,8 @@ class RequestRow extends ConsumerWidget {
                   '@${req.username}',
                   style: TextStyle(
                     color: dark
-                        ? const Color(0xFFC9B8AA)
-                        : const Color(0xFF776B62),
+                        ? MemoryColors.mutedOnDark
+                        : MemoryColors.mutedOnLight,
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -139,8 +139,8 @@ class RequestRow extends ConsumerWidget {
                     'Ignore',
                     style: TextStyle(
                       color: dark
-                          ? const Color(0xFFC9B8AA)
-                          : const Color(0xFF776B62),
+                          ? MemoryColors.mutedOnDark
+                          : MemoryColors.mutedOnLight,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
@@ -370,8 +370,8 @@ class ChatRow extends ConsumerWidget {
                                           ? MemoryColors.cream
                                           : MemoryColors.charcoal)
                                     : (dark
-                                          ? const Color(0xFFC9B8AA)
-                                          : const Color(0xFF776B62)),
+                                          ? MemoryColors.mutedOnDark
+                                          : MemoryColors.mutedOnLight),
                                 fontSize: 11,
                                 fontWeight: hasUnread
                                     ? FontWeight.w900
@@ -456,8 +456,8 @@ class ChatRow extends ConsumerWidget {
                         'Remove',
                         style: TextStyle(
                           color: dark
-                              ? const Color(0xFFC9B8AA)
-                              : const Color(0xFF776B62),
+                              ? MemoryColors.mutedOnDark
+                              : MemoryColors.mutedOnLight,
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                         ),

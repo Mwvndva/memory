@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 
 import 'api_config.dart';
 import 'package:memory_app/features/feed/feed.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 Future<String> _renderMemoryCard(MemoryItem memory) async {
   final recorder = ui.PictureRecorder();
@@ -21,7 +22,7 @@ Future<String> _renderMemoryCard(MemoryItem memory) async {
       memory.colors,
     );
   } else {
-    paint.color = const Color(0xFFF4C430); // fallback yellow (#F4C430)
+    paint.color = MemoryColors.accent; // fallback yellow (#F4C430)
   }
   canvas.drawRect(ui.Rect.fromLTWH(0, 0, 400, 400), paint);
 

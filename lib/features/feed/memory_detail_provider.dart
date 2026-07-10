@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/core/api_client.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/auth/auth.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
   MemoryDetailStateManager(this._ref, this._memoryId)
@@ -36,8 +36,8 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
           initial: 'L',
           time: '...',
           caption: '',
-          avatar: Color(0xFFFADA5E),
-          colors: [Color(0xFFFADA5E)],
+          avatar: MemoryColors.accentWarm,
+          colors: [MemoryColors.accentWarm],
           ageHours: 0.0,
         ),
       );

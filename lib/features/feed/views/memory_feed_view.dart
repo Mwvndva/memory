@@ -224,8 +224,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 Row(
                   children: [
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () async {
+                      child: MemoryShareButton(
+                        brand: MemoryShareBrand.instagram,
+                        onPressed: () async {
                           Navigator.pop(context);
                           await SharePlus.instance.share(
                             ShareParams(
@@ -233,54 +234,13 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                             ),
                           );
                         },
-                        child: Container(
-                          height: 44,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFFF058A0),
-                                Color(0xFFBD3EFF),
-                                Color(0xFFFF6B00),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(999),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFFF058A0,
-                                ).withValues(alpha: 0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.camera_alt_rounded,
-                                color: Colors.white,
-                                size: 15,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                'Instagram',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () async {
+                      child: MemoryShareButton(
+                        brand: MemoryShareBrand.whatsApp,
+                        onPressed: () async {
                           Navigator.pop(context);
                           await SharePlus.instance.share(
                             ShareParams(
@@ -288,44 +248,6 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                             ),
                           );
                         },
-                        child: Container(
-                          height: 44,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF25D366), Color(0xFF128C7E)],
-                            ),
-                            borderRadius: BorderRadius.circular(999),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFF25D366,
-                                ).withValues(alpha: 0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_rounded,
-                                color: Colors.white,
-                                size: 15,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                'WhatsApp',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ),
                     ),
                   ],
@@ -396,7 +318,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
     if (feedMemories.isEmpty && feedState.status == FeedLoadStatus.error) {
       final isOffline = feedState.errorCategory == FeedErrorCategory.network;
       return Scaffold(
-        backgroundColor: const Color(0xFFF4C430),
+        backgroundColor: MemoryColors.accent,
         body: Stack(
           children: [
             Positioned(
@@ -453,7 +375,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
 
     if (circleMembers.isEmpty) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF4C430),
+        backgroundColor: MemoryColors.accent,
         body: Stack(
           children: [
             Positioned(
@@ -515,7 +437,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
     if (feedMemories.isEmpty && !_gridOpen && !_fromGrid) {
       final isOffline = feedState.isOffline;
       return Scaffold(
-        backgroundColor: const Color(0xFFF4C430),
+        backgroundColor: MemoryColors.accent,
         body: Stack(
           children: [
             Positioned(
@@ -591,7 +513,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
           // GPU reflection background
           Positioned.fill(
             child: isEmptyFeed || m == null
-                ? Container(color: const Color(0xFFFADA5E))
+                ? Container(color: MemoryColors.accentWarm)
                 : _memoryReflectionBackground(m, dark),
           ),
           // Clean vertical snapping PageView between memories

@@ -26,7 +26,7 @@ Color parseHexColor(String hexStr) {
   } else if (clean.length == 8) {
     clean = 'FF${clean.substring(clean.length - 6)}';
   } else {
-    return const Color(0xFFFADA5E);
+    return MemoryColors.accentWarm;
   }
   return Color(int.tryParse(clean, radix: 16) ?? 0xFFFADA5E);
 }
@@ -45,7 +45,7 @@ class MemoryRepository {
       time: '8 min ago',
       caption: 'The ridiculous cake moment',
       avatar: MemoryColors.accent,
-      colors: [Color(0xFFFF826E), MemoryColors.amber, MemoryColors.mint],
+      colors: MemoryColors.memoryFallbackGradient,
       ageHours: .13,
     ),
     MemoryItem(
@@ -56,7 +56,7 @@ class MemoryRepository {
       time: 'Yesterday',
       caption: 'Found your old school song',
       avatar: MemoryColors.mint,
-      colors: [MemoryColors.mint, MemoryColors.sky, Color(0xFFFADA5E)],
+      colors: [MemoryColors.mint, MemoryColors.sky, MemoryColors.accentWarm],
       ageHours: 26,
     ),
     MemoryItem(
@@ -67,7 +67,11 @@ class MemoryRepository {
       time: 'Friday',
       caption: 'Rainy walk after class',
       avatar: MemoryColors.sky,
-      colors: [MemoryColors.sky, MemoryColors.lavender, Color(0xFFFADA5E)],
+      colors: [
+        MemoryColors.sky,
+        MemoryColors.lavender,
+        MemoryColors.accentWarm,
+      ],
       ageHours: 72,
     ),
     MemoryItem(

@@ -76,8 +76,8 @@ class CircleChatListView extends ConsumerWidget {
                             'SHARE REQUESTS',
                             style: TextStyle(
                               color: dark
-                                  ? const Color(0xFFC9B8AA)
-                                  : const Color(0xFF776B62),
+                                  ? MemoryColors.mutedOnDark
+                                  : MemoryColors.mutedOnLight,
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.0,
@@ -127,7 +127,7 @@ class CircleChatListView extends ConsumerWidget {
   BoxDecoration _softBackground(bool dark) => BoxDecoration(
     gradient: LinearGradient(
       colors: dark
-          ? const [MemoryColors.ink, Color(0xFF171717)]
+          ? const [MemoryColors.ink, MemoryColors.inkRaisedAlt]
           : const [MemoryColors.accent, MemoryColors.accent],
       begin: Alignment.topRight,
       end: Alignment.bottomLeft,

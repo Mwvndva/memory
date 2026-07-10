@@ -112,25 +112,25 @@ class ProfileFunCard extends StatelessWidget {
   static (Color tier, Color glow) _tierFor(int dayCount) {
     if (dayCount >= 365) {
       return (
-        const Color(0xFF89CFF0),
-        const Color(0xFF89CFF0).withValues(alpha: 0.35),
+        MemoryColors.tierDiamond,
+        MemoryColors.tierDiamond.withValues(alpha: 0.35),
       );
     }
     if (dayCount >= 100) {
       return (
-        const Color(0xFFFFD700),
-        const Color(0xFFFFD700).withValues(alpha: 0.30),
+        MemoryColors.tierGold,
+        MemoryColors.tierGold.withValues(alpha: 0.30),
       );
     }
     if (dayCount >= 30) {
       return (
-        const Color(0xFFC0C0C0),
-        const Color(0xFFC0C0C0).withValues(alpha: 0.25),
+        MemoryColors.tierSilver,
+        MemoryColors.tierSilver.withValues(alpha: 0.25),
       );
     }
     return (
-      const Color(0xFFCD7F32),
-      const Color(0xFFCD7F32).withValues(alpha: 0.22),
+      MemoryColors.tierBronze,
+      MemoryColors.tierBronze.withValues(alpha: 0.22),
     );
   }
 

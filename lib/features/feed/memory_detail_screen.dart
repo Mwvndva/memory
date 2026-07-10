@@ -129,7 +129,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     final m = detailState.memory!;
 
     return Scaffold(
-      backgroundColor: dark ? MemoryColors.ink : const Color(0xFFFADA5E),
+      backgroundColor: dark ? MemoryColors.ink : MemoryColors.accentWarm,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

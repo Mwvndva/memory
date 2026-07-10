@@ -163,8 +163,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
+                    child: MemoryShareButton(
+                      brand: MemoryShareBrand.instagram,
+                      onPressed: () async {
                         Navigator.pop(context);
                         await SharePlus.instance.share(
                           ShareParams(
@@ -172,54 +173,13 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                           ),
                         );
                       },
-                      child: Container(
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFFF058A0),
-                              Color(0xFFBD3EFF),
-                              Color(0xFFFF6B00),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFFF058A0,
-                              ).withValues(alpha: 0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.camera_alt_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Instagram',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
+                    child: MemoryShareButton(
+                      brand: MemoryShareBrand.whatsApp,
+                      onPressed: () async {
                         Navigator.pop(context);
                         await SharePlus.instance.share(
                           ShareParams(
@@ -227,44 +187,6 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                           ),
                         );
                       },
-                      child: Container(
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF25D366), Color(0xFF128C7E)],
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF25D366,
-                              ).withValues(alpha: 0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'WhatsApp',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 ],

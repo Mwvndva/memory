@@ -51,106 +51,28 @@ void showInviteOptions(BuildContext context, bool dark) {
               Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
+                    child: MemoryShareButton(
+                      brand: MemoryShareBrand.instagram,
+                      onPressed: () async {
                         Navigator.pop(context);
                         await inviteService.shareToInstagram(
                           referralCode: displayUsername,
                           username: displayUsername,
                         );
                       },
-                      child: Container(
-                        height: 44,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFFF058A0),
-                              Color(0xFFBD3EFF),
-                              Color(0xFFFF6B00),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFFF058A0,
-                              ).withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.camera_alt_rounded,
-                              color: Colors.white,
-                              size: 15,
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              'Instagram',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
+                    child: MemoryShareButton(
+                      brand: MemoryShareBrand.whatsApp,
+                      onPressed: () async {
                         Navigator.pop(context);
                         await inviteService.shareToWhatsApp(
                           referralCode: displayUsername,
                           username: displayUsername,
                         );
                       },
-                      child: Container(
-                        height: 44,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF25D366), Color(0xFF128C7E)],
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF25D366,
-                              ).withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_rounded,
-                              color: Colors.white,
-                              size: 15,
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              'WhatsApp',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 ],

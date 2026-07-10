@@ -17,7 +17,7 @@ Widget authStatusIndicator(String text, bool ok) => Padding(
   child: Text(
     text,
     style: TextStyle(
-      color: ok ? const Color(0xFF20A978) : MemoryColors.ink,
+      color: ok ? MemoryColors.success : MemoryColors.ink,
       fontSize: 10,
       fontWeight: FontWeight.w900,
     ),
@@ -113,7 +113,7 @@ Widget passwordValidationIndicator(String pass, String confirm) {
         Icon(
           ok ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
           size: 14,
-          color: ok ? const Color(0xFF20A978) : MemoryColors.ink,
+          color: ok ? MemoryColors.success : MemoryColors.ink,
         ),
         const SizedBox(width: 8),
         Text(
@@ -142,9 +142,7 @@ Widget passwordValidationIndicator(String pass, String confirm) {
           child: Text(
             pass == confirm ? 'Passwords match' : 'Passwords do not match',
             style: TextStyle(
-              color: pass == confirm
-                  ? const Color(0xFF20A978)
-                  : MemoryColors.ink,
+              color: pass == confirm ? MemoryColors.success : MemoryColors.ink,
               fontWeight: FontWeight.w800,
               fontSize: 12,
             ),

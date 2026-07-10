@@ -114,14 +114,20 @@ class InboxBubble extends ConsumerWidget {
                 gradient: mine
                     ? LinearGradient(
                         colors: dark
-                            ? const [MemoryColors.accent, Color(0xFFFFD54F)]
-                            : const [MemoryColors.ink, Color(0xFF2C2C2C)],
+                            ? const [
+                                MemoryColors.accent,
+                                MemoryColors.accentGlow,
+                              ]
+                            : const [
+                                MemoryColors.ink,
+                                MemoryColors.inkElevatedAlt,
+                              ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
                     : LinearGradient(
                         colors: dark
-                            ? const [MemoryColors.ink, Color(0xFF1E1E1E)]
+                            ? const [MemoryColors.ink, MemoryColors.inkElevated]
                             : const [Colors.white, MemoryColors.cream],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,

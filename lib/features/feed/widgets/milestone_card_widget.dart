@@ -43,18 +43,8 @@ class CardDesignData {
   factory CardDesignData.generate(int milestone) {
     final rand = Random();
 
-    // Vibrant neon/bright color palette
-    final palette = [
-      const Color(0xFFFF1493), // Hot pink
-      const Color(0xFFBD3EFF), // Electric purple
-      const Color(0xFF00F5FF), // Electric cyan
-      const Color(0xFF39FF14), // Neon lime
-      const Color(0xFFFF5E00), // Vivid orange
-      const Color(0xFFFADA5E), // Gold yellow (updated)
-      const Color(0xFFFF3366), // Coral red
-      const Color(0xFF6C5DD3), // Retro lavender
-    ];
-
+    // Copied because shuffle mutates in place, and the token list is const.
+    final palette = [...MemoryColors.celebration];
     palette.shuffle(rand);
     final colors = [palette[0], palette[1], palette[2]];
 
