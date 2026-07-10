@@ -263,6 +263,38 @@ void main() {
         greaterThanOrEqualTo(MemoryIconButton.minTouchTarget),
       );
     });
+
+    testWidgets('as a suffixIcon keeps its width and leaves the field typable', (
+      tester,
+    ) async {
+      // Regression: InputDecorator offers the suffixIcon the whole field width.
+      // A min-constrained Center swelled to fill it, covering the input so the
+      // field could never be typed in — the button *was* the field. Measured
+      // inside a 300px field it must stay near its 48dp target, not balloon.
+      final controller = TextEditingController();
+      await pump(
+        tester,
+        SizedBox(
+          width: 300,
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              suffixIcon: MemoryIconButton(
+                icon: Icons.visibility_off_outlined,
+                semanticLabel: 'Show password',
+                onPressed: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final suffixWidth = tester.getSize(find.byType(MemoryIconButton)).width;
+      expect(suffixWidth, lessThan(100));
+
+      await tester.enterText(find.byType(TextField), 'hunter2');
+      expect(controller.text, 'hunter2');
+    });
   });
 
   group('type scale', () {

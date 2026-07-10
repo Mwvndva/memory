@@ -8,7 +8,6 @@ import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/core/countries.dart';
 import 'package:memory_app/features/auth/auth.dart';
-import '../auth_background_painter.dart';
 import 'package:memory_app/design_system/design_system.dart';
 
 class CreateAccountView extends ConsumerStatefulWidget {
@@ -209,113 +208,116 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // 1. Premium Textured Background
-          Positioned.fill(child: CustomPaint(painter: AuthBackgroundPainter())),
-
-          // 2. Guided Form Layout
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Guided Onboarding Header
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 58,
-                        height: 34,
-                        child: MemoryButton(
-                          label: 'Back',
-                          onPressed: () {
-                            if (_currentStep > 1) {
-                              setState(() => _currentStep--);
-                            } else {
-                              context.pop();
-                            }
-                          },
-                          dark: dark,
-                          variant: MemoryButtonVariant.secondary,
-                          size: MemoryButtonSize.compact,
-                        ),
-                      ),
-                      const SizedBox(width: MemorySpacing.xl),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Step $_currentStep of 3', // Simple step indicator
-                              style: MemoryTypography.caption.copyWith(
-                                fontWeight: FontWeight.w900,
-                                color: fg.withValues(alpha: 0.5),
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                            const SizedBox(height: MemorySpacing.xxs),
-                            Text(
-                              _currentStep == 1
-                                  ? 'Identity'
-                                  : _currentStep == 2
-                                  ? 'Account Details'
-                                  : 'Terms & Finish',
-                              // Smaller than the other auth headlines: this line is two lines long.
-                              style: MemoryTypography.headlineLarge.copyWith(
-                                color: fg,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+      // The same flat accent as the login screen — no textured painter, no
+      // scattered background icons — so the two auth screens read as one place.
+      backgroundColor: MemoryColors.accent,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Guided Onboarding Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 58,
+                    height: 34,
+                    child: MemoryButton(
+                      label: 'Back',
+                      onPressed: () {
+                        if (_currentStep > 1) {
+                          setState(() => _currentStep--);
+                        } else {
+                          context.pop();
+                        }
+                      },
+                      dark: dark,
+                      variant: MemoryButtonVariant.secondary,
+                      size: MemoryButtonSize.compact,
+                    ),
                   ),
-                ),
-                const SizedBox(height: MemorySpacing.gutter),
+                  const SizedBox(width: MemorySpacing.xl),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Step $_currentStep of 3', // Simple step indicator
+                          style: MemoryTypography.caption.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: fg.withValues(alpha: 0.5),
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                        const SizedBox(height: MemorySpacing.xxs),
+                        Text(
+                          _currentStep == 1
+                              ? 'Identity'
+                              : _currentStep == 2
+                              ? 'Account Details'
+                              : 'Terms & Finish',
+                          // Smaller than the other auth headlines: this line is two lines long.
+                          style: MemoryTypography.headlineLarge.copyWith(
+                            color: fg,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: MemorySpacing.gutter),
 
-                // Step Forms Container
-                Expanded(
-                  child: SingleChildScrollView(
+            // Step forms — centered on the yellow, no card, so the screen
+            // reads as the same place as login.
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+                  return SingleChildScrollView(
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: EdgeInsets.fromLTRB(
-                      18,
-                      0,
-                      18,
-                      28 + MediaQuery.viewInsetsOf(context).bottom,
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: MemorySpacing.section,
-                            vertical: 24,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(
-                              MemoryRadius.xl,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
-                                blurRadius: 24,
-                                offset: const Offset(0, 12),
-                              ),
-                            ],
-                          ),
+                    padding: EdgeInsets.fromLTRB(18, 0, 18, 28 + keyboard),
+                    child: ConstrainedBox(
+                      // Fill the viewport so the form can sit centered when
+                      // it is shorter than the screen, and scroll when not.
+                      constraints: BoxConstraints(
+                        minHeight: (constraints.maxHeight - 48).clamp(
+                          0.0,
+                          double.infinity,
+                        ),
+                      ),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              // The same logo the login and splash show, so the
+                              // sign-up flow stays branded above every step.
+                              // Centered, not stretched, so it keeps its shape.
+                              Center(
+                                child: Image.asset(
+                                  'assets/images/memory-logo.png',
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(height: MemorySpacing.section),
+
                               // Step 1 - Identity
                               if (_currentStep == 1) ...[
                                 Text(
                                   'The best memories start with real people.',
                                   style: MemoryTypography.bodySmall.copyWith(
-                                    color: Colors.grey,
+                                    color: MemoryColors.charcoal.withValues(
+                                      alpha: 0.6,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: MemorySpacing.sheet),
@@ -419,7 +421,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                 Text(
                                   'Confirm your registration below to agree and complete registration.',
                                   style: MemoryTypography.bodySmall.copyWith(
-                                    color: Colors.grey,
+                                    color: MemoryColors.charcoal.withValues(
+                                      alpha: 0.6,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: MemorySpacing.sheet),
@@ -511,14 +515,14 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                             ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

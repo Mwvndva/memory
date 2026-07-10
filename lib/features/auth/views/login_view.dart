@@ -1,11 +1,9 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/features/auth/auth.dart';
-import '../auth_background_painter.dart';
 import 'package:memory_app/design_system/design_system.dart';
 
 class LoginView extends ConsumerStatefulWidget {
@@ -15,59 +13,17 @@ class LoginView extends ConsumerStatefulWidget {
   ConsumerState<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends ConsumerState<LoginView>
-    with SingleTickerProviderStateMixin {
+class _LoginViewState extends ConsumerState<LoginView> {
   final _loginId = TextEditingController();
   final _loginPassword = TextEditingController();
   String _errorMessage = '';
   bool _loginLoading = false;
   bool _loginObscure = true;
 
-  late AnimationController _breathingController;
-  late Animation<double> _breathingAnimation;
-  Timer? _blinkTimer;
-  bool _isBlinking = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _breathingController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3500),
-    )..repeat(reverse: true);
-
-    _breathingAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
-      CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut),
-    );
-
-    // Blinking schedule: every 9 seconds, perform a quick double-blink simulation
-    _blinkTimer = Timer.periodic(const Duration(seconds: 9), (timer) {
-      if (mounted) {
-        setState(() => _isBlinking = true);
-        Future.delayed(const Duration(milliseconds: 150), () {
-          if (mounted) {
-            setState(() => _isBlinking = false);
-            // double blink pattern
-            Future.delayed(const Duration(milliseconds: 100), () {
-              if (mounted) {
-                setState(() => _isBlinking = true);
-                Future.delayed(const Duration(milliseconds: 150), () {
-                  if (mounted) setState(() => _isBlinking = false);
-                });
-              }
-            });
-          }
-        });
-      }
-    });
-  }
-
   @override
   void dispose() {
     _loginId.dispose();
     _loginPassword.dispose();
-    _breathingController.dispose();
-    _blinkTimer?.cancel();
     super.dispose();
   }
 
@@ -125,142 +81,98 @@ class _LoginViewState extends ConsumerState<LoginView>
     final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
+    // Plain yellow, the same accent the loading screen fills, with a still
+    // logo: the login is the app's first frame after the splash, so it should
+    // look like the splash settling, not a second animation starting over.
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: Stack(
-        children: [
-          // 1. Premium Textured Background
-          Positioned.fill(child: CustomPaint(painter: AuthBackgroundPainter())),
+      backgroundColor: MemoryColors.accent,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.fromLTRB(26, 44, 26, 28 + keyboard),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: MemorySpacing.sheet),
+                Image.asset(
+                  'assets/images/memory-logo.png',
+                  width: 140,
+                  height: 140,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 24),
+                // The wordmark, the one place the brand name is set larger than
+                // any other type in the app.
+                Text(
+                  'Memory',
+                  style: MemoryTypography.wordmark.copyWith(color: fg),
+                ),
+                const SizedBox(height: MemorySpacing.lg),
+                Text(
+                  'Share memories with your circle', // Canonical tagline
+                  style: MemoryTypography.bodyMedium.copyWith(
+                    color: fg.withValues(alpha: .55),
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 36),
 
-          // 2. Main Login Form Layout
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: EdgeInsets.fromLTRB(26, 44, 26, 28 + keyboard),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: MemorySpacing.sheet),
-                    // Breathing & Blinking Animated Mascot
-                    ScaleTransition(
-                      scale: _breathingAnimation,
-                      child: Container(
-                        width: 140,
-                        height: 140,
-                        alignment: Alignment.center,
-                        child: AnimatedCrossFade(
-                          duration: const Duration(milliseconds: 100),
-                          crossFadeState: _isBlinking
-                              ? CrossFadeState.showSecond
-                              : CrossFadeState.showFirst,
-                          firstChild: Image.asset(
-                            'assets/images/memory-logo.png',
-                            width: 140,
-                            height: 140,
-                            fit: BoxFit.contain,
-                          ),
-                          secondChild: Opacity(
-                            opacity: 0.15, // Simple blink fade simulation
-                            child: Image.asset(
-                              'assets/images/memory-logo.png',
-                              width: 140,
-                              height: 140,
-                              fit: BoxFit.contain,
-                            ),
+                // The form sits straight on the yellow — no card. The fields
+                // are their own dark slabs, so a white panel behind them only
+                // boxed the screen in.
+                SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _field('Email or username', _loginId, '', dark),
+                      const SizedBox(height: MemorySpacing.xxl),
+                      _field(
+                        'Password',
+                        _loginPassword,
+                        '',
+                        dark,
+                        obscure: _loginObscure,
+                        onToggleObscure: () =>
+                            setState(() => _loginObscure = !_loginObscure),
+                      ),
+                      if (_errorMessage.isNotEmpty) ...[
+                        const SizedBox(height: MemorySpacing.xl),
+                        Text(
+                          _errorMessage,
+                          style: MemoryTypography.caption.copyWith(
+                            color: Colors.redAccent.shade700,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
+                      ],
+                      // A clear break so the actions do not crowd the last field.
+                      const SizedBox(height: MemorySpacing.xxxl),
+                      MemoryButton(
+                        label: 'Continue',
+                        onPressed: _onLogin,
+                        dark: dark,
+                        background: MemoryColors.ink,
+                        foreground: Colors.white,
+                        isLoading: _loginLoading,
                       ),
-                    ),
-                    const SizedBox(height: 24), // Increased spacing
-                    // The wordmark, the one place the brand name is set larger than
-                    // any other type in the app.
-                    Text(
-                      'Memory',
-                      style: MemoryTypography.wordmark.copyWith(color: fg),
-                    ),
-                    const SizedBox(
-                      height: MemorySpacing.lg,
-                    ), // Increased spacing
-                    Text(
-                      'Share memories with your circle', // Canonical tagline
-                      style: MemoryTypography.bodyMedium.copyWith(
-                        color: fg.withValues(alpha: .55),
-                        letterSpacing: 0.2,
+                      const SizedBox(height: MemorySpacing.gutter),
+                      MemoryButton(
+                        label: 'Create account',
+                        onPressed: () => context.push('/create'),
+                        dark: dark,
+                        background: Colors.white,
+                        foreground: MemoryColors.ink,
                       ),
-                    ),
-                    const SizedBox(height: 36),
-
-                    // Auth card with premium spacing, elevation & rounded geometries
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: MemorySpacing.section,
-                        vertical: 24,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(MemoryRadius.xl),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 24,
-                            spreadRadius: 1,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _field('Email or username', _loginId, '', dark),
-                          const SizedBox(height: MemorySpacing.xxl),
-                          _field(
-                            'Password',
-                            _loginPassword,
-                            '',
-                            dark,
-                            obscure: _loginObscure,
-                            onToggleObscure: () =>
-                                setState(() => _loginObscure = !_loginObscure),
-                          ),
-                          if (_errorMessage.isNotEmpty) ...[
-                            const SizedBox(height: MemorySpacing.xl),
-                            Text(
-                              _errorMessage,
-                              style: MemoryTypography.caption.copyWith(
-                                color: Colors.redAccent.shade700,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: MemorySpacing.section),
-                          MemoryButton(
-                            label: 'Continue',
-                            onPressed: _onLogin,
-                            dark: dark,
-                            background: MemoryColors.ink,
-                            foreground: Colors.white,
-                            isLoading: _loginLoading,
-                          ),
-                          const SizedBox(height: MemorySpacing.xl),
-                          MemoryButton(
-                            label: 'Create account',
-                            onPressed: () => context.push('/create'),
-                            dark: dark,
-                            background: MemoryColors.cream,
-                            foreground: MemoryColors.charcoal,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
