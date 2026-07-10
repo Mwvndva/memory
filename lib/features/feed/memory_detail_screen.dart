@@ -137,9 +137,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
 
     return Scaffold(
       backgroundColor: dark ? MemoryColors.ink : MemoryColors.accentWarm,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      appBar: MemoryAppBar(
+        title: '',
+        dark: dark,
         leading: MemoryIconButton(
           icon: Icons.arrow_back_ios_new_rounded,
           semanticLabel: 'Back',
@@ -147,7 +147,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
           onPressed: () => context.pop(),
         ),
         actions: [
-          if (isOwner)
+          if (isOwner) ...[
             MemoryIconButton(
               icon: Icons.download_rounded,
               semanticLabel: 'Download video',
@@ -170,7 +170,6 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 }
               },
             ),
-          if (isOwner) ...[
             MemoryIconButton(
               icon: Icons.edit_rounded,
               semanticLabel: 'Edit caption',
@@ -219,16 +218,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                TextField(
+                                MemoryInlineField(
                                   controller: _editCaptionController,
+                                  hint: 'Edit caption...',
                                   style: MemoryTypography.titleLarge.copyWith(
                                     color: Colors.white,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: 'Edit caption...',
-                                    hintStyle: MemoryTypography.bodyMedium
-                                        .copyWith(color: Colors.white38),
-                                    border: InputBorder.none,
                                   ),
                                   maxLines: 2,
                                   onChanged: (val) {
@@ -514,17 +508,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: MemoryInlineField(
                       controller: _commentController,
+                      hint: 'Write a comment...',
                       style: MemoryTypography.bodyMedium.copyWith(
                         color: dark ? Colors.white : MemoryColors.charcoal,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Write a comment...',
-                        hintStyle: MemoryTypography.bodyMedium.copyWith(
-                          color: Colors.grey,
-                        ),
-                        border: InputBorder.none,
                       ),
                     ),
                   ),

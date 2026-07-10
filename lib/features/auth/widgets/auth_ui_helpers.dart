@@ -28,66 +28,36 @@ Widget authInputField(
   bool obscure = false,
   TextInputType? keyboard,
   VoidCallback? onToggleObscure,
-}) => Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Text(
-      label,
-      style: MemoryTypography.caption.copyWith(
-        color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-        fontWeight: FontWeight.w900,
-      ),
-    ),
-    const SizedBox(height: 7),
-    TextField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboard,
-      inputFormatters: keyboard == TextInputType.phone
-          ? [FilteringTextInputFormatter.digitsOnly]
-          : null,
-      style: MemoryTypography.button.copyWith(
-        color: dark ? MemoryColors.ink : Colors.white,
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: MemoryTypography.bodyMedium.copyWith(
-          color: (dark ? MemoryColors.ink : Colors.white).withValues(
-            alpha: 0.35,
+}) {
+  // The auth surfaces invert: a solid slab behind bright text, rather than the
+  // translucent well a field sits in everywhere else.
+  final fill = dark ? MemoryColors.accent : MemoryColors.ink;
+  final ink = dark ? MemoryColors.ink : Colors.white;
+
+  return MemoryTextField(
+    controller: controller,
+    hint: hint,
+    dark: dark,
+    label: label,
+    obscureText: obscure,
+    keyboardType: keyboard,
+    background: fill,
+    foreground: ink,
+    inputFormatters: keyboard == TextInputType.phone
+        ? [FilteringTextInputFormatter.digitsOnly]
+        : null,
+    suffix: onToggleObscure == null
+        ? null
+        : MemoryIconButton(
+            icon: obscure
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            semanticLabel: obscure ? 'Show password' : 'Hide password',
+            color: ink.withValues(alpha: 0.8),
+            onPressed: onToggleObscure,
           ),
-          fontWeight: FontWeight.w500,
-        ),
-        filled: true,
-        fillColor: dark ? MemoryColors.accent : MemoryColors.ink,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(MemoryRadius.lg),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 13,
-          vertical: MemorySpacing.xxl,
-        ),
-        suffixIcon: onToggleObscure == null
-            ? null
-            : GestureDetector(
-                onTap: onToggleObscure,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: MemorySpacing.md),
-                  child: Icon(
-                    obscure
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    size: 20,
-                    color: (dark ? MemoryColors.ink : Colors.white).withValues(
-                      alpha: 0.8,
-                    ),
-                  ),
-                ),
-              ),
-      ),
-    ),
-  ],
-);
+  );
+}
 
 Widget passwordValidationIndicator(String pass, String confirm) {
   final lengthOk = pass.length >= 8;

@@ -61,17 +61,10 @@ class InboxBubble extends ConsumerWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          ListTile(
-                            leading: const Icon(
-                              Icons.refresh_rounded,
-                              color: Colors.white,
-                            ),
-                            title: Text(
-                              'Retry sending',
-                              style: MemoryTypography.bodyMedium.copyWith(
-                                color: Colors.white,
-                              ),
-                            ),
+                          MemorySheetAction(
+                            icon: Icons.refresh_rounded,
+                            label: 'Retry sending',
+                            dark: true,
                             onTap: () {
                               Navigator.pop(ctx);
                               ref
@@ -79,17 +72,11 @@ class InboxBubble extends ConsumerWidget {
                                   .retryMessage(contactName, msg.id);
                             },
                           ),
-                          ListTile(
-                            leading: const Icon(
-                              Icons.delete_outline_rounded,
-                              color: Colors.redAccent,
-                            ),
-                            title: Text(
-                              'Delete message',
-                              style: MemoryTypography.bodyMedium.copyWith(
-                                color: Colors.redAccent,
-                              ),
-                            ),
+                          MemorySheetAction(
+                            icon: Icons.delete_outline_rounded,
+                            label: 'Delete message',
+                            dark: true,
+                            isDestructive: true,
                             onTap: () {
                               Navigator.pop(ctx);
                               ref

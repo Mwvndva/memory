@@ -1015,17 +1015,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                 const SizedBox(height: MemorySpacing.gutter),
                                 if (uploadState.status ==
                                     UploadStatus.uploading) ...[
-                                  LinearProgressIndicator(
+                                  MemoryProgressIndicator(
                                     value: uploadState.progress,
-                                    color: MemoryColors.accent,
-                                    backgroundColor:
-                                        (dark
-                                                ? Colors.white
-                                                : MemoryColors.charcoal)
-                                            .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(
-                                      MemoryRadius.md,
-                                    ),
+                                    dark: dark,
                                   ),
                                   const SizedBox(height: MemorySpacing.lg),
                                   Text(
@@ -1038,16 +1030,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                     ),
                                   ),
                                 ] else ...[
-                                  LinearProgressIndicator(
-                                    color: MemoryColors.accent,
-                                    backgroundColor:
-                                        (dark
-                                                ? Colors.white
-                                                : MemoryColors.charcoal)
-                                            .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(
-                                      MemoryRadius.md,
-                                    ),
+                                  MemoryProgressIndicator(
+                                    value: null,
+                                    dark: dark,
                                   ),
                                 ],
                               ],
@@ -1079,8 +1064,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
         }),
         child: SizedBox(
           width: 210,
-          child: TextField(
+          child: MemoryInlineField(
             controller: _captureCaption,
+            hint: 'Add caption',
             autofocus: true,
             maxLines: 2,
             textAlign: TextAlign.center,
@@ -1088,13 +1074,6 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
             style: MemoryTypography.mediaCaption.copyWith(
               color: Colors.white,
               fontSize: _captureCaptionSize,
-            ),
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              hintText: 'Add caption',
-              hintStyle: MemoryTypography.bodyMedium.copyWith(
-                color: Colors.white70,
-              ),
             ),
           ),
         ),

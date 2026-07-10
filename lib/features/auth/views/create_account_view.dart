@@ -712,105 +712,60 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           children: [
             SizedBox(
               width: 96,
-              child: DropdownButtonFormField<CountryInfo>(
-                initialValue: selectedCountry,
-                dropdownColor: dark ? MemoryColors.ink : MemoryColors.accent,
-                borderRadius: BorderRadius.circular(MemoryRadius.lg),
-                icon: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
-                      .withValues(alpha: 0.6),
+              child: MemoryDropdown<CountryInfo>(
+                value: selectedCountry,
+                options: kCountries,
+                dark: dark,
+                onChanged: (v) => setState(() => selectedCountry = v),
+                itemBuilder: (c) => Row(
+                  children: [
+                    Text(c.flag, style: MemoryTypography.emoji(18)),
+                    const SizedBox(width: MemorySpacing.md),
+                    Text(
+                      c.code,
+                      style: MemoryTypography.onSurface(
+                        MemoryTypography.bodyMedium,
+                        dark,
+                      ),
+                    ),
+                    const SizedBox(width: MemorySpacing.sm),
+                    Text(
+                      c.dialCode,
+                      style: MemoryTypography.mutedOnSurface(
+                        MemoryTypography.caption,
+                        dark,
+                        alpha: 0.6,
+                      ),
+                    ),
+                  ],
                 ),
-                iconSize: 20,
-                isDense: true,
-                isExpanded: true,
-                menuMaxHeight: 350,
-                items: kCountries
-                    .map(
-                      (c) => DropdownMenuItem<CountryInfo>(
-                        value: c,
-                        child: Row(
-                          children: [
-                            Text(c.flag, style: MemoryTypography.emoji(18)),
-                            const SizedBox(width: MemorySpacing.md),
-                            Text(
-                              c.code,
-                              style: MemoryTypography.bodyMedium.copyWith(
-                                color: dark
-                                    ? MemoryColors.cream
-                                    : MemoryColors.charcoal,
-                              ),
-                            ),
-                            const SizedBox(width: MemorySpacing.sm),
-                            Text(
-                              c.dialCode,
-                              style: MemoryTypography.caption.copyWith(
-                                color:
-                                    (dark
-                                            ? MemoryColors.cream
-                                            : MemoryColors.charcoal)
-                                        .withValues(alpha: 0.6),
-                              ),
-                            ),
-                          ],
-                        ),
+                // Collapsed, the box is 96dp wide: the dial code will not fit,
+                // and the flag already says which country this is.
+                selectedBuilder: (c) => Row(
+                  children: [
+                    Text(c.flag, style: MemoryTypography.emoji(18)),
+                    const SizedBox(width: MemorySpacing.sm),
+                    Text(
+                      c.code,
+                      style: MemoryTypography.onSurface(
+                        MemoryTypography.button,
+                        dark,
                       ),
-                    )
-                    .toList(),
-                selectedItemBuilder: (context) => kCountries
-                    .map(
-                      (c) => Row(
-                        children: [
-                          Text(c.flag, style: MemoryTypography.emoji(18)),
-                          const SizedBox(width: MemorySpacing.sm),
-                          Text(
-                            c.code,
-                            style: MemoryTypography.button.copyWith(
-                              color: dark
-                                  ? MemoryColors.cream
-                                  : MemoryColors.charcoal,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) =>
-                    setState(() => selectedCountry = v ?? kCountries[0]),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: dark ? MemoryColors.ink : MemoryColors.cream,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(MemoryRadius.lg),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: MemorySpacing.md,
-                    vertical: MemorySpacing.xxl,
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
             const SizedBox(width: MemorySpacing.md),
             Expanded(
-              child: TextField(
+              child: MemoryTextField(
                 controller: _phone,
+                hint: '',
+                dark: dark,
                 keyboardType: TextInputType.phone,
+                background: MemoryColors.ink,
+                foreground: Colors.white,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: MemoryTypography.button.copyWith(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: '',
-                  filled: true,
-                  fillColor: Colors.black,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(MemoryRadius.lg),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: MemorySpacing.xxl,
-                  ),
-                ),
               ),
             ),
           ],

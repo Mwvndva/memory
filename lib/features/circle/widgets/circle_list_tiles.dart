@@ -246,32 +246,26 @@ class ChatRow extends ConsumerWidget {
                                         targetRole != CircleRole.admin);
 
                                 if (canManageRole) {
-                                  return PopupMenuButton<CircleRole>(
+                                  return MemoryContextMenu<CircleRole>(
+                                    dark: dark,
                                     initialValue: member.role,
                                     tooltip: 'Change Role',
+                                    items: [
+                                      for (final role in CircleRole.values)
+                                        MemoryMenuItem(
+                                          value: role,
+                                          label: role.name.toUpperCase(),
+                                        ),
+                                    ],
                                     onSelected: (newRole) async {
                                       ref
                                           .read(circlesProvider.notifier)
                                           .updateMemberRole(member.id, newRole);
                                       showAppMessage(
                                         context,
-                                        'Updated ${member.firstName}\'s role to ${newRole.name}',
+                                        "Updated ${member.firstName}'s role to ${newRole.name}",
                                       );
                                     },
-                                    itemBuilder: (BuildContext context) =>
-                                        CircleRole.values.map((role) {
-                                          return PopupMenuItem<CircleRole>(
-                                            value: role,
-                                            child: Text(
-                                              role.name.toUpperCase(),
-                                              style: MemoryTypography
-                                                  .buttonCompact
-                                                  .copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                            ),
-                                          );
-                                        }).toList(),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: MemorySpacing.sm,

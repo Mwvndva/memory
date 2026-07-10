@@ -47,20 +47,15 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      appBar: MemoryAppBar(
+        title: 'Notifications',
+        dark: dark,
+        foreground: dark ? MemoryColors.accent : MemoryColors.ink,
         leading: MemoryIconButton(
           icon: Icons.arrow_back_ios_new_rounded,
           semanticLabel: 'Back',
           color: dark ? MemoryColors.accent : MemoryColors.ink,
           onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'Notifications',
-          style: MemoryTypography.headlineMedium.copyWith(
-            color: dark ? MemoryColors.accent : MemoryColors.ink,
-          ),
         ),
         actions: [
           if (state.notifications.any((n) => !n.isRead))

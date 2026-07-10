@@ -34,19 +34,14 @@ class _NotificationPreferencesSheetState
     final dark = widget.dark;
     final prefService = ref.read(notificationPreferencesServiceProvider);
 
-    Widget typeSwitch(String label, NotificationType type) => SwitchListTile(
-      title: Text(
-        label,
-        style: MemoryTypography.bodyMedium.copyWith(
-          color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-        ),
-      ),
+    Widget typeSwitch(String label, NotificationType type) => MemorySwitchTile(
+      label: label,
+      dark: dark,
       value: prefService.isNotificationTypeEnabled(type),
       onChanged: (val) async {
         await prefService.setNotificationTypeEnabled(type, val);
         if (mounted) setState(() {});
       },
-      activeThumbColor: MemoryColors.accent,
     );
 
     return MemoryBottomSheet(
@@ -62,19 +57,14 @@ class _NotificationPreferencesSheetState
             ),
           ),
           const SizedBox(height: MemorySpacing.xl),
-          SwitchListTile(
-            title: Text(
-              'Push Notifications',
-              style: MemoryTypography.bodyMedium.copyWith(
-                color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-              ),
-            ),
+          MemorySwitchTile(
+            label: 'Push Notifications',
+            dark: dark,
             value: prefService.isAllNotificationsEnabled(),
             onChanged: (val) async {
               await prefService.setAllNotificationsEnabled(val);
               if (mounted) setState(() {});
             },
-            activeThumbColor: MemoryColors.accent,
           ),
           typeSwitch('Comments', NotificationType.reaction),
           typeSwitch('Messages', NotificationType.message),
@@ -121,19 +111,14 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
       String label,
       bool value,
       Future<void> Function(bool) onSet,
-    ) => SwitchListTile(
-      title: Text(
-        label,
-        style: MemoryTypography.bodyMedium.copyWith(
-          color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-        ),
-      ),
+    ) => MemorySwitchTile(
+      label: label,
+      dark: dark,
       value: value,
       onChanged: (val) async {
         await onSet(val);
         if (mounted) setState(() {});
       },
-      activeThumbColor: MemoryColors.accent,
     );
 
     return MemoryBottomSheet(
@@ -291,27 +276,14 @@ class _SecuritySettingsSheetState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   for (final s in sessions)
-                    ListTile(
-                      title: Text(
-                        s.isCurrent ? '${s.device} (this device)' : s.device,
-                        style: MemoryTypography.bodyMedium.copyWith(
-                          color: dark
-                              ? MemoryColors.cream
-                              : MemoryColors.charcoal,
-                        ),
-                      ),
-                      subtitle: Text(
-                        s.lastActive,
-                        style: MemoryTypography.caption.copyWith(
-                          color:
-                              (dark
-                                      ? MemoryColors.cream
-                                      : MemoryColors.charcoal)
-                                  .withValues(alpha: 0.6),
-                        ),
-                      ),
+                    MemoryDetailRow(
+                      title: s.isCurrent
+                          ? '${s.device} (this device)'
+                          : s.device,
+                      subtitle: s.lastActive,
+                      dark: dark,
                       trailing: s.isCurrent
-                          ? Icon(
+                          ? const Icon(
                               Icons.check_circle,
                               color: MemoryColors.mint,
                               size: 18,

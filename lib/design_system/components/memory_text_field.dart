@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../foundation/memory_colors.dart';
 import '../foundation/memory_radius.dart';
@@ -25,6 +26,9 @@ class MemoryTextField extends StatelessWidget {
     this.onChanged,
     this.enabled = true,
     this.errorText,
+    this.inputFormatters,
+    this.background,
+    this.foreground,
   });
 
   final TextEditingController controller;
@@ -44,10 +48,16 @@ class MemoryTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final bool enabled;
   final String? errorText;
+  final List<TextInputFormatter>? inputFormatters;
+
+  /// Escape hatches for the auth screens, whose fields invert the surface:
+  /// solid ink behind white text. Prefer the defaults everywhere else.
+  final Color? background;
+  final Color? foreground;
 
   @override
   Widget build(BuildContext context) {
-    final fg = MemoryColors.foregroundOn(dark);
+    final fg = foreground ?? MemoryColors.foregroundOn(dark);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,6 +80,7 @@ class MemoryTextField extends StatelessWidget {
           textCapitalization: textCapitalization,
           maxLength: maxLength,
           onChanged: onChanged,
+          inputFormatters: inputFormatters,
           style: MemoryTypography.bodyMedium.copyWith(color: fg),
           cursorColor: MemoryColors.accent,
           decoration: InputDecoration(
@@ -86,7 +97,8 @@ class MemoryTextField extends StatelessWidget {
             prefixIcon: prefix,
             suffixIcon: suffix,
             filled: true,
-            fillColor: fg.withValues(alpha: MemoryColors.alphaBorder),
+            fillColor:
+                background ?? fg.withValues(alpha: MemoryColors.alphaBorder),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: MemorySpacing.gutter,
               vertical: MemorySpacing.xxl,
@@ -188,6 +200,67 @@ class MemorySearchField extends StatelessWidget {
         Icons.search_rounded,
         size: 18,
         color: MemoryColors.muted(dark),
+      ),
+    );
+  }
+}
+
+/// A text input with no chrome at all: no fill, no border, no counter.
+///
+/// For places where the surface already frames the input — a chat composer, a
+/// comment box, a caption typed straight onto a photo. A boxed field there
+/// would draw a rectangle around something that is already inside one.
+class MemoryInlineField extends StatelessWidget {
+  const MemoryInlineField({
+    super.key,
+    required this.controller,
+    required this.hint,
+    required this.style,
+    this.hintColor,
+    this.textAlign = TextAlign.start,
+    this.maxLines = 1,
+    this.autofocus = false,
+    this.onChanged,
+    this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+
+  /// The typed text's style. Callers pass a token; a caption over a photo is
+  /// not set at the same size as a chat message.
+  final TextStyle style;
+
+  /// Defaults to the typed text's colour, faded.
+  final Color? hintColor;
+
+  final TextAlign textAlign;
+  final int maxLines;
+  final bool autofocus;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    final hintTint =
+        hintColor ??
+        (style.color ?? MemoryColors.mutedOnDark).withValues(alpha: 0.4);
+
+    return TextField(
+      controller: controller,
+      autofocus: autofocus,
+      maxLines: maxLines,
+      textAlign: textAlign,
+      style: style,
+      cursorColor: MemoryColors.accent,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      decoration: InputDecoration(
+        border: InputBorder.none,
+        isDense: true,
+        contentPadding: EdgeInsets.zero,
+        hintText: hint,
+        hintStyle: style.copyWith(color: hintTint),
       ),
     );
   }

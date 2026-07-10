@@ -538,20 +538,11 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
         child: Row(
           children: [
             Expanded(
-              child: TextField(
+              child: MemoryInlineField(
                 controller: _messageController,
-                style: MemoryTypography.bodyLarge.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
+                hint: 'Message ${widget.contactName}',
+                style: MemoryTypography.bodyLarge.copyWith(color: Colors.white),
                 onSubmitted: (_) => _sendMessage(),
-                decoration: InputDecoration(
-                  hintText: 'Message ${widget.contactName}',
-                  hintStyle: MemoryTypography.bodyMedium.copyWith(
-                    color: Colors.white.withValues(alpha: 0.4),
-                  ),
-                  border: InputBorder.none,
-                ),
               ),
             ),
             const SizedBox(width: MemorySpacing.md),

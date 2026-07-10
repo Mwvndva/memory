@@ -104,8 +104,9 @@ class _DevDiagnosticsViewState extends ConsumerState<DevDiagnosticsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dev Diagnostics'),
+      appBar: MemoryAppBar(
+        title: 'Dev Diagnostics',
+        dark: Theme.of(context).brightness == Brightness.dark,
         actions: [
           if (_loading)
             const Padding(

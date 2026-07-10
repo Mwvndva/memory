@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memory_app/design_system/design_system.dart';
 
@@ -319,6 +320,169 @@ void main() {
         expect(style.fontFamily, isNull);
         expect(style.color, isNull, reason: 'colour comes from the surface');
       }
+    });
+  });
+
+  group('MemorySwitchTile', () {
+    testWidgets('reports its state and label to a screen reader once', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pump(
+        tester,
+        MemorySwitchTile(
+          label: 'Push Notifications',
+          value: true,
+          dark: false,
+          onChanged: (_) {},
+        ),
+      );
+
+      // The switch keeps its own toggle action; the label merges into it.
+      final node = tester.getSemantics(find.byType(Switch));
+      expect(node.label, contains('Push Notifications'));
+      expect(
+        node.getSemanticsData().hasAction(SemanticsAction.tap),
+        isTrue,
+        reason: 'a reader must be able to flip it, not only read it',
+      );
+      handle.dispose();
+    });
+
+    testWidgets('a null onChanged disables the row', (tester) async {
+      await pump(
+        tester,
+        const MemorySwitchTile(
+          label: 'Locked',
+          value: false,
+          dark: false,
+          onChanged: null,
+        ),
+      );
+      final sw = tester.widget<Switch>(find.byType(Switch));
+      expect(sw.onChanged, isNull);
+    });
+  });
+
+  group('MemorySheetAction', () {
+    testWidgets('a destructive action tints its glyph and label', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        MemorySheetAction(
+          icon: Icons.delete_outline_rounded,
+          label: 'Delete message',
+          dark: true,
+          isDestructive: true,
+          onTap: () {},
+        ),
+      );
+
+      final icon = tester.widget<Icon>(find.byType(Icon));
+      expect(icon.color, MemoryColors.danger);
+
+      final text = tester.widget<Text>(find.text('Delete message'));
+      expect(text.style!.color, MemoryColors.danger);
+    });
+
+    testWidgets('announces itself as a button, exactly once', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pump(
+        tester,
+        MemorySheetAction(
+          icon: Icons.refresh_rounded,
+          label: 'Retry sending',
+          dark: true,
+          onTap: () {},
+        ),
+      );
+      expect(
+        tester.getSemantics(find.byType(MemorySheetAction)),
+        matchesSemantics(
+          label: 'Retry sending',
+          isButton: true,
+          hasTapAction: true,
+          hasLongPressAction: false,
+        ),
+      );
+      handle.dispose();
+    });
+  });
+
+  group('MemoryInlineField', () {
+    testWidgets('draws no border and no fill', (tester) async {
+      await pump(
+        tester,
+        MemoryInlineField(
+          controller: TextEditingController(),
+          hint: 'Write a comment...',
+          style: MemoryTypography.bodyMedium,
+        ),
+      );
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.decoration!.border, InputBorder.none);
+      expect(field.decoration!.filled, isNot(true));
+      expect(field.decoration!.hintText, 'Write a comment...');
+    });
+
+    testWidgets('the hint inherits the typed text style, faded', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        MemoryInlineField(
+          controller: TextEditingController(),
+          hint: 'Add caption',
+          style: MemoryTypography.mediaCaption.copyWith(color: Colors.white),
+        ),
+      );
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      final hint = field.decoration!.hintStyle!;
+      expect(hint.fontSize, MemoryTypography.mediaCaption.fontSize);
+      expect(hint.color!.a, closeTo(0.4, 0.01));
+    });
+  });
+
+  group('MemoryAppBar', () {
+    testWidgets('is transparent, flat, and toolbar-height', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            appBar: MemoryAppBar(title: 'Notifications', dark: false),
+          ),
+        ),
+      );
+
+      final bar = tester.widget<AppBar>(find.byType(AppBar));
+      expect(bar.backgroundColor, Colors.transparent);
+      expect(bar.elevation, 0);
+      expect(find.text('Notifications'), findsOneWidget);
+    });
+  });
+
+  group('MemoryWatermark', () {
+    testWidgets('is invisible to a screen reader', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pump(
+        tester,
+        const MemoryWatermark(size: 80, angle: -0.4, opacity: 0.02),
+      );
+      expect(find.bySemanticsLabel('M'), findsNothing);
+      handle.dispose();
+    });
+  });
+
+  group('radius scale', () {
+    test('is five doubling steps, plus the pill shape', () {
+      expect(MemoryRadius.xs, 4);
+      expect(MemoryRadius.sm, 8);
+      expect(MemoryRadius.md, 12);
+      expect(MemoryRadius.lg, 16);
+      expect(MemoryRadius.xl, 24);
+      expect(MemoryRadius.pill, 999);
     });
   });
 }

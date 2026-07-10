@@ -101,3 +101,51 @@ class MemoryFloatingActionButton extends StatelessWidget {
     );
   }
 }
+
+/// A transparent app bar for a [Scaffold].
+///
+/// Memory's screens carry their own background — a gradient, a photo, the
+/// accent — so the bar never paints one of its own, and never casts a shadow
+/// onto the surface it floats over.
+///
+/// Exists so feature code does not reach for [AppBar] and re-decide
+/// elevation, background, and title weight on every screen.
+class MemoryAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const MemoryAppBar({
+    super.key,
+    required this.title,
+    required this.dark,
+    this.leading,
+    this.actions = const [],
+    this.foreground,
+  });
+
+  final String title;
+  final bool dark;
+  final Widget? leading;
+  final List<Widget> actions;
+
+  /// Overrides the title's colour, for a bar sitting on a photo rather than
+  /// on a surface.
+  final Color? foreground;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      leading: leading,
+      actions: actions,
+      title: Text(
+        title,
+        style: foreground == null
+            ? MemoryTypography.onSurface(MemoryTypography.headlineMedium, dark)
+            : MemoryTypography.headlineMedium.copyWith(color: foreground),
+      ),
+    );
+  }
+}
