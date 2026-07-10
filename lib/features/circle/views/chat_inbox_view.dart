@@ -6,6 +6,7 @@ import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class ChatInboxView extends ConsumerStatefulWidget {
   const ChatInboxView({super.key, required this.contactName});
@@ -166,31 +167,18 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       tooltip: 'Back',
                     ),
                     const SizedBox(width: 4),
-                    CircleAvatar(
+                    MemoryAvatar(
                       radius: 18,
-                      backgroundColor: kYellow,
-                      backgroundImage:
-                          (contactMember.avatarUrl != null &&
-                              contactMember.avatarUrl!.isNotEmpty)
-                          ? NetworkImage(
-                                  formatImageUrl(contactMember.avatarUrl!),
-                                )
-                                as ImageProvider
-                          : null,
-                      child:
-                          (contactMember.avatarUrl == null ||
-                              contactMember.avatarUrl!.isEmpty)
-                          ? Text(
-                              contactMember.firstName.isNotEmpty
-                                  ? contactMember.firstName[0].toUpperCase()
-                                  : widget.contactName[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: kBlack,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 13,
-                              ),
-                            )
-                          : null,
+                      dark: dark,
+                      imageUrl:
+                          contactMember.avatarUrl == null ||
+                              contactMember.avatarUrl!.isEmpty
+                          ? null
+                          : formatImageUrl(contactMember.avatarUrl!),
+                      initial: contactMember.firstName.isNotEmpty
+                          ? contactMember.firstName
+                          : contactMember.username,
+                      background: MemoryColors.accent,
                     ),
                     const SizedBox(width: 12),
                     Expanded(

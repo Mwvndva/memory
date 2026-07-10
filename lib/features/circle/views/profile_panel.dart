@@ -227,36 +227,20 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                   shape: BoxShape.circle,
                                   color: dark ? kYellow : kBlack,
                                 ),
-                                child: CircleAvatar(
+                                child: MemoryAvatar(
                                   radius: 34,
-                                  backgroundColor: dark ? kBlack : Colors.white,
-                                  backgroundImage: user.avatarBytes != null
-                                      ? MemoryImage(user.avatarBytes!)
-                                      : (user.avatarUrl != null &&
-                                                user.avatarUrl!.isNotEmpty
-                                            ? NetworkImage(
-                                                    formatImageUrl(
-                                                      user.avatarUrl!,
-                                                    ),
-                                                  )
-                                                  as ImageProvider
-                                            : null),
-                                  child:
-                                      (user.avatarBytes == null &&
-                                          (user.avatarUrl == null ||
-                                              user.avatarUrl!.isEmpty))
-                                      ? Text(
-                                          displayFirstName.isNotEmpty
-                                              ? displayFirstName[0]
-                                                    .toUpperCase()
-                                              : '?',
-                                          style: TextStyle(
-                                            color: kYellow,
-                                            fontSize: 26,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        )
-                                      : null,
+                                  dark: dark,
+                                  bytes: user.avatarBytes,
+                                  imageUrl:
+                                      user.avatarUrl == null ||
+                                          user.avatarUrl!.isEmpty
+                                      ? null
+                                      : formatImageUrl(user.avatarUrl!),
+                                  initial: displayFirstName,
+                                  background: dark
+                                      ? MemoryColors.ink
+                                      : Colors.white,
+                                  foreground: MemoryColors.accent,
                                 ),
                               ),
                               Positioned(

@@ -9,7 +9,7 @@ import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/core/countries.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import '../auth_background_painter.dart';
-import 'package:memory_app/shared/widgets/pills.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class CreateAccountView extends ConsumerStatefulWidget {
   const CreateAccountView({super.key});
@@ -228,17 +228,18 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       SizedBox(
                         width: 58,
                         height: 34,
-                        child: pill(
-                          'Back',
-                          () {
+                        child: MemoryButton(
+                          label: 'Back',
+                          onPressed: () {
                             if (_currentStep > 1) {
                               setState(() => _currentStep--);
                             } else {
                               context.pop();
                             }
                           },
-                          dark,
-                          compact: true,
+                          dark: dark,
+                          variant: MemoryButtonVariant.secondary,
+                          size: MemoryButtonSize.compact,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -341,11 +342,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                 _field('Username', _username, '', dark),
                                 _status(usernameStatus, usernameOk),
                                 const SizedBox(height: 20),
-                                pill(
-                                  'Continue',
-                                  _goNext,
-                                  dark,
-                                  color: kBlack,
+                                MemoryButton(
+                                  label: 'Continue',
+                                  onPressed: _goNext,
+                                  dark: dark,
+                                  background: MemoryColors.ink,
                                   foreground: Colors.white,
                                 ),
                               ],
@@ -402,11 +403,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                 const SizedBox(height: 8),
                                 _status(passwordStatus, passwordOk),
                                 const SizedBox(height: 20),
-                                pill(
-                                  'Continue',
-                                  _goNext,
-                                  dark,
-                                  color: kBlack,
+                                MemoryButton(
+                                  label: 'Continue',
+                                  onPressed: _goNext,
+                                  dark: dark,
+                                  background: MemoryColors.ink,
                                   foreground: Colors.white,
                                 ),
                               ],
@@ -492,16 +493,13 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                pill(
-                                  'Create account',
-                                  _onSubmit,
-                                  dark,
-                                  color: _createLoading
-                                      ? kBlack.withValues(alpha: 0.9)
-                                      : kBlack,
+                                MemoryButton(
+                                  label: 'Create account',
+                                  onPressed: _onSubmit,
+                                  dark: dark,
+                                  background: MemoryColors.ink,
                                   foreground: Colors.white,
                                   isLoading: _createLoading,
-                                  disabled: _createLoading,
                                 ),
                               ],
                             ],

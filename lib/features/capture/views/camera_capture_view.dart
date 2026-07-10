@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/core/playful.dart';
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/features/capture/capture.dart';
@@ -341,30 +342,19 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
           _captureCaptionSize = 24;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Memory posted successfully to your Circle!'),
-          ),
-        );
+        showAppMessage(context, 'Memory posted successfully to your Circle!');
 
         ref.read(uploadProvider.notifier).reset();
         context.go('/capture');
       } else if (next.status == UploadStatus.failed) {
         if (next.isRetryable) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Upload failed: ${next.errorMessage}'),
-              backgroundColor: Colors.black,
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'Retry',
-                textColor: kYellow,
-                onPressed: () {
-                  _sendToCircle();
-                },
-              ),
-              duration: const Duration(seconds: 8),
-            ),
+          MemorySnackBar.show(
+            context,
+            'Upload failed: ${next.errorMessage}',
+            tone: MemorySnackTone.error,
+            duration: const Duration(seconds: 8),
+            actionLabel: 'Retry',
+            onAction: _sendToCircle,
           );
         } else {
           showAppError(context, 'Failed to post memory: ${next.errorMessage}');
@@ -395,53 +385,25 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
         canPop: !isUploading,
         onPopInvokedWithResult: (didPop, result) async {
           if (didPop) return;
-          final leave = await showDialog<bool>(
+          final leave = await MemoryDialog.show<bool>(
             context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: dark ? kBlack : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Text(
-                'Upload in Progress',
-                style: TextStyle(
-                  color: dark ? kCream : kCharcoal,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              content: Text(
-                'Your memory is still uploading. Leaving will cancel the upload. Leave anyway?',
-                style: TextStyle(
-                  color: dark
-                      ? kCream.withValues(alpha: 0.8)
-                      : kCharcoal.withValues(alpha: 0.8),
-                  fontSize: 13,
-                ),
-              ),
+            builder: (ctx) => MemoryDialog(
+              title: 'Upload in Progress',
+              dark: dark,
+              message:
+                  'Your memory is still uploading. Leaving will cancel the upload. Leave anyway?',
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(
-                    'Continue Upload',
-                    style: TextStyle(
-                      color: dark ? kYellow : kBlack,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                MemoryDialogAction(
+                  label: 'Continue Upload',
+                  isPrimary: true,
+                  onPressed: () => Navigator.of(ctx).pop(false),
                 ),
-                TextButton(
+                MemoryDialogAction(
+                  label: 'Leave Anyway',
                   onPressed: () {
                     ref.read(uploadProvider.notifier).cancelUpload();
-                    Navigator.of(context).pop(true);
+                    Navigator.of(ctx).pop(true);
                   },
-                  child: Text(
-                    'Leave Anyway',
-                    style: TextStyle(
-                      color: dark
-                          ? kCream.withValues(alpha: 0.6)
-                          : kCharcoal.withValues(alpha: 0.6),
-                    ),
-                  ),
                 ),
               ],
             ),

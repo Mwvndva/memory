@@ -14,8 +14,21 @@ enum MemorySnackTone { neutral, error }
 /// Floating, inset from the edges, and gone before it becomes furniture.
 /// Screens never build a [SnackBar] themselves — they call [show].
 abstract final class MemorySnackBar {
-  static SnackBar _build(String message, MemorySnackTone tone, Duration? d) {
+  static SnackBar _build(
+    String message,
+    MemorySnackTone tone,
+    Duration? d,
+    String? actionLabel,
+    VoidCallback? onAction,
+  ) {
     return SnackBar(
+      action: (actionLabel == null || onAction == null)
+          ? null
+          : SnackBarAction(
+              label: actionLabel,
+              textColor: MemoryColors.accent,
+              onPressed: onAction,
+            ),
       content: Text(
         message,
         style: MemoryTypography.bodySmall.copyWith(color: MemoryColors.cream),
@@ -45,9 +58,13 @@ abstract final class MemorySnackBar {
     String message, {
     MemorySnackTone tone = MemorySnackTone.neutral,
     Duration? duration,
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
-    messenger.showSnackBar(_build(message, tone, duration));
+    messenger.showSnackBar(
+      _build(message, tone, duration, actionLabel, onAction),
+    );
   }
 
   /// How long a snack takes to slide in. Exposed so motion stays in one place.

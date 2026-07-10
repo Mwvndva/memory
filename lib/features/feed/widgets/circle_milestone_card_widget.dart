@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'milestone_card_widget.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class CircleMemberWithMemories {
   final String id;
@@ -132,20 +132,14 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              child: CircleAvatar(
+              child: MemoryAvatar(
                 radius: size / 2,
-                backgroundColor: index == 0 ? kBlack : kLavender,
-                backgroundImage: avatarProvider,
-                child: avatarProvider == null
-                    ? Text(
-                        initial,
-                        style: TextStyle(
-                          fontSize: (size * 0.4).clamp(7.0, 24.0),
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      )
-                    : null,
+                dark: false,
+                image: avatarProvider,
+                initial: initial,
+                background: index == 0
+                    ? MemoryColors.ink
+                    : MemoryColors.lavender,
               ),
             ),
           );

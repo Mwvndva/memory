@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/features/circle/circle.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 enum ShapeType { rect, circle, triangle, ring, star, sparkle, wave }
 
@@ -385,22 +386,11 @@ class MilestoneCardWidget extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        child: CircleAvatar(
+                        child: MemoryAvatar(
                           radius: 50,
-                          backgroundColor: ref.watch(isDarkProvider)
-                              ? kYellow
-                              : kBlack,
-                          backgroundImage: avatarProvider,
-                          child: avatarProvider == null
-                              ? Text(
-                                  nameInitial,
-                                  style: const TextStyle(
-                                    fontSize: 38,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : null,
+                          dark: ref.watch(isDarkProvider),
+                          image: avatarProvider,
+                          initial: nameInitial,
                         ),
                       ),
                       const SizedBox(height: 14),

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/auth/auth.dart';
+import 'package:memory_app/core/error_handler.dart';
 
 class MemoryDetailScreen extends ConsumerStatefulWidget {
   final String memoryId;
@@ -43,28 +45,23 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
   }
 
   void _confirmDelete() {
-    showDialog(
+    final dark = ref.read(isDarkProvider);
+    MemoryDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: kCharcoal,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Delete Memory',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'Are you sure you want to permanently delete this memory? This cannot be undone.',
-          style: TextStyle(color: Colors.white70),
-        ),
+      builder: (ctx) => MemoryDialog(
+        title: 'Delete Memory',
+        dark: dark,
+        isDestructive: true,
+        message:
+            'Are you sure you want to permanently delete this memory? This cannot be undone.',
         actions: [
-          TextButton(
+          MemoryDialogAction(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.white38),
-            ),
           ),
-          TextButton(
+          MemoryDialogAction(
+            label: 'Delete',
+            isDestructive: true,
             onPressed: () async {
               Navigator.pop(ctx);
               final success = await ref
@@ -74,13 +71,6 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 context.pop();
               }
             },
-            child: const Text(
-              'Delete',
-              style: TextStyle(
-                color: Colors.redAccent,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ),
         ],
       ),
@@ -165,19 +155,14 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                       .read(downloadRepositoryProvider)
                       .downloadMemoryVideo(m);
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Video downloaded successfully to: $path',
-                        ),
-                      ),
+                    showAppMessage(
+                      context,
+                      'Video downloaded successfully to: $path',
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(e.toString())));
+                    showAppError(context, e.toString());
                   }
                 }
               },
@@ -460,28 +445,15 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CircleAvatar(
+                              MemoryAvatar(
                                 radius: 16,
-                                backgroundColor: kYellow,
-                                backgroundImage:
-                                    c.avatarUrl != null &&
-                                        c.avatarUrl!.isNotEmpty
-                                    ? NetworkImage(c.avatarUrl!)
-                                          as ImageProvider
-                                    : null,
-                                child:
+                                dark: dark,
+                                imageUrl:
                                     c.avatarUrl == null || c.avatarUrl!.isEmpty
-                                    ? Text(
-                                        c.person.isNotEmpty
-                                            ? c.person[0].toUpperCase()
-                                            : '?',
-                                        style: const TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      )
-                                    : null,
+                                    ? null
+                                    : c.avatarUrl,
+                                initial: c.person,
+                                background: MemoryColors.accent,
                               ),
                               const SizedBox(width: 10),
                               Expanded(

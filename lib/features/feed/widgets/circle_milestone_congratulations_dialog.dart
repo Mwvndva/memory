@@ -11,6 +11,7 @@ import 'package:memory_app/core/playful.dart';
 
 import 'circle_milestone_card_widget.dart';
 import 'milestone_card_widget.dart';
+import 'package:memory_app/core/error_handler.dart';
 
 const _circle7Messages = [
   "Your circle has reached 7 members! A perfect crew for sharing moments. 👥✨",
@@ -103,9 +104,7 @@ class _CircleMilestoneCongratulationsDialogState
     } catch (e) {
       debugPrint('Error sharing milestone card: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not generate shareable card: $e')),
-        );
+        showAppError(context, 'Could not generate shareable card: $e');
       }
     } finally {
       if (mounted) {

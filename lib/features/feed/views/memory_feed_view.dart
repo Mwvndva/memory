@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/core/playful.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/core/api_config.dart';
@@ -335,9 +336,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: inviteLink));
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Invite link copied!')),
-                    );
+                    showAppMessage(context, 'Invite link copied!');
                   },
                   child: Container(
                     width: double.infinity,
@@ -756,23 +755,14 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 ),
                 child: Column(
                   children: [
-                    CircleAvatar(
+                    MemoryAvatar(
                       radius: 20,
-                      backgroundColor: m.avatar,
-                      backgroundImage:
-                          m.avatarUrl != null && m.avatarUrl!.isNotEmpty
-                          ? NetworkImage(formatImageUrl(m.avatarUrl!))
-                                as ImageProvider
-                          : null,
-                      child: m.avatarUrl == null || m.avatarUrl!.isEmpty
-                          ? Text(
-                              m.initial,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            )
-                          : null,
+                      dark: dark,
+                      imageUrl: m.avatarUrl == null || m.avatarUrl!.isEmpty
+                          ? null
+                          : formatImageUrl(m.avatarUrl!),
+                      initial: m.initial,
+                      background: m.avatar,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -1028,26 +1018,15 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                             Positioned(
                               left: 7,
                               bottom: 7,
-                              child: CircleAvatar(
+                              child: MemoryAvatar(
                                 radius: 11,
-                                backgroundColor: m.avatar,
-                                backgroundImage:
-                                    m.avatarUrl != null &&
-                                        m.avatarUrl!.isNotEmpty
-                                    ? NetworkImage(formatImageUrl(m.avatarUrl!))
-                                          as ImageProvider
-                                    : null,
-                                child:
+                                dark: dark,
+                                imageUrl:
                                     m.avatarUrl == null || m.avatarUrl!.isEmpty
-                                    ? Text(
-                                        m.initial,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      )
-                                    : null,
+                                    ? null
+                                    : formatImageUrl(m.avatarUrl!),
+                                initial: m.initial,
+                                background: m.avatar,
                               ),
                             ),
                           ],
@@ -1230,22 +1209,12 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 HapticFeedback.lightImpact();
                 showDialog(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    backgroundColor: dark ? kBlack : Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    title: Text(
-                      'React to ${m.person}',
-                      style: TextStyle(
-                        color: dark ? Colors.white : kCharcoal,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  builder: (ctx) => MemoryDialog(
+                    title: 'React to ${m.person}',
+                    dark: dark,
                     content: Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
+                      spacing: MemorySpacing.xl,
+                      runSpacing: MemorySpacing.xl,
                       children: ['👍', '🎉', '💡', '😍', '👏', '🤔', '👀', '🥳']
                           .map((emoji) {
                             return GestureDetector(
@@ -1261,6 +1230,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                           })
                           .toList(),
                     ),
+                    actions: const [],
                   ),
                 );
               },

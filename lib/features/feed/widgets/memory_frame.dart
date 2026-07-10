@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/auth/auth.dart';
+import 'package:memory_app/core/error_handler.dart';
 
 class MemoryFrame extends ConsumerWidget {
   final MemoryItem memory;
@@ -97,19 +98,14 @@ class MemoryFrame extends ConsumerWidget {
                             .read(downloadRepositoryProvider)
                             .downloadMemoryVideo(m);
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Video downloaded successfully to: $path',
-                              ),
-                            ),
+                          showAppMessage(
+                            context,
+                            'Video downloaded successfully to: $path',
                           );
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(e.toString())));
+                          showAppError(context, e.toString());
                         }
                       }
                     },

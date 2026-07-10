@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import '../auth_background_painter.dart';
-import 'package:memory_app/shared/widgets/pills.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
@@ -234,23 +234,21 @@ class _LoginViewState extends ConsumerState<LoginView>
                             ),
                           ],
                           const SizedBox(height: 20),
-                          pill(
-                            'Continue',
-                            _onLogin,
-                            dark,
-                            color: _loginLoading
-                                ? kBlack.withValues(alpha: 0.9)
-                                : kBlack,
+                          MemoryButton(
+                            label: 'Continue',
+                            onPressed: _onLogin,
+                            dark: dark,
+                            background: MemoryColors.ink,
                             foreground: Colors.white,
                             isLoading: _loginLoading,
                           ),
                           const SizedBox(height: 12),
-                          pill(
-                            'Create account',
-                            () => context.push('/create'),
-                            dark,
-                            color: kCream,
-                            foreground: kCharcoal,
+                          MemoryButton(
+                            label: 'Create account',
+                            onPressed: () => context.push('/create'),
+                            dark: dark,
+                            background: MemoryColors.cream,
+                            foreground: MemoryColors.charcoal,
                           ),
                         ],
                       ),

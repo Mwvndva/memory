@@ -122,22 +122,12 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
                           ),
                         ),
                       ],
-                      CircleAvatar(
+                      MemoryAvatar(
                         radius: 54,
-                        backgroundColor: kAmber,
-                        backgroundImage: _avatarBytes == null
-                            ? null
-                            : MemoryImage(_avatarBytes!),
-                        child: _avatarBytes == null
-                            ? Text(
-                                initialText,
-                                style: const TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : null,
+                        dark: dark,
+                        bytes: _avatarBytes,
+                        initial: initialText,
+                        background: MemoryColors.amber,
                       ),
                       const SizedBox(height: 12),
                       Text(

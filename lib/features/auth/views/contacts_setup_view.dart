@@ -12,7 +12,7 @@ import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import '../../circle/circle_state_manager.dart';
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/shared/widgets/pills.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class ContactsSetupView extends ConsumerStatefulWidget {
   const ContactsSetupView({super.key});
@@ -274,9 +274,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: inviteLink));
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Invite link copied!')),
-                  );
+                  showAppMessage(context, 'Invite link copied!');
                 },
                 child: Container(
                   width: double.infinity,
@@ -423,14 +421,14 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                 ),
               ),
               const SizedBox(height: 14),
-              pill(
-                'Start using Memory',
-                () {
+              MemoryButton(
+                label: 'Start using Memory',
+                onPressed: () {
                   ref.read(sessionProvider.notifier).authenticate();
                   context.go('/feed');
                 },
-                dark,
-                color: dark ? kYellow : kBlack,
+                dark: dark,
+                background: dark ? MemoryColors.accent : MemoryColors.ink,
                 foreground: Colors.white,
               ),
             ],
@@ -461,22 +459,16 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: color,
-            backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                ? NetworkImage(formatImageUrl(avatarUrl)) as ImageProvider
-                : null,
-            child: (avatarUrl == null || avatarUrl.isEmpty)
-                ? Text(
-                    initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  )
-                : null,
+          MemoryAvatar(
+            radius: 20,
+            dark: dark,
+            imageUrl: (avatarUrl == null || avatarUrl.isEmpty)
+                ? null
+                : formatImageUrl(avatarUrl),
+            initial: initial,
+            background: color,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: MemorySpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,9 +484,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           SizedBox(
             width: 110,
             height: 34,
-            child: pill(
-              isAdded ? 'Requested' : 'Add to circle',
-              () async {
+            child: MemoryButton(
+              label: isAdded ? 'Requested' : 'Add to circle',
+              onPressed: () async {
                 if (isAdded) return;
                 if (isMock) {
                   _toggleAdded(userKey);
@@ -522,11 +514,11 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                   }
                 }
               },
-              dark,
-              compact: true,
-              color: isAdded
+              dark: dark,
+              size: MemoryButtonSize.compact,
+              background: isAdded
                   ? Colors.grey.withValues(alpha: 0.5)
-                  : (dark ? kYellow : kBlack),
+                  : (dark ? MemoryColors.accent : MemoryColors.ink),
               foreground: Colors.white,
             ),
           ),

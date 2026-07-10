@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class InboxBubble extends ConsumerWidget {
   final Message msg;
@@ -39,28 +40,17 @@ class InboxBubble extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (!mine) ...[
-              CircleAvatar(
+              MemoryAvatar(
                 radius: 14,
-                backgroundColor: dark ? kYellow : kBlack,
-                backgroundImage:
-                    (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(formatImageUrl(member.avatarUrl!))
-                          as ImageProvider
-                    : null,
-                child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
-                    ? Text(
-                        member.firstName.isNotEmpty
-                            ? member.firstName[0].toUpperCase()
-                            : member.username[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 10,
-                        ),
-                      )
-                    : null,
+                dark: dark,
+                imageUrl: member.avatarUrl == null || member.avatarUrl!.isEmpty
+                    ? null
+                    : formatImageUrl(member.avatarUrl!),
+                initial: member.firstName.isNotEmpty
+                    ? member.firstName
+                    : member.username,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: MemorySpacing.md),
             ],
             if (mine && msg.isFailed)
               GestureDetector(
