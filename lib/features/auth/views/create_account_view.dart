@@ -297,6 +297,19 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              // The same logo the login and splash show, so the
+                              // sign-up flow stays branded above every step.
+                              // Centered, not stretched, so it keeps its shape.
+                              Center(
+                                child: Image.asset(
+                                  'assets/images/memory-logo.png',
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(height: MemorySpacing.section),
+
                               // Step 1 - Identity
                               if (_currentStep == 1) ...[
                                 Text(
