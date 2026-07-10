@@ -70,11 +70,8 @@ class MemoryFrame extends ConsumerWidget {
                       child: Text(
                         m.caption,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: MemoryTypography.mediaCaption.copyWith(
                           color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          height: 1.05,
                         ),
                       ),
                     ),

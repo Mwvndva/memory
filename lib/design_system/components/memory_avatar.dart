@@ -66,7 +66,7 @@ class MemoryAvatar extends StatelessWidget {
           ? null
           : Text(
               letter,
-              style: MemoryTypography.title.copyWith(
+              style: MemoryTypography.headlineLarge.copyWith(
                 // Scale the initial with the circle so it never crowds the edge.
                 fontSize: radius * 0.75,
                 color: foreground ?? Colors.white,

@@ -43,14 +43,14 @@ class ProfileAddPersonCard extends StatelessWidget {
               Text(
                 '$circleCount / $maxCircleSize',
                 style: MemoryTypography.onSurface(
-                  MemoryTypography.headline,
+                  MemoryTypography.titleLarge,
                   dark,
                 ),
               ),
               Text(
                 'in your circle',
                 style: MemoryTypography.mutedOnSurface(
-                  MemoryTypography.sectionLabel.copyWith(
+                  MemoryTypography.overline.copyWith(
                     letterSpacing: 0,
                     fontWeight: FontWeight.w600,
                   ),
@@ -158,7 +158,7 @@ class ProfileFunCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: MemoryColors.ink,
-        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         border: Border.all(color: tierColor, width: 2),
         boxShadow: [
           BoxShadow(
@@ -189,38 +189,12 @@ class ProfileFunCard extends StatelessWidget {
           Positioned(
             right: 30,
             top: 45,
-            child: Opacity(
-              opacity: 0.02,
-              child: Transform.rotate(
-                angle: -0.4,
-                child: const Text(
-                  'M',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 80,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
+            child: const MemoryWatermark(size: 80, angle: -0.4, opacity: 0.02),
           ),
           Positioned(
             left: 45,
             bottom: 30,
-            child: Opacity(
-              opacity: 0.03,
-              child: Transform.rotate(
-                angle: 0.5,
-                child: const Text(
-                  'M',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 50,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
+            child: const MemoryWatermark(size: 50, angle: 0.5, opacity: 0.03),
           ),
           Positioned(
             right: 25,
@@ -272,11 +246,8 @@ class ProfileFunCard extends StatelessWidget {
                               fallbackWidget: Center(
                                 child: Text(
                                   avatarInitial,
-                                  style: const TextStyle(
-                                    color: MemoryColors.cream,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                                  style: MemoryTypography.headlineLarge
+                                      .copyWith(color: MemoryColors.cream),
                                 ),
                               ),
                             )
@@ -285,10 +256,8 @@ class ProfileFunCard extends StatelessWidget {
                               alignment: Alignment.center,
                               child: Text(
                                 avatarInitial,
-                                style: const TextStyle(
+                                style: MemoryTypography.headlineLarge.copyWith(
                                   color: MemoryColors.ink,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
                                 ),
                               ),
                             ),
@@ -298,7 +267,7 @@ class ProfileFunCard extends StatelessWidget {
                   Text(
                     '@$username',
                     textAlign: TextAlign.center,
-                    style: MemoryTypography.subtitle.copyWith(
+                    style: MemoryTypography.titleMedium.copyWith(
                       color: MemoryColors.cream,
                       fontWeight: FontWeight.w900,
                     ),
@@ -307,7 +276,9 @@ class ProfileFunCard extends StatelessWidget {
                   Text(
                     descriptiveHeading,
                     textAlign: TextAlign.center,
-                    style: MemoryTypography.headline.copyWith(color: tierColor),
+                    style: MemoryTypography.titleLarge.copyWith(
+                      color: tierColor,
+                    ),
                   ),
                   const SizedBox(height: MemorySpacing.xs),
                   Padding(
@@ -317,7 +288,7 @@ class ProfileFunCard extends StatelessWidget {
                     child: Text(
                       descriptiveWording,
                       textAlign: TextAlign.center,
-                      style: MemoryTypography.sectionLabel.copyWith(
+                      style: MemoryTypography.overline.copyWith(
                         letterSpacing: 0,
                         fontWeight: FontWeight.w500,
                         height: 1.25,
@@ -402,10 +373,7 @@ class _RankChip extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: MemoryTypography.micro.copyWith(
-          fontSize: 9,
-          color: MemoryColors.cream,
-        ),
+        style: MemoryTypography.micro.copyWith(color: MemoryColors.cream),
       ),
     );
   }

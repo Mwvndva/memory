@@ -51,7 +51,7 @@ Widget authInputField(
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: MemoryTypography.body.copyWith(
+        hintStyle: MemoryTypography.bodyMedium.copyWith(
           color: (dark ? MemoryColors.ink : Colors.white).withValues(
             alpha: 0.35,
           ),
@@ -60,7 +60,7 @@ Widget authInputField(
         filled: true,
         fillColor: dark ? MemoryColors.accent : MemoryColors.ink,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(MemoryRadius.md),
+          borderRadius: BorderRadius.circular(MemoryRadius.lg),
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(

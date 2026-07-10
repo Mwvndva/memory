@@ -87,7 +87,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
         color: dark ? MemoryColors.ink : Colors.white,
-        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         border: Border.all(
           color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
             alpha: 0.06,
@@ -131,7 +131,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   ),
                   child: Text(
                     'Close',
-                    style: MemoryTypography.body.copyWith(
+                    style: MemoryTypography.bodyMedium.copyWith(
                       color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     ),
                   ),
@@ -274,7 +274,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         const SizedBox(height: MemorySpacing.xl),
                         Text(
                           '$displayFirstName $displayLastName',
-                          style: MemoryTypography.title.copyWith(
+                          style: MemoryTypography.headlineLarge.copyWith(
                             color: dark
                                 ? MemoryColors.cream
                                 : MemoryColors.charcoal,
@@ -429,7 +429,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: Colors.red,
-                        borderRadius: BorderRadius.circular(MemoryRadius.md),
+                        borderRadius: BorderRadius.circular(MemoryRadius.lg),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -442,7 +442,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                           SizedBox(width: MemorySpacing.md),
                           Text(
                             'Log Out',
-                            style: MemoryTypography.body.copyWith(
+                            style: MemoryTypography.bodyMedium.copyWith(
                               color: Colors.white,
                             ),
                           ),

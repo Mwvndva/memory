@@ -106,7 +106,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               const SizedBox(height: MemorySpacing.gutter),
               Text(
                 detailState.errorMessage ?? 'An error occurred',
-                style: const TextStyle(color: Colors.white70, fontSize: 16),
+                style: MemoryTypography.titleMedium.copyWith(
+                  color: Colors.white70,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: MemorySpacing.gutter),
@@ -128,6 +130,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
 
     final m = detailState.memory!;
 
+    // Editing and deleting a memory are the owner's alone. The backend
+    // enforces this too, but a control the user cannot use should never be
+    // on screen: offering it and then refusing is worse than not offering it.
+    final isOwner = m.username == ref.watch(sessionProvider).user.username;
+
     return Scaffold(
       backgroundColor: dark ? MemoryColors.ink : MemoryColors.accentWarm,
       appBar: AppBar(
@@ -140,7 +147,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
           onPressed: () => context.pop(),
         ),
         actions: [
-          if (m.username == ref.watch(sessionProvider).user.username)
+          if (isOwner)
             MemoryIconButton(
               icon: Icons.download_rounded,
               semanticLabel: 'Download video',
@@ -163,28 +170,29 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 }
               },
             ),
-          // Deletion and Editing permissions: only owner can edit/delete
-          MemoryIconButton(
-            icon: Icons.edit_rounded,
-            semanticLabel: 'Edit caption',
-            color: dark ? Colors.white : MemoryColors.charcoal,
-            onPressed: () {
-              ref
-                  .read(memoryDetailProvider(widget.memoryId).notifier)
-                  .setDraftCaption(m.caption);
-              _editCaptionController.text = m.caption;
-              // Toggle edit mode via public notifier method
-              ref
-                  .read(memoryDetailProvider(widget.memoryId).notifier)
-                  .setEditing(!detailState.isEditing);
-            },
-          ),
-          MemoryIconButton(
-            icon: Icons.delete_outline_rounded,
-            semanticLabel: 'Delete memory',
-            color: MemoryColors.danger,
-            onPressed: _confirmDelete,
-          ),
+          if (isOwner) ...[
+            MemoryIconButton(
+              icon: Icons.edit_rounded,
+              semanticLabel: 'Edit caption',
+              color: dark ? Colors.white : MemoryColors.charcoal,
+              onPressed: () {
+                ref
+                    .read(memoryDetailProvider(widget.memoryId).notifier)
+                    .setDraftCaption(m.caption);
+                _editCaptionController.text = m.caption;
+                // Toggle edit mode via public notifier method
+                ref
+                    .read(memoryDetailProvider(widget.memoryId).notifier)
+                    .setEditing(!detailState.isEditing);
+              },
+            ),
+            MemoryIconButton(
+              icon: Icons.delete_outline_rounded,
+              semanticLabel: 'Delete memory',
+              color: MemoryColors.danger,
+              onPressed: _confirmDelete,
+            ),
+          ],
         ],
       ),
       body: SafeArea(
@@ -199,7 +207,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 aspectRatio: 3 / 2.2,
                 child: MemoryGradientSurface(
                   colors: m.colors,
-                  borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+                  borderRadius: BorderRadius.circular(MemoryRadius.xl),
                   shadows: MemoryShadows.raised(dark),
                   child: Stack(
                     children: [
@@ -213,13 +221,13 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                               children: [
                                 TextField(
                                   controller: _editCaptionController,
-                                  style: const TextStyle(
+                                  style: MemoryTypography.titleLarge.copyWith(
                                     color: Colors.white,
-                                    fontSize: 18,
                                   ),
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     hintText: 'Edit caption...',
-                                    hintStyle: TextStyle(color: Colors.white38),
+                                    hintStyle: MemoryTypography.bodyMedium
+                                        .copyWith(color: Colors.white38),
                                     border: InputBorder.none,
                                   ),
                                   maxLines: 2,
@@ -283,10 +291,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                             child: Text(
                               m.caption,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              style: MemoryTypography.headlineLarge.copyWith(
                                 color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
                               ),
                             ),
                           ),
@@ -318,13 +324,14 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.black.withValues(alpha: 0.4),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(
+                                      MemoryRadius.md,
+                                    ),
                                   ),
                                   child: Text(
                                     count > 0 ? '$emoji $count' : emoji,
-                                    style: const TextStyle(
+                                    style: MemoryTypography.bodySmall.copyWith(
                                       color: Colors.white,
-                                      fontSize: 12,
                                     ),
                                   ),
                                 ),
@@ -348,10 +355,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 children: [
                   Text(
                     'Comments',
-                    style: TextStyle(
+                    style: MemoryTypography.titleLarge.copyWith(
                       color: dark ? Colors.white : MemoryColors.charcoal,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const Spacer(),
@@ -367,7 +372,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                   ? Center(
                       child: Text(
                         'No comments yet. Be the first!',
-                        style: TextStyle(
+                        style: MemoryTypography.bodyMedium.copyWith(
                           color: dark
                               ? Colors.white38
                               : MemoryColors.charcoal.withValues(alpha: 0.4),
@@ -400,7 +405,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                       ? Colors.white.withValues(alpha: 0.07)
                                       : Colors.white.withValues(alpha: 0.5)),
                             borderRadius: BorderRadius.circular(
-                              MemoryRadius.md,
+                              MemoryRadius.lg,
                             ),
                             border: isOptimistic
                                 ? Border.all(
@@ -444,25 +449,27 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                         const SizedBox(width: MemorySpacing.sm),
                                         Text(
                                           '@${c.username}',
-                                          style: TextStyle(
-                                            color: dark
-                                                ? Colors.white38
-                                                : MemoryColors.charcoal
-                                                      .withValues(alpha: 0.5),
-                                            fontSize: 10,
-                                          ),
+                                          style: MemoryTypography.overline
+                                              .copyWith(
+                                                color: dark
+                                                    ? Colors.white38
+                                                    : MemoryColors.charcoal
+                                                          .withValues(
+                                                            alpha: 0.5,
+                                                          ),
+                                              ),
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: MemorySpacing.xs),
                                     Text(
                                       c.text,
-                                      style: TextStyle(
-                                        color: dark
-                                            ? Colors.white70
-                                            : MemoryColors.charcoal,
-                                        fontSize: 13,
-                                      ),
+                                      style: MemoryTypography.bodyMedium
+                                          .copyWith(
+                                            color: dark
+                                                ? Colors.white70
+                                                : MemoryColors.charcoal,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -484,7 +491,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 ),
                 child: Text(
                   detailState.errorMessage!,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  style: MemoryTypography.bodySmall.copyWith(
+                    color: Colors.white,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -507,12 +516,14 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                   Expanded(
                     child: TextField(
                       controller: _commentController,
-                      style: TextStyle(
+                      style: MemoryTypography.bodyMedium.copyWith(
                         color: dark ? Colors.white : MemoryColors.charcoal,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Write a comment...',
-                        hintStyle: TextStyle(color: Colors.grey),
+                        hintStyle: MemoryTypography.bodyMedium.copyWith(
+                          color: Colors.grey,
+                        ),
                         border: InputBorder.none,
                       ),
                     ),

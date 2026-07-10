@@ -90,7 +90,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
               Text(
                 'Add your face',
                 textAlign: TextAlign.center,
-                style: headlineStyle(fg).copyWith(fontSize: 34),
+                style: headlineStyle(fg),
               ),
               const SizedBox(height: MemorySpacing.md),
               Text(
@@ -101,13 +101,13 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
               const SizedBox(height: 26),
               InkWell(
                 onTap: _pickAvatar,
-                borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+                borderRadius: BorderRadius.circular(MemoryRadius.xl),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: fg.withValues(alpha: .08),
-                    borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+                    borderRadius: BorderRadius.circular(MemoryRadius.xl),
                   ),
                   child: Column(
                     children: [
@@ -127,10 +127,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
                         _uploading
                             ? 'Uploading picture...'
                             : 'Upload profile picture',
-                        style: TextStyle(
-                          color: fg,
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: MemoryTypography.bodyLarge.copyWith(color: fg),
                       ),
                       const SizedBox(height: MemorySpacing.xs),
                       Text(

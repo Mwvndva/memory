@@ -147,7 +147,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               ),
               const Text(
                 'No contacts on Memory yet',
-                style: MemoryTypography.heading,
+                style: MemoryTypography.titleLarge,
               ),
               const SizedBox(height: MemorySpacing.sm),
               Text(
@@ -381,7 +381,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
       padding: const EdgeInsets.all(9),
       decoration: BoxDecoration(
         color: fg.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(MemoryRadius.lg),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
       ),
       child: Row(
         children: [
@@ -401,7 +401,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               children: [
                 Text(
                   name,
-                  style: TextStyle(color: fg, fontWeight: FontWeight.w900),
+                  style: MemoryTypography.bodyLarge.copyWith(color: fg),
                 ),
                 Text(subtitle, style: smallStyle(fg.withValues(alpha: .58))),
               ],
@@ -470,7 +470,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         children: [
           Text(
             'Invite to circle',
-            style: MemoryTypography.heading.copyWith(color: Colors.white),
+            style: MemoryTypography.titleLarge.copyWith(color: Colors.white),
           ),
           const SizedBox(height: MemorySpacing.sm),
           Text(

@@ -70,11 +70,11 @@ class MemoryTextField extends StatelessWidget {
           textCapitalization: textCapitalization,
           maxLength: maxLength,
           onChanged: onChanged,
-          style: MemoryTypography.body.copyWith(color: fg),
+          style: MemoryTypography.bodyMedium.copyWith(color: fg),
           cursorColor: MemoryColors.accent,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: MemoryTypography.body.copyWith(
+            hintStyle: MemoryTypography.bodyMedium.copyWith(
               color: fg.withValues(alpha: 0.4),
               fontWeight: FontWeight.w500,
             ),
@@ -92,15 +92,15 @@ class MemoryTextField extends StatelessWidget {
               vertical: MemorySpacing.xxl,
             ),
             border: const OutlineInputBorder(
-              borderRadius: MemoryRadius.allMd,
+              borderRadius: MemoryRadius.allLg,
               borderSide: BorderSide.none,
             ),
             enabledBorder: const OutlineInputBorder(
-              borderRadius: MemoryRadius.allMd,
+              borderRadius: MemoryRadius.allLg,
               borderSide: BorderSide.none,
             ),
             focusedBorder: const OutlineInputBorder(
-              borderRadius: MemoryRadius.allMd,
+              borderRadius: MemoryRadius.allLg,
               borderSide: BorderSide(color: MemoryColors.accent, width: 1.4),
             ),
           ),

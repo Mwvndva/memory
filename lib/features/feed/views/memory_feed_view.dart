@@ -206,7 +206,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               color: dark ? MemoryColors.ink : MemoryColors.accent,
-              borderRadius: BorderRadius.circular(MemoryRadius.sheet),
+              borderRadius: BorderRadius.circular(MemoryRadius.xl),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -214,7 +214,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 Text(
                   'Invite friends to share memories',
                   textAlign: TextAlign.center,
-                  style: MemoryTypography.subtitle.copyWith(
+                  style: MemoryTypography.titleMedium.copyWith(
                     color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     fontWeight: FontWeight.w900,
                   ),
@@ -346,7 +346,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                           ? 'No internet connection.\nPlease check your network settings.'
                           : 'Unable to load your memories.\nPlease try again later.',
                       textAlign: TextAlign.center,
-                      style: MemoryTypography.subtitle.copyWith(
+                      style: MemoryTypography.titleMedium.copyWith(
                         color: dark ? MemoryColors.ink : MemoryColors.charcoal,
                         fontWeight: FontWeight.bold,
                         height: 1.4,
@@ -415,7 +415,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                   const SizedBox(height: MemorySpacing.gutter),
                   Text(
                     'invite friends to share memories',
-                    style: MemoryTypography.bodyStrong.copyWith(
+                    style: MemoryTypography.bodyLarge.copyWith(
                       color: dark
                           ? MemoryColors.cream.withValues(alpha: 0.8)
                           : MemoryColors.charcoal.withValues(alpha: 0.8),
@@ -471,7 +471,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                         ? 'no internet connection\nshowing cached state if available'
                         : 'no memories posted in last 24hrs',
                     textAlign: TextAlign.center,
-                    style: MemoryTypography.subtitle.copyWith(
+                    style: MemoryTypography.titleMedium.copyWith(
                       color: dark
                           ? MemoryColors.cream.withValues(alpha: 0.8)
                           : MemoryColors.charcoal.withValues(alpha: 0.8),
@@ -555,12 +555,14 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                               aspectRatio: 3 / 4.3,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(74.0),
+                                  borderRadius: BorderRadius.circular(
+                                    MemoryRadius.xl,
+                                  ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(
-                                        0xFFFADA5E,
-                                      ).withValues(alpha: 0.14),
+                                      color: MemoryColors.accentWarm.withValues(
+                                        alpha: 0.14,
+                                      ),
                                       blurRadius: 28,
                                       spreadRadius: 2,
                                     ),
@@ -593,7 +595,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
               child: Text(
                 'No active memories in the last 24h.\nTap the grid icon to view history.',
                 textAlign: TextAlign.center,
-                style: MemoryTypography.emptyTitle.copyWith(
+                style: MemoryTypography.titleMedium.copyWith(
                   color: dark
                       ? MemoryColors.cream.withValues(alpha: 0.8)
                       : MemoryColors.charcoal.withValues(alpha: 0.8),
@@ -670,7 +672,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     const SizedBox(height: MemorySpacing.xs),
                     Text(
                       m.person,
-                      style: MemoryTypography.body.copyWith(
+                      style: MemoryTypography.bodyMedium.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
                         shadows: [Shadow(color: Colors.black, blurRadius: 4)],
@@ -784,7 +786,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 const Spacer(),
                 Text(
                   'All memories',
-                  style: MemoryTypography.title.copyWith(
+                  style: MemoryTypography.headlineLarge.copyWith(
                     color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                   ),
                 ),
@@ -792,14 +794,13 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 _smallClose(() => _setGridOpen(false), dark),
               ],
             ),
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Text(
                   'No archived memories yet.\nMemories older than 24h will appear here.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: MemoryTypography.bodyMedium.copyWith(
                     color: Colors.grey,
-                    fontSize: 13,
                     height: 1.4,
                   ),
                 ),
@@ -829,7 +830,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 const Spacer(),
                 Text(
                   'All memories',
-                  style: MemoryTypography.title.copyWith(
+                  style: MemoryTypography.headlineLarge.copyWith(
                     color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                   ),
                 ),
@@ -883,7 +884,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                         _setGridOpen(false);
                       },
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(MemoryRadius.md),
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
@@ -1042,7 +1043,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(selectedEmoji, style: const TextStyle(fontSize: 20)),
+                Text(selectedEmoji, style: MemoryTypography.emoji(20)),
                 const SizedBox(width: MemorySpacing.xs),
                 Text(
                   '${m.reactions[selectedEmoji]}',
@@ -1105,7 +1106,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                               },
                               child: Text(
                                 emoji,
-                                style: const TextStyle(fontSize: 32),
+                                style: MemoryTypography.emoji(32),
                               ),
                             );
                           })
@@ -1146,56 +1147,50 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
     child: SizedBox(
       width: 44,
       height: 36,
-      child: Center(
-        child: Text(emoji, style: const TextStyle(fontSize: 28, height: 1)),
-      ),
+      child: Center(child: Text(emoji, style: MemoryTypography.emoji(28))),
     ),
   );
 
-  Widget _roundIcon(IconData icon, VoidCallback onTap, {int badgeCount = 0}) =>
-      BouncyTap(
-        onTap: onTap,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: .22),
+  Widget _roundIcon(
+    IconData icon,
+    VoidCallback onTap, {
+    int badgeCount = 0,
+  }) => BouncyTap(
+    onTap: onTap,
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .22),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+        if (badgeCount > 0)
+          Positioned(
+            right: -4,
+            top: -4,
+            child: Container(
+              padding: const EdgeInsets.all(MemorySpacing.xs),
+              decoration: const BoxDecoration(
+                color: Colors.red,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: Colors.white, size: 20),
-            ),
-            if (badgeCount > 0)
-              Positioned(
-                right: -4,
-                top: -4,
-                child: Container(
-                  padding: const EdgeInsets.all(MemorySpacing.xs),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$badgeCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Center(
+                child: Text(
+                  '$badgeCount',
+                  style: MemoryTypography.micro.copyWith(color: Colors.white),
                 ),
               ),
-          ],
-        ),
-      );
+            ),
+          ),
+      ],
+    ),
+  );
 
   Widget _smallClose(VoidCallback onTap, bool dark) => BouncyTap(
     onTap: onTap,

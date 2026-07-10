@@ -66,9 +66,11 @@ class InboxBubble extends ConsumerWidget {
                               Icons.refresh_rounded,
                               color: Colors.white,
                             ),
-                            title: const Text(
+                            title: Text(
                               'Retry sending',
-                              style: TextStyle(color: Colors.white),
+                              style: MemoryTypography.bodyMedium.copyWith(
+                                color: Colors.white,
+                              ),
                             ),
                             onTap: () {
                               Navigator.pop(ctx);
@@ -82,9 +84,11 @@ class InboxBubble extends ConsumerWidget {
                               Icons.delete_outline_rounded,
                               color: Colors.redAccent,
                             ),
-                            title: const Text(
+                            title: Text(
                               'Delete message',
-                              style: TextStyle(color: Colors.redAccent),
+                              style: MemoryTypography.bodyMedium.copyWith(
+                                color: Colors.redAccent,
+                              ),
                             ),
                             onTap: () {
                               Navigator.pop(ctx);
@@ -159,7 +163,7 @@ class InboxBubble extends ConsumerWidget {
                 children: [
                   Text(
                     msg.text,
-                    style: MemoryTypography.body.copyWith(
+                    style: MemoryTypography.bodyMedium.copyWith(
                       color: mine
                           ? (dark ? MemoryColors.ink : Colors.white)
                           : (dark ? MemoryColors.cream : MemoryColors.charcoal),
@@ -172,7 +176,7 @@ class InboxBubble extends ConsumerWidget {
                     children: [
                       Text(
                         _formatTime(msg.timestamp),
-                        style: TextStyle(
+                        style: MemoryTypography.micro.copyWith(
                           color:
                               (mine
                                       ? (dark ? MemoryColors.ink : Colors.white)
@@ -180,8 +184,6 @@ class InboxBubble extends ConsumerWidget {
                                             ? MemoryColors.cream
                                             : MemoryColors.charcoal))
                                   .withValues(alpha: 0.5),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       if (mine) ...[

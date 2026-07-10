@@ -49,7 +49,10 @@ class MemoryTopBar extends StatelessWidget {
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: MemoryTypography.onSurface(MemoryTypography.display, dark),
+              style: MemoryTypography.onSurface(
+                MemoryTypography.displayLarge,
+                dark,
+              ),
             ),
           ),
         ),

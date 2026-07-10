@@ -306,7 +306,7 @@ class MilestoneCardWidget extends ConsumerWidget {
       width: 310,
       height: 420,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -316,7 +316,7 @@ class MilestoneCardWidget extends ConsumerWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         child: Stack(
           children: [
             // Procedurally painted background pattern
@@ -386,10 +386,8 @@ class MilestoneCardWidget extends ConsumerWidget {
                       Text(
                         '@${user.username.isNotEmpty ? user.username : "memory_user"}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: MemoryTypography.headlineLarge.copyWith(
                           color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
                           shadows: [
                             Shadow(
@@ -412,7 +410,7 @@ class MilestoneCardWidget extends ConsumerWidget {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(MemoryRadius.lg),
+                      borderRadius: BorderRadius.circular(MemoryRadius.xl),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.25),
                         width: 1.5,
@@ -421,7 +419,7 @@ class MilestoneCardWidget extends ConsumerWidget {
                     child: Text(
                       message,
                       textAlign: TextAlign.center,
-                      style: MemoryTypography.body.copyWith(
+                      style: MemoryTypography.bodyMedium.copyWith(
                         color: Colors.white,
                         height: 1.35,
                         shadows: [

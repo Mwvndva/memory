@@ -46,7 +46,7 @@ class MemoryEmptyState extends StatelessWidget {
             title,
             textAlign: TextAlign.center,
             style: MemoryTypography.onSurface(
-              MemoryTypography.emptyTitle,
+              MemoryTypography.titleMedium,
               dark,
             ),
           ),

@@ -46,7 +46,7 @@ abstract final class MemorySnackBar {
         horizontal: MemorySpacing.sheet,
         vertical: MemorySpacing.md,
       ),
-      shape: const RoundedRectangleBorder(borderRadius: MemoryRadius.allSm),
+      shape: const RoundedRectangleBorder(borderRadius: MemoryRadius.allMd),
       animation: null, // let the framework drive it; timing is below
     );
   }

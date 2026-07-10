@@ -626,10 +626,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                       child: Center(
                         child: Text(
                           f.initial,
-                          style: const TextStyle(
+                          style: MemoryTypography.micro.copyWith(
                             color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -863,10 +861,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                   : Text(
                                       'Mock Video Preview\n(Looping Simulation)',
                                       textAlign: TextAlign.center,
-                                      style: MemoryTypography.subtitle.copyWith(
-                                        color: Colors.white70,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: MemoryTypography.titleMedium
+                                          .copyWith(
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                     ),
                             ),
                           )
@@ -898,7 +897,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                             const SizedBox(height: MemorySpacing.xl),
                             Text(
                               'No camera detected',
-                              style: MemoryTypography.bodyStrong.copyWith(
+                              style: MemoryTypography.bodyLarge.copyWith(
                                 color: Colors.white.withValues(alpha: 0.5),
                                 fontWeight: FontWeight.w600,
                               ),
@@ -924,7 +923,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                             const SizedBox(height: MemorySpacing.gutter),
                             Text(
                               'Starting camera...',
-                              style: MemoryTypography.body.copyWith(
+                              style: MemoryTypography.bodyMedium.copyWith(
                                 color: Colors.white.withValues(alpha: 0.7),
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.5,
@@ -985,7 +984,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                             decoration: BoxDecoration(
                               color: dark ? MemoryColors.ink : Colors.white,
                               borderRadius: BorderRadius.circular(
-                                MemoryRadius.lg,
+                                MemoryRadius.xl,
                               ),
                               border: Border.all(
                                 color:
@@ -1007,7 +1006,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                               children: [
                                 Text(
                                   _getUploadStageMessage(uploadState.status),
-                                  style: MemoryTypography.bodyStrong.copyWith(
+                                  style: MemoryTypography.bodyLarge.copyWith(
                                     color: dark
                                         ? MemoryColors.cream
                                         : MemoryColors.charcoal,
@@ -1025,7 +1024,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                                 : MemoryColors.charcoal)
                                             .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(
-                                      MemoryRadius.sm,
+                                      MemoryRadius.md,
                                     ),
                                   ),
                                   const SizedBox(height: MemorySpacing.lg),
@@ -1047,7 +1046,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                                 : MemoryColors.charcoal)
                                             .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(
-                                      MemoryRadius.sm,
+                                      MemoryRadius.md,
                                     ),
                                   ),
                                 ],
@@ -1085,16 +1084,17 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
             autofocus: true,
             maxLines: 2,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            // The caption is pinch-resizable, so its size is state.
+            style: MemoryTypography.mediaCaption.copyWith(
               color: Colors.white,
               fontSize: _captureCaptionSize,
-              fontWeight: FontWeight.w900,
-              height: 1.05,
             ),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               border: InputBorder.none,
               hintText: 'Add caption',
-              hintStyle: TextStyle(color: Colors.white70),
+              hintStyle: MemoryTypography.bodyMedium.copyWith(
+                color: Colors.white70,
+              ),
             ),
           ),
         ),

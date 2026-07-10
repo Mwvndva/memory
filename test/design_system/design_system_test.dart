@@ -265,24 +265,55 @@ void main() {
   });
 
   group('type scale', () {
+    test('is ten steps, strictly descending, with no duplicate size', () {
+      const scale = <String, TextStyle>{
+        'displayLarge': MemoryTypography.displayLarge,
+        'headlineLarge': MemoryTypography.headlineLarge,
+        'headlineMedium': MemoryTypography.headlineMedium,
+        'titleLarge': MemoryTypography.titleLarge,
+        'titleMedium': MemoryTypography.titleMedium,
+        'bodyLarge': MemoryTypography.bodyLarge,
+        'bodyMedium': MemoryTypography.bodyMedium,
+        'bodySmall': MemoryTypography.bodySmall,
+        'caption': MemoryTypography.caption,
+        'overline': MemoryTypography.overline,
+      };
+      expect(scale, hasLength(10));
+
+      final sizes = scale.values.map((s) => s.fontSize!).toList();
+      for (var i = 1; i < sizes.length; i++) {
+        expect(
+          sizes[i],
+          lessThan(sizes[i - 1]),
+          reason: 'the scale must descend without ties',
+        );
+      }
+    });
+
+    test('an emoji carries no weight and a pinned line height', () {
+      final e = MemoryTypography.emoji(28);
+      expect(e.fontSize, 28);
+      expect(e.fontWeight, isNull);
+      expect(e.height, 1);
+    });
+
     test('carries no fontFamily, so it inherits Plus Jakarta Sans', () {
       const styles = <TextStyle>[
         MemoryTypography.displayLarge,
-        MemoryTypography.display,
-        MemoryTypography.title,
-        MemoryTypography.sectionTitle,
-        MemoryTypography.headline,
-        MemoryTypography.heading,
-        MemoryTypography.subtitle,
-        MemoryTypography.emptyTitle,
-        MemoryTypography.bodyStrong,
-        MemoryTypography.body,
+        MemoryTypography.headlineLarge,
+        MemoryTypography.headlineMedium,
+        MemoryTypography.titleLarge,
+        MemoryTypography.titleMedium,
+        MemoryTypography.bodyLarge,
+        MemoryTypography.bodyMedium,
         MemoryTypography.bodySmall,
         MemoryTypography.caption,
-        MemoryTypography.sectionLabel,
+        MemoryTypography.overline,
+        MemoryTypography.wordmark,
+        MemoryTypography.mediaCaption,
+        MemoryTypography.micro,
         MemoryTypography.button,
         MemoryTypography.buttonCompact,
-        MemoryTypography.micro,
       ];
       for (final style in styles) {
         expect(style.fontFamily, isNull);

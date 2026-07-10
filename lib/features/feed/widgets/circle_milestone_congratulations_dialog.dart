@@ -144,7 +144,7 @@ class _CircleMilestoneCongratulationsDialogState
                 padding: const EdgeInsets.all(MemorySpacing.sheet),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(MemoryRadius.card),
+                  borderRadius: BorderRadius.circular(MemoryRadius.xl),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.15),
                     width: 1.5,
@@ -155,7 +155,7 @@ class _CircleMilestoneCongratulationsDialogState
                   children: [
                     Text(
                       'Share circle milestone!',
-                      style: MemoryTypography.bodyStrong.copyWith(
+                      style: MemoryTypography.bodyLarge.copyWith(
                         color: Colors.white,
                       ),
                     ),

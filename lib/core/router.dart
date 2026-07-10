@@ -187,7 +187,7 @@ void showGlobalNotification({
                 ),
                 decoration: BoxDecoration(
                   color: dark ? MemoryColors.ink : MemoryColors.accent,
-                  borderRadius: BorderRadius.circular(MemoryRadius.lg),
+                  borderRadius: BorderRadius.circular(MemoryRadius.xl),
                   boxShadow: [
                     BoxShadow(
                       color: MemoryColors.ink.withValues(alpha: 0.12),

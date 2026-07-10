@@ -41,7 +41,7 @@ class MemoryBottomSheet extends StatelessWidget {
         padding: const EdgeInsets.all(MemorySpacing.sheet),
         decoration: BoxDecoration(
           color: MemoryColors.ink,
-          borderRadius: MemoryRadius.allSheet,
+          borderRadius: MemoryRadius.allXl,
           border: Border.all(
             color: MemoryColors.hairline(
               dark,

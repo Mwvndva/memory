@@ -58,7 +58,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         ),
         title: Text(
           'Notifications',
-          style: MemoryTypography.sectionTitle.copyWith(
+          style: MemoryTypography.headlineMedium.copyWith(
             color: dark ? MemoryColors.accent : MemoryColors.ink,
           ),
         ),

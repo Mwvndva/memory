@@ -154,7 +154,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
       width: 310,
       height: 420,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -164,7 +164,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         child: Stack(
           children: [
             // Procedurally painted background pattern
@@ -215,7 +215,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(MemoryRadius.lg),
+                      borderRadius: BorderRadius.circular(MemoryRadius.xl),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.25),
                         width: 1.5,

@@ -43,12 +43,7 @@ Future<String> _renderMemoryCard(MemoryItem memory) async {
     final textPainter = TextPainter(
       text: TextSpan(
         text: memory.caption,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 28,
-          fontWeight: FontWeight.w900,
-          height: 1.15,
-        ),
+        style: MemoryTypography.mediaCaption.copyWith(color: Colors.white),
       ),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,

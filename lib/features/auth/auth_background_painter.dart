@@ -39,9 +39,10 @@ class AuthBackgroundPainter extends CustomPainter {
         final textPainter = TextPainter(
           text: TextSpan(
             text: 'M',
-            style: TextStyle(
+            // A decorative glyph that grows with the canvas, so its size is
+            // computed rather than picked from the scale.
+            style: MemoryTypography.displayLarge.copyWith(
               fontSize: scale,
-              fontWeight: FontWeight.w900,
               color: Colors.black.withValues(alpha: opacity),
             ),
           ),

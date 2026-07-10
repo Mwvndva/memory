@@ -210,7 +210,7 @@ void showShareCard(
                         children: [
                           Text(
                             'Send to $channel',
-                            style: MemoryTypography.bodyStrong.copyWith(
+                            style: MemoryTypography.bodyLarge.copyWith(
                               color: MemoryColors.ink,
                               fontWeight: FontWeight.w900,
                               height: 1.1,

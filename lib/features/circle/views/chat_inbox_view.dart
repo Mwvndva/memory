@@ -189,7 +189,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         children: [
                           Text(
                             widget.contactName,
-                            style: MemoryTypography.emptyTitle.copyWith(
+                            style: MemoryTypography.titleMedium.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w900,
                             ),
@@ -201,7 +201,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                                 : (isPendingRequest
                                       ? 'Wants to share'
                                       : 'Not in Circle'),
-                            style: MemoryTypography.sectionLabel.copyWith(
+                            style: MemoryTypography.overline.copyWith(
                               color: Colors.white.withValues(alpha: 0.6),
                             ),
                           ),
@@ -237,7 +237,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                           children: [
                             Text(
                               'No messages yet',
-                              style: MemoryTypography.heading.copyWith(
+                              style: MemoryTypography.titleLarge.copyWith(
                                 color: MemoryColors.charcoal,
                               ),
                             ),
@@ -245,7 +245,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                             Text(
                               'Say hello to start the conversation!',
                               textAlign: TextAlign.center,
-                              style: MemoryTypography.body.copyWith(
+                              style: MemoryTypography.bodyMedium.copyWith(
                                 color: MemoryColors.charcoal.withValues(
                                   alpha: 0.6,
                                 ),
@@ -339,7 +339,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
         padding: const EdgeInsets.all(MemorySpacing.gutter),
         decoration: BoxDecoration(
           color: MemoryColors.ink,
-          borderRadius: BorderRadius.circular(MemoryRadius.lg),
+          borderRadius: BorderRadius.circular(MemoryRadius.xl),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.2),
@@ -355,7 +355,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             Text(
               '${widget.contactName} wants to share memories',
               textAlign: TextAlign.center,
-              style: MemoryTypography.bodyStrong.copyWith(
+              style: MemoryTypography.bodyLarge.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
               ),
@@ -466,7 +466,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
         padding: const EdgeInsets.all(MemorySpacing.gutter),
         decoration: BoxDecoration(
           color: MemoryColors.ink,
-          borderRadius: BorderRadius.circular(MemoryRadius.lg),
+          borderRadius: BorderRadius.circular(MemoryRadius.xl),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.2),
@@ -482,7 +482,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             Text(
               '${widget.contactName} is not in your circle',
               textAlign: TextAlign.center,
-              style: MemoryTypography.bodyStrong.copyWith(
+              style: MemoryTypography.bodyLarge.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
               ),
@@ -540,14 +540,14 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             Expanded(
               child: TextField(
                 controller: _messageController,
-                style: MemoryTypography.bodyStrong.copyWith(
+                style: MemoryTypography.bodyLarge.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
                 ),
                 onSubmitted: (_) => _sendMessage(),
                 decoration: InputDecoration(
                   hintText: 'Message ${widget.contactName}',
-                  hintStyle: TextStyle(
+                  hintStyle: MemoryTypography.bodyMedium.copyWith(
                     color: Colors.white.withValues(alpha: 0.4),
                   ),
                   border: InputBorder.none,

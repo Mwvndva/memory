@@ -63,7 +63,7 @@ class NotificationCard extends StatelessWidget {
           decoration: BoxDecoration(
             // Read rows drop their surface entirely and sit on the page.
             color: unread ? MemoryColors.surface(dark) : Colors.transparent,
-            borderRadius: BorderRadius.circular(MemoryRadius.lg),
+            borderRadius: BorderRadius.circular(MemoryRadius.xl),
             border: Border.all(
               color: MemoryColors.hairline(
                 dark,
@@ -85,7 +85,7 @@ class NotificationCard extends StatelessWidget {
                     Text(
                       item.title,
                       style: MemoryTypography.onSurface(
-                        MemoryTypography.body.copyWith(
+                        MemoryTypography.bodyMedium.copyWith(
                           fontWeight: unread
                               ? FontWeight.w900
                               : FontWeight.w700,

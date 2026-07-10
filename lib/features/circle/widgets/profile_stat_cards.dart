@@ -65,7 +65,7 @@ class _StatCard extends StatelessWidget {
         color: dark
             ? MemoryColors.ink
             : Color.alphaBlend(accent.withValues(alpha: 0.08), Colors.white),
-        borderRadius: BorderRadius.circular(MemoryRadius.card),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         border: Border.all(color: accent.withValues(alpha: 0.18), width: 1),
         boxShadow: [
           BoxShadow(
@@ -108,10 +108,8 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: MemorySpacing.md),
           Text(
             value,
-            style: TextStyle(
+            style: MemoryTypography.headlineLarge.copyWith(
               color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
               height: 1,
             ),
           ),
@@ -208,7 +206,7 @@ class _ShareIcon extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(MemoryRadius.sm),
+        borderRadius: BorderRadius.circular(MemoryRadius.md),
       ),
       child: Icon(icon, color: accent, size: 16),
     );

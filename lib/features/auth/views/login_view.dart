@@ -178,19 +178,15 @@ class _LoginViewState extends ConsumerState<LoginView>
                     // any other type in the app.
                     Text(
                       'Memory',
-                      style: headlineStyle(fg).copyWith(fontSize: 36),
+                      style: MemoryTypography.wordmark.copyWith(color: fg),
                     ),
                     const SizedBox(
                       height: MemorySpacing.lg,
                     ), // Increased spacing
                     Text(
                       'Share memories with your circle', // Canonical tagline
-                      style: TextStyle(
-                        color: fg.withValues(
-                          alpha: .55,
-                        ), // Softer tagline color
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                      style: MemoryTypography.bodyMedium.copyWith(
+                        color: fg.withValues(alpha: .55),
                         letterSpacing: 0.2,
                       ),
                     ),

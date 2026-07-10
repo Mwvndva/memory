@@ -22,7 +22,7 @@ class RequestRow extends ConsumerWidget {
       padding: const EdgeInsets.all(MemorySpacing.xxl),
       decoration: BoxDecoration(
         color: dark ? MemoryColors.ink : Colors.white,
-        borderRadius: BorderRadius.circular(MemoryRadius.card),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         border: Border.all(
           color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
             alpha: 0.07,
@@ -54,7 +54,7 @@ class RequestRow extends ConsumerWidget {
               children: [
                 Text(
                   name,
-                  style: MemoryTypography.bodyStrong.copyWith(color: fg),
+                  style: MemoryTypography.bodyLarge.copyWith(color: fg),
                 ),
                 const SizedBox(height: MemorySpacing.xxs),
                 Text(
@@ -165,7 +165,7 @@ class ChatRow extends ConsumerWidget {
       padding: const EdgeInsets.all(MemorySpacing.xxl),
       decoration: BoxDecoration(
         color: dark ? MemoryColors.ink : Colors.white,
-        borderRadius: BorderRadius.circular(MemoryRadius.card),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         border: Border.all(
           color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
             alpha: 0.07,
@@ -227,7 +227,7 @@ class ChatRow extends ConsumerWidget {
                           children: [
                             Text(
                               name,
-                              style: MemoryTypography.bodyStrong.copyWith(
+                              style: MemoryTypography.bodyLarge.copyWith(
                                 color: dark
                                     ? MemoryColors.cream
                                     : MemoryColors.charcoal,

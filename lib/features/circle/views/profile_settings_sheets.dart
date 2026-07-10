@@ -37,9 +37,8 @@ class _NotificationPreferencesSheetState
     Widget typeSwitch(String label, NotificationType type) => SwitchListTile(
       title: Text(
         label,
-        style: TextStyle(
+        style: MemoryTypography.bodyMedium.copyWith(
           color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-          fontSize: 13,
         ),
       ),
       value: prefService.isNotificationTypeEnabled(type),
@@ -58,7 +57,7 @@ class _NotificationPreferencesSheetState
         children: [
           Text(
             'Notification Preferences',
-            style: MemoryTypography.subtitle.copyWith(
+            style: MemoryTypography.titleMedium.copyWith(
               color: dark ? MemoryColors.cream : MemoryColors.charcoal,
             ),
           ),
@@ -66,9 +65,8 @@ class _NotificationPreferencesSheetState
           SwitchListTile(
             title: Text(
               'Push Notifications',
-              style: TextStyle(
+              style: MemoryTypography.bodyMedium.copyWith(
                 color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                fontSize: 13,
               ),
             ),
             value: prefService.isAllNotificationsEnabled(),
@@ -126,9 +124,8 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
     ) => SwitchListTile(
       title: Text(
         label,
-        style: TextStyle(
+        style: MemoryTypography.bodyMedium.copyWith(
           color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-          fontSize: 13,
         ),
       ),
       value: value,
@@ -147,7 +144,7 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
         children: [
           Text(
             'Privacy Settings',
-            style: MemoryTypography.subtitle.copyWith(
+            style: MemoryTypography.titleMedium.copyWith(
               color: dark ? MemoryColors.cream : MemoryColors.charcoal,
             ),
           ),
@@ -248,7 +245,7 @@ class _SecuritySettingsSheetState
         children: [
           Text(
             'Security & Active Sessions',
-            style: MemoryTypography.subtitle.copyWith(
+            style: MemoryTypography.titleMedium.copyWith(
               color: dark ? MemoryColors.cream : MemoryColors.charcoal,
             ),
           ),
@@ -266,10 +263,9 @@ class _SecuritySettingsSheetState
                   ),
                   child: Text(
                     'Could not load your active sessions.',
-                    style: TextStyle(
+                    style: MemoryTypography.bodySmall.copyWith(
                       color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
                           .withValues(alpha: 0.7),
-                      fontSize: 12,
                     ),
                   ),
                 );
@@ -283,10 +279,9 @@ class _SecuritySettingsSheetState
                   ),
                   child: Text(
                     'No active sessions.',
-                    style: TextStyle(
+                    style: MemoryTypography.bodySmall.copyWith(
                       color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
                           .withValues(alpha: 0.7),
-                      fontSize: 12,
                     ),
                   ),
                 );
@@ -299,7 +294,7 @@ class _SecuritySettingsSheetState
                     ListTile(
                       title: Text(
                         s.isCurrent ? '${s.device} (this device)' : s.device,
-                        style: MemoryTypography.body.copyWith(
+                        style: MemoryTypography.bodyMedium.copyWith(
                           color: dark
                               ? MemoryColors.cream
                               : MemoryColors.charcoal,
@@ -307,13 +302,12 @@ class _SecuritySettingsSheetState
                       ),
                       subtitle: Text(
                         s.lastActive,
-                        style: TextStyle(
+                        style: MemoryTypography.caption.copyWith(
                           color:
                               (dark
                                       ? MemoryColors.cream
                                       : MemoryColors.charcoal)
                                   .withValues(alpha: 0.6),
-                          fontSize: 11,
                         ),
                       ),
                       trailing: s.isCurrent

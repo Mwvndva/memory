@@ -263,7 +263,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                   ? 'Account Details'
                                   : 'Terms & Finish',
                               // Smaller than the other auth headlines: this line is two lines long.
-                              style: headlineStyle(fg).copyWith(fontSize: 24),
+                              style: MemoryTypography.headlineLarge.copyWith(
+                                color: fg,
+                              ),
                             ),
                           ],
                         ),
@@ -310,11 +312,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                             children: [
                               // Step 1 - Identity
                               if (_currentStep == 1) ...[
-                                const Text(
+                                Text(
                                   'The best memories start with real people.',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
+                                  style: MemoryTypography.bodySmall.copyWith(
                                     color: Colors.grey,
                                   ),
                                 ),
@@ -416,11 +416,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
 
                               // Step 3 - Finish Consent & Submit
                               if (_currentStep == 3) ...[
-                                const Text(
+                                Text(
                                   'Confirm your registration below to agree and complete registration.',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
+                                  style: MemoryTypography.bodySmall.copyWith(
                                     color: Colors.grey,
                                   ),
                                 ),
@@ -479,13 +477,17 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                                     context,
                                                     dark,
                                                   ),
-                                                  child: const Text(
+                                                  child: Text(
                                                     'Terms and Conditions',
-                                                    style: TextStyle(
-                                                      color: MemoryColors.ink,
-                                                      decoration: TextDecoration
-                                                          .underline,
-                                                    ),
+                                                    style: MemoryTypography
+                                                        .bodyMedium
+                                                        .copyWith(
+                                                          color:
+                                                              MemoryColors.ink,
+                                                          decoration:
+                                                              TextDecoration
+                                                                  .underline,
+                                                        ),
                                                   ),
                                                 ),
                                               ),
@@ -534,7 +536,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           decoration: BoxDecoration(
             color: dark ? MemoryColors.ink : Colors.white,
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(MemoryRadius.xl),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.15),
@@ -560,7 +562,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 children: [
                   Text(
                     'Terms & Conditions',
-                    style: MemoryTypography.sectionTitle.copyWith(
+                    style: MemoryTypography.headlineMedium.copyWith(
                       color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     ),
                   ),
@@ -674,7 +676,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
         children: [
           Text(
             heading,
-            style: MemoryTypography.body.copyWith(
+            style: MemoryTypography.bodyMedium.copyWith(
               color: MemoryColors.ink,
               fontWeight: FontWeight.w800,
             ),
@@ -682,11 +684,10 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           const SizedBox(height: MemorySpacing.sm),
           Text(
             body,
-            style: TextStyle(
+            style: MemoryTypography.bodySmall.copyWith(
               color: dark
                   ? MemoryColors.cream.withValues(alpha: 0.8)
                   : MemoryColors.charcoal.withValues(alpha: 0.8),
-              fontSize: 12.5,
               height: 1.45,
             ),
           ),
@@ -714,7 +715,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               child: DropdownButtonFormField<CountryInfo>(
                 initialValue: selectedCountry,
                 dropdownColor: dark ? MemoryColors.ink : MemoryColors.accent,
-                borderRadius: BorderRadius.circular(MemoryRadius.md),
+                borderRadius: BorderRadius.circular(MemoryRadius.lg),
                 icon: Icon(
                   Icons.keyboard_arrow_down_rounded,
                   color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
@@ -730,11 +731,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                         value: c,
                         child: Row(
                           children: [
-                            Text(c.flag, style: const TextStyle(fontSize: 18)),
+                            Text(c.flag, style: MemoryTypography.emoji(18)),
                             const SizedBox(width: MemorySpacing.md),
                             Text(
                               c.code,
-                              style: MemoryTypography.body.copyWith(
+                              style: MemoryTypography.bodyMedium.copyWith(
                                 color: dark
                                     ? MemoryColors.cream
                                     : MemoryColors.charcoal,
@@ -743,8 +744,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                             const SizedBox(width: MemorySpacing.sm),
                             Text(
                               c.dialCode,
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: MemoryTypography.caption.copyWith(
                                 color:
                                     (dark
                                             ? MemoryColors.cream
@@ -761,7 +761,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     .map(
                       (c) => Row(
                         children: [
-                          Text(c.flag, style: const TextStyle(fontSize: 18)),
+                          Text(c.flag, style: MemoryTypography.emoji(18)),
                           const SizedBox(width: MemorySpacing.sm),
                           Text(
                             c.code,
@@ -781,7 +781,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                   filled: true,
                   fillColor: dark ? MemoryColors.ink : MemoryColors.cream,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(MemoryRadius.md),
+                    borderRadius: BorderRadius.circular(MemoryRadius.lg),
                     borderSide: BorderSide.none,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
@@ -803,7 +803,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                   filled: true,
                   fillColor: Colors.black,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(MemoryRadius.md),
+                    borderRadius: BorderRadius.circular(MemoryRadius.lg),
                     borderSide: BorderSide.none,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
