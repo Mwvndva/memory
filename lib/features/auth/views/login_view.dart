@@ -119,27 +119,13 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 ),
                 const SizedBox(height: 36),
 
-                // Auth card with premium spacing, elevation & rounded geometries
-                Container(
+                // The form sits straight on the yellow — no card. The fields
+                // are their own dark slabs, so a white panel behind them only
+                // boxed the screen in.
+                SizedBox(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: MemorySpacing.section,
-                    vertical: 24,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(MemoryRadius.xl),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 24,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 12),
-                      ),
-                    ],
-                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _field('Email or username', _loginId, '', dark),
                       const SizedBox(height: MemorySpacing.xxl),
@@ -162,7 +148,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: MemorySpacing.section),
+                      // A clear break so the actions do not crowd the last field.
+                      const SizedBox(height: MemorySpacing.xxxl),
                       MemoryButton(
                         label: 'Continue',
                         onPressed: _onLogin,
@@ -171,13 +158,13 @@ class _LoginViewState extends ConsumerState<LoginView> {
                         foreground: Colors.white,
                         isLoading: _loginLoading,
                       ),
-                      const SizedBox(height: MemorySpacing.xl),
+                      const SizedBox(height: MemorySpacing.gutter),
                       MemoryButton(
                         label: 'Create account',
                         onPressed: () => context.push('/create'),
                         dark: dark,
-                        background: MemoryColors.cream,
-                        foreground: MemoryColors.charcoal,
+                        background: Colors.white,
+                        foreground: MemoryColors.ink,
                       ),
                     ],
                   ),

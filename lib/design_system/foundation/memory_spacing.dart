@@ -32,4 +32,8 @@ abstract final class MemorySpacing {
 
   /// 20 — section breaks.
   static const double section = 20;
+
+  /// 28 — a generous break before a screen's primary action, where a section
+  /// gap reads as too tight to separate a form from its buttons.
+  static const double xxxl = 28;
 }
