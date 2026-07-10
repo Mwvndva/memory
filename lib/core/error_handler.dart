@@ -2,35 +2,29 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 
+import 'package:memory_app/design_system/design_system.dart';
+
 /// Centralized error handling helpers to keep UX consistent.
 /// Use `showAppError(context, message)` to display user-facing errors.
 
+/// Show a user-facing error. Delegates to [MemorySnackBar] so every transient
+/// message in the app has one implementation.
 void showAppError(BuildContext context, String message, {Duration? duration}) {
-  final snack = SnackBar(
-    content: Text(message),
-    backgroundColor: Colors.black,
-    behavior: SnackBarBehavior.floating,
-    duration: duration ?? const Duration(seconds: 4),
-    margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  MemorySnackBar.show(
+    context,
+    message,
+    tone: MemorySnackTone.error,
+    duration: duration,
   );
-  ScaffoldMessenger.of(context).showSnackBar(snack);
 }
 
+/// Show a neutral confirmation.
 void showAppMessage(
   BuildContext context,
   String message, {
   Duration? duration,
 }) {
-  final snack = SnackBar(
-    content: Text(message),
-    backgroundColor: Colors.grey[900],
-    behavior: SnackBarBehavior.floating,
-    duration: duration ?? const Duration(seconds: 3),
-    margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-  );
-  ScaffoldMessenger.of(context).showSnackBar(snack);
+  MemorySnackBar.show(context, message, duration: duration);
 }
 
 /// Centralized Exception Taxonomy

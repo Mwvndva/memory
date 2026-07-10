@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:memory_app/core/api_config.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/features/feed/feed.dart';
@@ -330,17 +331,17 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   const SizedBox(height: 14),
                   ProfileStatCards(dark: dark),
                   const SizedBox(height: 12),
-                  ProfileSectionCard(
+                  MemorySection(
                     title: 'CONTACT',
                     dark: dark,
                     children: [
-                      ProfileDetailRow(
+                      MemoryListTile(
                         label: 'Email',
                         value: displayEmail,
                         isLast: false,
                         dark: dark,
                       ),
-                      ProfileDetailRow(
+                      MemoryListTile(
                         label: 'Phone',
                         value: displayPhone,
                         isLast: true,
@@ -355,23 +356,23 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     onAddPerson: () => showInviteOptions(context, dark),
                   ),
                   const SizedBox(height: 12),
-                  ProfileSectionCard(
+                  MemorySection(
                     title: 'ACCOUNT & PREFERENCES',
                     dark: dark,
                     children: [
-                      ProfilePolicyRow(
+                      MemoryActionTile(
                         title: 'Notification Preferences',
                         onTap: () => showNotificationPreferences(context, dark),
                         isLast: false,
                         dark: dark,
                       ),
-                      ProfilePolicyRow(
+                      MemoryActionTile(
                         title: 'Privacy Settings',
                         onTap: () => showPrivacySettings(context, dark),
                         isLast: false,
                         dark: dark,
                       ),
-                      ProfilePolicyRow(
+                      MemoryActionTile(
                         title: 'Security Settings',
                         onTap: () => showSecuritySettings(context, dark),
                         isLast: true,
@@ -380,17 +381,17 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  ProfileSectionCard(
+                  MemorySection(
                     title: 'DATA MANAGEMENT',
                     dark: dark,
                     children: [
-                      ProfilePolicyRow(
+                      MemoryActionTile(
                         title: 'Export My Data',
                         onTap: () => showExportDialog(context, dark),
                         isLast: false,
                         dark: dark,
                       ),
-                      ProfilePolicyRow(
+                      MemoryActionTile(
                         title: 'Delete Account',
                         onTap: () => showDeleteAccountDialog(context, dark),
                         isLast: true,
@@ -399,11 +400,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  ProfileSectionCard(
+                  MemorySection(
                     title: 'LEGAL & SUPPORT',
                     dark: dark,
                     children: [
-                      ProfilePolicyRow(
+                      MemoryActionTile(
                         title: 'Privacy Policy',
                         onTap: () => showPolicyDialog(
                           context,
@@ -414,7 +415,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         isLast: false,
                         dark: dark,
                       ),
-                      ProfilePolicyRow(
+                      MemoryActionTile(
                         title: 'Terms & Conditions',
                         onTap: () => showFullTermsSheet(context, dark),
                         isLast: true,

@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/auth/repositories/auth_repository.dart';
 
 import '../repositories/circles_repository.dart';
@@ -35,7 +36,7 @@ void showInviteOptions(BuildContext context, bool dark) {
 
         final inviteService = ref.read(externalInviteServiceProvider);
 
-        return ProfileActionSheet(
+        return MemoryBottomSheet(
           dark: dark,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -156,9 +157,9 @@ void showInviteOptions(BuildContext context, bool dark) {
                 ],
               ),
               const SizedBox(height: 8),
-              ProfilePill(
-                text: 'Share via System',
-                onTap: () async {
+              MemoryButton(
+                label: 'Share via System',
+                onPressed: () async {
                   Navigator.pop(context);
                   await inviteService.shareToSystem(
                     referralCode: displayUsername,
@@ -166,13 +167,13 @@ void showInviteOptions(BuildContext context, bool dark) {
                   );
                 },
                 dark: dark,
-                color: dark ? kCream : kCharcoal,
-                foreground: dark ? kCharcoal : Colors.white,
+                background: dark ? MemoryColors.cream : MemoryColors.charcoal,
+                foreground: dark ? MemoryColors.charcoal : Colors.white,
               ),
               const SizedBox(height: 8),
-              ProfilePill(
-                text: 'Copy invite link',
-                onTap: () async {
+              MemoryButton(
+                label: 'Copy invite link',
+                onPressed: () async {
                   final success = await inviteService.copyInviteLink(
                     referralCode: displayUsername,
                     username: displayUsername,
@@ -187,8 +188,8 @@ void showInviteOptions(BuildContext context, bool dark) {
                   }
                 },
                 dark: dark,
-                color: dark ? kCream : kCharcoal,
-                foreground: dark ? kCharcoal : Colors.white,
+                background: dark ? MemoryColors.cream : MemoryColors.charcoal,
+                foreground: dark ? MemoryColors.charcoal : Colors.white,
               ),
             ],
           ),
@@ -236,7 +237,7 @@ void showShareCard(
           }
         }
 
-        return ProfileActionSheet(
+        return MemoryBottomSheet(
           dark: dark,
           child: Column(
             mainAxisSize: MainAxisSize.min,

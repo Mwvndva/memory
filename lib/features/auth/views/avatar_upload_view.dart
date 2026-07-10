@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/shared/widgets/pills.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class AvatarUploadView extends ConsumerStatefulWidget {
   const AvatarUploadView({super.key});
@@ -159,20 +159,20 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
                 ),
               ),
               const Spacer(),
-              pill(
-                'Continue',
-                () => context.go('/contacts'),
-                dark,
-                color: dark ? kYellow : kBlack,
+              MemoryButton(
+                label: 'Continue',
+                onPressed: () => context.go('/contacts'),
+                dark: dark,
+                background: dark ? MemoryColors.accent : MemoryColors.ink,
                 foreground: Colors.white,
               ),
-              const SizedBox(height: 10),
-              pill(
-                'Skip for now',
-                () => context.go('/contacts'),
-                dark,
-                color: dark ? kCream : kCharcoal,
-                foreground: dark ? kCharcoal : Colors.white,
+              const SizedBox(height: MemorySpacing.lg),
+              MemoryButton(
+                label: 'Skip for now',
+                onPressed: () => context.go('/contacts'),
+                dark: dark,
+                background: dark ? MemoryColors.cream : MemoryColors.charcoal,
+                foreground: dark ? MemoryColors.charcoal : Colors.white,
               ),
             ],
           ),

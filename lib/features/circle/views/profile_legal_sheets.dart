@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 const String _termsLastUpdated = 'Last Updated: June 2026';
 
@@ -33,35 +33,49 @@ const List<(String heading, String body)> _termsSections = [
 
 /// Full-height sheet listing the Terms & Conditions.
 void showFullTermsSheet(BuildContext context, bool dark) {
-  showModalBottomSheet(
+  MemoryBottomSheet.show(
     context: context,
     isScrollControlled: true,
-    useRootNavigator: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => Container(
+    builder: (_) => _TermsSheet(dark: dark),
+  );
+}
+
+class _TermsSheet extends StatelessWidget {
+  const _TermsSheet({required this.dark});
+
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
       height: MediaQuery.sizeOf(context).height * 0.88,
-      margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      margin: const EdgeInsets.fromLTRB(
+        MemorySpacing.sheet,
+        0,
+        MemorySpacing.sheet,
+        MemorySpacing.sheet,
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        MemorySpacing.section,
+        MemorySpacing.gutter,
+        MemorySpacing.section,
+        MemorySpacing.section,
+      ),
       decoration: BoxDecoration(
-        color: dark ? kBlack : Colors.white,
+        color: MemoryColors.surface(dark),
         borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: MemoryShadows.overlay(dark),
       ),
       child: Column(
         children: [
+          // Grab handle.
           Container(
             width: 40,
             height: 5,
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: const EdgeInsets.only(bottom: MemorySpacing.gutter),
             decoration: BoxDecoration(
-              color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(999),
+              color: MemoryColors.hairline(dark, alpha: 0.15),
+              borderRadius: MemoryRadius.allPill,
             ),
           ),
           Row(
@@ -69,30 +83,26 @@ void showFullTermsSheet(BuildContext context, bool dark) {
             children: [
               Text(
                 'Terms & Conditions',
-                style: TextStyle(
-                  color: dark ? kCream : kCharcoal,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
+                style: MemoryTypography.onSurface(
+                  MemoryTypography.display.copyWith(fontSize: 20, height: 1.0),
+                  dark,
                 ),
               ),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: (dark ? kCream : kCharcoal).withValues(alpha: 0.08),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.close_rounded,
-                    color: dark ? kCream : kCharcoal,
-                    size: 18,
-                  ),
-                ),
+              MemoryIconButton(
+                icon: Icons.close_rounded,
+                onPressed: () => Navigator.pop(context),
+                semanticLabel: 'Close',
+                iconSize: 18,
+                visualSize: 30,
+                filled: true,
+                background: MemoryColors.foregroundOn(
+                  dark,
+                ).withValues(alpha: MemoryColors.alphaBorder),
+                color: MemoryColors.foregroundOn(dark),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: MemorySpacing.sheet),
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -101,46 +111,32 @@ void showFullTermsSheet(BuildContext context, bool dark) {
                 children: [
                   Text(
                     _termsLastUpdated,
-                    style: TextStyle(
-                      color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                    style: MemoryTypography.mutedOnSurface(
+                      MemoryTypography.caption.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                      dark,
+                      alpha: 0.6,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: MemorySpacing.xxl),
                   for (final (heading, body) in _termsSections)
                     _TermsItem(heading: heading, body: body, dark: dark),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: dark ? kYellow : kBlack,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Text(
-                  'Close',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ),
+          const SizedBox(height: MemorySpacing.gutter),
+          MemoryButton(
+            label: 'Close',
+            onPressed: () => Navigator.pop(context),
+            dark: dark,
+            foreground: Colors.white,
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _TermsItem extends StatelessWidget {
@@ -157,27 +153,26 @@ class _TermsItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: MemorySpacing.sheet),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             heading,
-            style: TextStyle(
-              color: dark ? kYellow : kBlack,
-              fontSize: 13,
+            style: MemoryTypography.body.copyWith(
               fontWeight: FontWeight.w800,
+              color: dark ? MemoryColors.accent : MemoryColors.ink,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: MemorySpacing.sm),
           Text(
             body,
-            style: TextStyle(
-              color: dark
-                  ? kCream.withValues(alpha: 0.8)
-                  : kCharcoal.withValues(alpha: 0.8),
-              fontSize: 12.5,
+            style: MemoryTypography.bodySmall.copyWith(
+              fontWeight: FontWeight.w400,
               height: 1.45,
+              color: MemoryColors.foregroundOn(
+                dark,
+              ).withValues(alpha: MemoryColors.alphaSecondary),
             ),
           ),
         ],
@@ -193,38 +188,27 @@ void showPolicyDialog(
   String content,
   bool dark,
 ) {
-  showDialog(
+  MemoryDialog.show(
     context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: dark ? kBlack : kYellow,
-      title: Text(
-        title,
-        style: TextStyle(
-          color: dark ? kCream : kCharcoal,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
+    builder: (ctx) => MemoryDialog(
+      title: title,
+      dark: dark,
       content: SingleChildScrollView(
         child: Text(
           content,
-          style: TextStyle(
-            color: dark
-                ? kCream.withValues(alpha: 0.8)
-                : kCharcoal.withValues(alpha: 0.8),
-            fontSize: 13,
+          style: MemoryTypography.body.copyWith(
+            fontWeight: FontWeight.w500,
+            color: MemoryColors.foregroundOn(
+              dark,
+            ).withValues(alpha: MemoryColors.alphaSecondary),
           ),
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Close',
-            style: TextStyle(
-              color: dark ? kYellow : kBlack,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+        MemoryDialogAction(
+          label: 'Close',
+          isPrimary: true,
+          onPressed: () => Navigator.pop(ctx),
         ),
       ],
     ),

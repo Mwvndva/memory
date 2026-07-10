@@ -1,0 +1,194 @@
+import 'package:flutter/material.dart';
+
+import '../foundation/memory_colors.dart';
+import '../foundation/memory_radius.dart';
+import '../foundation/memory_spacing.dart';
+import '../foundation/memory_typography.dart';
+
+/// Memory's text input.
+///
+/// No outline. The field is a filled, soft-cornered surface; focus is shown by
+/// a hairline in the accent, not by a heavy border.
+class MemoryTextField extends StatelessWidget {
+  const MemoryTextField({
+    super.key,
+    required this.controller,
+    required this.hint,
+    required this.dark,
+    this.label,
+    this.keyboardType,
+    this.textCapitalization = TextCapitalization.none,
+    this.obscureText = false,
+    this.suffix,
+    this.prefix,
+    this.maxLength,
+    this.onChanged,
+    this.enabled = true,
+    this.errorText,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final bool dark;
+
+  /// Rendered above the field, not inside it: a floating label competes with
+  /// the value for the same space.
+  final String? label;
+
+  final TextInputType? keyboardType;
+  final TextCapitalization textCapitalization;
+  final bool obscureText;
+  final Widget? suffix;
+  final Widget? prefix;
+  final int? maxLength;
+  final ValueChanged<String>? onChanged;
+  final bool enabled;
+  final String? errorText;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = MemoryColors.foregroundOn(dark);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label != null) ...[
+          Text(
+            label!,
+            style: MemoryTypography.mutedOnSurface(
+              MemoryTypography.caption.copyWith(fontWeight: FontWeight.w700),
+              dark,
+            ),
+          ),
+          const SizedBox(height: MemorySpacing.sm),
+        ],
+        TextField(
+          controller: controller,
+          enabled: enabled,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
+          maxLength: maxLength,
+          onChanged: onChanged,
+          style: MemoryTypography.body.copyWith(color: fg),
+          cursorColor: MemoryColors.accent,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: MemoryTypography.body.copyWith(
+              color: fg.withValues(alpha: 0.4),
+              fontWeight: FontWeight.w500,
+            ),
+            counterText: '',
+            errorText: errorText,
+            errorStyle: MemoryTypography.caption.copyWith(
+              color: MemoryColors.danger,
+            ),
+            prefixIcon: prefix,
+            suffixIcon: suffix,
+            filled: true,
+            fillColor: fg.withValues(alpha: MemoryColors.alphaBorder),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: MemorySpacing.gutter,
+              vertical: MemorySpacing.xxl,
+            ),
+            border: const OutlineInputBorder(
+              borderRadius: MemoryRadius.allMd,
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: const OutlineInputBorder(
+              borderRadius: MemoryRadius.allMd,
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: MemoryRadius.allMd,
+              borderSide: BorderSide(color: MemoryColors.accent, width: 1.4),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A text field that hides its value, with a reveal toggle.
+class MemoryPasswordField extends StatefulWidget {
+  const MemoryPasswordField({
+    super.key,
+    required this.controller,
+    required this.hint,
+    required this.dark,
+    this.label,
+    this.onChanged,
+    this.errorText,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final bool dark;
+  final String? label;
+  final ValueChanged<String>? onChanged;
+  final String? errorText;
+
+  @override
+  State<MemoryPasswordField> createState() => _MemoryPasswordFieldState();
+}
+
+class _MemoryPasswordFieldState extends State<MemoryPasswordField> {
+  bool _obscured = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return MemoryTextField(
+      controller: widget.controller,
+      hint: widget.hint,
+      dark: widget.dark,
+      label: widget.label,
+      obscureText: _obscured,
+      onChanged: widget.onChanged,
+      errorText: widget.errorText,
+      suffix: Semantics(
+        button: true,
+        label: _obscured ? 'Show password' : 'Hide password',
+        child: IconButton(
+          icon: Icon(
+            _obscured ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+            size: 18,
+            color: MemoryColors.muted(widget.dark),
+          ),
+          onPressed: () => setState(() => _obscured = !_obscured),
+        ),
+      ),
+    );
+  }
+}
+
+/// A rounded search input.
+class MemorySearchField extends StatelessWidget {
+  const MemorySearchField({
+    super.key,
+    required this.controller,
+    required this.dark,
+    this.hint = 'Search',
+    this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final bool dark;
+  final String hint;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return MemoryTextField(
+      controller: controller,
+      hint: hint,
+      dark: dark,
+      onChanged: onChanged,
+      prefix: Icon(
+        Icons.search_rounded,
+        size: 18,
+        color: MemoryColors.muted(dark),
+      ),
+    );
+  }
+}

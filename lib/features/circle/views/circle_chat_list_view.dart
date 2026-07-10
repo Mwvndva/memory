@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import '../circle_state_manager.dart';
 import '../widgets/circle_list_tiles.dart';
 
@@ -97,48 +98,12 @@ class CircleChatListView extends ConsumerWidget {
                       if (circleMembers.isEmpty && pendingRequests.isEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 60),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: dark ? kBlack : Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: (dark ? Colors.white : kCharcoal)
-                                    .withValues(alpha: 0.06),
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.people_alt_rounded,
-                                  color: dark ? kYellow : kBlack,
-                                  size: 28,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'No one is in your circle yet.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: dark ? kCream : kCharcoal,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Open your profile to add someone and start sharing.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: dark
-                                        ? const Color(0xFFC9B8AA)
-                                        : const Color(0xFF776B62),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          child: MemoryEmptyState(
+                            icon: Icons.people_alt_rounded,
+                            title: 'No one is in your circle yet.',
+                            message:
+                                'Open your profile to add someone and start sharing.',
+                            dark: dark,
                           ),
                         )
                       else ...[

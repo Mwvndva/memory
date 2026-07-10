@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/core/countries.dart';
 import 'package:memory_app/features/auth/auth.dart';
@@ -107,38 +108,21 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           .toLowerCase();
 
       if (fName.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('First name is required.'),
-            backgroundColor: kBlack,
-          ),
-        );
+        showAppError(context, 'First name is required.');
         return;
       }
       if (lName.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Last name is required.'),
-            backgroundColor: kBlack,
-          ),
-        );
+        showAppError(context, 'Last name is required.');
         return;
       }
       if (uName.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Username is required.'),
-            backgroundColor: kBlack,
-          ),
-        );
+        showAppError(context, 'Username is required.');
         return;
       }
       final isUsernameAvailable = await _checkUsernameNow();
       if (!mounted) return;
       if (!isUsernameAvailable) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(usernameStatus), backgroundColor: kBlack),
-        );
+        showAppError(context, usernameStatus);
         return;
       }
       setState(() => _currentStep = 2);
@@ -150,46 +134,24 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
 
       if (emailVal.isEmpty ||
           !RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(emailVal)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid email address.'),
-            backgroundColor: kBlack,
-          ),
-        );
+        showAppError(context, 'Please enter a valid email address.');
         return;
       }
       if (phoneVal.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Phone number is required.'),
-            backgroundColor: kBlack,
-          ),
-        );
+        showAppError(context, 'Phone number is required.');
         return;
       }
       if (passVal.length < 8) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password must be at least 8 characters.'),
-            backgroundColor: kBlack,
-          ),
-        );
+        showAppError(context, 'Password must be at least 8 characters.');
         return;
       }
       if (passVal != confPassVal) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Passwords do not match.'),
-            backgroundColor: kBlack,
-          ),
-        );
+        showAppError(context, 'Passwords do not match.');
         return;
       }
       _validatePassword();
       if (!passwordOk) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(passwordStatus), backgroundColor: kBlack),
-        );
+        showAppError(context, passwordStatus);
         return;
       }
       setState(() => _currentStep = 3);
@@ -202,13 +164,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
 
     if (!acceptedTerms) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'You must agree to the Terms & Conditions to register.',
-          ),
-          backgroundColor: kBlack,
-        ),
+      showAppError(
+        context,
+        'You must agree to the Terms & Conditions to register.',
       );
       return;
     }
@@ -240,9 +198,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
     } else {
       if (mounted) {
         final msg = result['message']?.toString() ?? 'Registration failed.';
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: kBlack));
+        showAppError(context, msg);
       }
     }
   }
