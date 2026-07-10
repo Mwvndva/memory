@@ -86,9 +86,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         detailState.memory == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(
-          child: CircularProgressIndicator(color: MemoryColors.accent),
-        ),
+        body: MemoryLoading.block(),
       );
     }
 
@@ -112,19 +110,15 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
+              MemoryButton(
+                label: 'Retry',
+                dark: true,
+                width: 160,
                 onPressed: () {
                   ref
                       .read(memoryDetailProvider(widget.memoryId).notifier)
                       .loadMemory();
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: MemoryColors.accent,
-                ),
-                child: const Text(
-                  'Retry',
-                  style: TextStyle(color: Colors.black),
-                ),
               ),
             ],
           ),
@@ -139,20 +133,18 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: dark ? Colors.white : MemoryColors.charcoal,
-          ),
+        leading: MemoryIconButton(
+          icon: Icons.arrow_back_ios_new_rounded,
+          semanticLabel: 'Back',
+          color: dark ? Colors.white : MemoryColors.charcoal,
           onPressed: () => context.pop(),
         ),
         actions: [
           if (m.username == ref.watch(sessionProvider).user.username)
-            IconButton(
-              icon: Icon(
-                Icons.download_rounded,
-                color: dark ? Colors.white : MemoryColors.charcoal,
-              ),
+            MemoryIconButton(
+              icon: Icons.download_rounded,
+              semanticLabel: 'Download video',
+              color: dark ? Colors.white : MemoryColors.charcoal,
               onPressed: () async {
                 try {
                   final path = await ref
@@ -172,11 +164,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               },
             ),
           // Deletion and Editing permissions: only owner can edit/delete
-          IconButton(
-            icon: Icon(
-              Icons.edit_rounded,
-              color: dark ? Colors.white : MemoryColors.charcoal,
-            ),
+          MemoryIconButton(
+            icon: Icons.edit_rounded,
+            semanticLabel: 'Edit caption',
+            color: dark ? Colors.white : MemoryColors.charcoal,
             onPressed: () {
               ref
                   .read(memoryDetailProvider(widget.memoryId).notifier)
@@ -188,11 +179,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                   .setEditing(!detailState.isEditing);
             },
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.delete_outline_rounded,
-              color: Colors.redAccent,
-            ),
+          MemoryIconButton(
+            icon: Icons.delete_outline_rounded,
+            semanticLabel: 'Delete memory',
+            color: MemoryColors.danger,
             onPressed: _confirmDelete,
           ),
         ],
@@ -244,7 +234,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    TextButton(
+                                    MemoryButton(
+                                      label: 'Cancel',
+                                      dark: true,
+                                      variant: MemoryButtonVariant.text,
+                                      size: MemoryButtonSize.compact,
                                       onPressed: () {
                                         ref
                                             .read(
@@ -254,13 +248,14 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                             )
                                             .setEditing(false);
                                       },
-                                      child: const Text(
-                                        'Cancel',
-                                        style: TextStyle(color: Colors.white38),
-                                      ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
+                                    const SizedBox(width: MemorySpacing.md),
+                                    MemoryButton(
+                                      label: 'Save',
+                                      dark: true,
+                                      width: 96,
+                                      size: MemoryButtonSize.compact,
+                                      isLoading: detailState.isSavingEdit,
                                       onPressed: () {
                                         ref
                                             .read(
@@ -270,24 +265,6 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                             )
                                             .saveCaptionEdit();
                                       },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: MemoryColors.accent,
-                                      ),
-                                      child: detailState.isSavingEdit
-                                          ? const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.black,
-                                              ),
-                                            )
-                                          : const Text(
-                                              'Save',
-                                              style: TextStyle(
-                                                color: Colors.black,
-                                              ),
-                                            ),
                                     ),
                                   ],
                                 ),
@@ -375,14 +352,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                   ),
                   const Spacer(),
                   if (detailState.isCommentsLoading)
-                    const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: MemoryColors.accent,
-                      ),
-                    ),
+                    const MemoryLoading(size: 14),
                 ],
               ),
             ),
@@ -408,14 +378,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                           (detailState.hasMoreComments ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == detailState.comments.length) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(12.0),
-                              child: CircularProgressIndicator(
-                                color: MemoryColors.accent,
-                              ),
-                            ),
-                          );
+                          return const MemoryLoading.block();
                         }
                         final c = detailState.comments[index];
                         final isOptimistic = c.id.startsWith('local-comment-');
@@ -541,11 +504,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.send_rounded,
-                      color: MemoryColors.accent,
-                    ),
+                  MemoryIconButton(
+                    icon: Icons.send_rounded,
+                    semanticLabel: 'Send comment',
+                    color: MemoryColors.accent,
                     onPressed: () {
                       final text = _commentController.text.trim();
                       if (text.isNotEmpty) {

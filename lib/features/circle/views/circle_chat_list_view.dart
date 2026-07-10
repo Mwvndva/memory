@@ -35,12 +35,11 @@ class CircleChatListView extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                      onPressed: () => context.go('/capture'),
+                    MemoryIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      semanticLabel: 'Back',
                       color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      onPressed: () => context.go('/capture'),
                     ),
                     Expanded(
                       child: Center(

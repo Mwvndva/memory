@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../foundation/memory_interactions.dart';
 import '../foundation/memory_colors.dart';
 import '../foundation/memory_radius.dart';
+import '../foundation/memory_spacing.dart';
 import '../foundation/memory_typography.dart';
+import 'memory_loading.dart';
 
 /// How prominent a [MemoryButton] is.
 enum MemoryButtonVariant {
@@ -15,6 +17,10 @@ enum MemoryButtonVariant {
 
   /// Destructive. Reserved for irreversible actions.
   danger,
+
+  /// No fill, no edge — just the label. For inline links ("Tap to retry") and
+  /// top-bar actions, where a filled pill would outweigh what it does.
+  text,
 }
 
 /// Two heights. Compact is for buttons that sit inside a card.
@@ -59,8 +65,11 @@ class MemoryButton extends StatelessWidget {
 
   bool get _disabled => onPressed == null || isLoading;
   bool get _compact => size == MemoryButtonSize.compact;
+  bool get _isText => variant == MemoryButtonVariant.text;
 
   Color _resolveBackground() {
+    // A text button has nothing to grey out; it dims its label instead.
+    if (_isText && background == null) return Colors.transparent;
     if (_disabled) {
       return dark
           ? MemoryColors.ink.withValues(alpha: MemoryColors.alphaScrim)
@@ -73,17 +82,23 @@ class MemoryButton extends StatelessWidget {
       MemoryButtonVariant.secondary =>
         dark ? MemoryColors.ink : MemoryColors.cream,
       MemoryButtonVariant.danger => MemoryColors.danger,
+      MemoryButtonVariant.text => Colors.transparent,
     };
   }
 
   Color _resolveForeground() {
     if (foreground != null) return foreground!;
-    return switch (variant) {
+    final base = switch (variant) {
       MemoryButtonVariant.primary =>
         dark ? MemoryColors.ink : MemoryColors.accent,
       MemoryButtonVariant.secondary => MemoryColors.foregroundOn(dark),
       MemoryButtonVariant.danger => Colors.white,
+      MemoryButtonVariant.text => dark ? MemoryColors.accent : MemoryColors.ink,
     };
+    if (_isText && _disabled) {
+      return base.withValues(alpha: MemoryColors.alphaMuted);
+    }
+    return base;
   }
 
   /// Only the quiet variant carries an edge, and only when it is not tinted.
@@ -107,9 +122,13 @@ class MemoryButton extends StatelessWidget {
       child: BouncyTap(
         onTap: _disabled ? null : onPressed,
         child: Container(
-          width: width ?? double.infinity,
+          // A text button hugs its label; every other variant fills its slot.
+          width: width ?? (_isText ? null : double.infinity),
           height: _compact ? 34 : 46,
           alignment: Alignment.center,
+          padding: _isText
+              ? const EdgeInsets.symmetric(horizontal: MemorySpacing.xl)
+              : null,
           decoration: BoxDecoration(
             color: _resolveBackground(),
             borderRadius: MemoryRadius.allPill,
@@ -129,12 +148,11 @@ class MemoryButton extends StatelessWidget {
                           .copyWith(color: _resolveForeground()),
                 ),
               ),
+              // The spinner must take the label's colour, not the ambient
+              // theme's: an accent-filled button would otherwise spin in
+              // accent-on-accent and show nothing at all.
               if (isLoading)
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2.2),
-                ),
+                MemoryLoading(size: 18, color: _resolveForeground()),
             ],
           ),
         ),

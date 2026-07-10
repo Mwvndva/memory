@@ -180,14 +180,7 @@ class InboxBubble extends ConsumerWidget {
                       if (mine) ...[
                         const SizedBox(width: 4),
                         if (msg.isPending)
-                          const SizedBox(
-                            width: 10,
-                            height: 10,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 1.2,
-                              color: MemoryColors.accent,
-                            ),
-                          )
+                          const MemoryLoading(size: 10)
                         else
                           Icon(
                             msg.isRead

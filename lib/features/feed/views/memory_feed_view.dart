@@ -434,27 +434,13 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                       ),
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: dark
-                            ? MemoryColors.ink
-                            : MemoryColors.charcoal,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 12,
-                        ),
-                      ),
+                    MemoryButton(
+                      label: 'Retry',
+                      dark: dark,
+                      width: 180,
                       onPressed: () {
                         ref.read(feedProvider.notifier).retryCurrentFailure();
                       },
-                      child: const Text(
-                        'Retry',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
                     ),
                   ],
                 ),
@@ -851,12 +837,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
         m.videoPath!.isNotEmpty &&
         (_feedVideoController == null ||
             !_feedVideoController!.value.isInitialized)) {
-      return Container(
+      return ColoredBox(
         color: Colors.black,
-        child: Center(
-          child: CircularProgressIndicator(
-            color: dark ? MemoryColors.accent : MemoryColors.ink,
-          ),
+        child: MemoryLoading.block(
+          color: dark ? MemoryColors.accent : MemoryColors.ink,
         ),
       );
     }
@@ -1035,32 +1019,19 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                               FeedErrorCategory.network
                           ? 'Connection lost. '
                           : 'Load failed. ',
-                      style: TextStyle(
-                        color: dark
-                            ? MemoryColors.cream.withValues(alpha: 0.6)
-                            : MemoryColors.charcoal.withValues(alpha: 0.6),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                      style: MemoryTypography.mutedOnSurface(
+                        MemoryTypography.caption,
+                        dark,
                       ),
                     ),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 0),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
+                    MemoryButton(
+                      label: 'Tap to retry',
+                      dark: dark,
+                      variant: MemoryButtonVariant.text,
+                      size: MemoryButtonSize.compact,
                       onPressed: () {
                         ref.read(feedProvider.notifier).retryCurrentFailure();
                       },
-                      child: const Text(
-                        'Tap to retry',
-                        style: TextStyle(
-                          color: MemoryColors.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
                     ),
                   ],
                 ),

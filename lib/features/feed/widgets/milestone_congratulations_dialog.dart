@@ -187,13 +187,9 @@ class _MilestoneCongratulationsDialogState
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: _isSharing
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  color: MemoryColors.ink,
-                                  strokeWidth: 2,
-                                ),
+                            ? const MemoryLoading(
+                                size: 16,
+                                color: MemoryColors.ink,
                               )
                             : const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,

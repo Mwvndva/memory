@@ -393,10 +393,8 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
       listItems.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Center(
-            child: CircularProgressIndicator(
-              color: dark ? MemoryColors.accent : MemoryColors.ink,
-            ),
+          child: MemoryLoading.block(
+            color: dark ? MemoryColors.accent : MemoryColors.ink,
           ),
         ),
       );

@@ -263,10 +263,7 @@ class _SecuritySettingsSheetState
             future: _sessions,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
-                );
+                return const MemoryLoading.block();
               }
               if (snapshot.hasError) {
                 return Padding(

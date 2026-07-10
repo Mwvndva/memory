@@ -37,11 +37,7 @@ class _LoadingViewState extends ConsumerState<LoadingView> {
               fit: BoxFit.contain,
             ),
             const SizedBox(height: 24),
-            const SizedBox(
-              width: 32,
-              height: 32,
-              child: MemoryLoading(size: 24, color: MemoryColors.ink),
-            ),
+            const MemoryLoading(size: 24, color: MemoryColors.ink),
           ],
         ),
       ),

@@ -434,8 +434,12 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                       Row(
                         children: [
                           const Spacer(),
-                          _overlayProfileSettingsButton(
-                            onTap: () => _showProfileSheet(context),
+                          MemoryIconButton(
+                            icon: Icons.person_rounded,
+                            semanticLabel: 'Profile and settings',
+                            color: Colors.white,
+                            iconSize: 28,
+                            onPressed: () => _showProfileSheet(context),
                           ),
                         ],
                       ),
@@ -464,9 +468,12 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                 _cameras.length > 1)
                               Positioned(
                                 left: 8,
-                                child: _overlayIconButton(
+                                child: MemoryIconButton(
                                   icon: Icons.flip_camera_android_rounded,
-                                  onTap: _switchCamera,
+                                  semanticLabel: 'Switch camera',
+                                  color: Colors.white,
+                                  iconSize: 28,
+                                  onPressed: _switchCamera,
                                 ),
                               ),
 
@@ -670,65 +677,34 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
   }
 
   // Helper for icon buttons overlaid on the camera preview
-  Widget _overlayIconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Icon(icon, color: Colors.white, size: 28),
-    );
-  }
-
-  // Profile settings icon button for top-right (single icon instead of twin user icon)
-  Widget _overlayProfileSettingsButton({required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
-    );
-  }
-
-  // Message icon button for bottom-right with unread badge overlay
+  /// The messages button, with the only count-bearing badge in the app: from
+  /// the camera the user cannot see the inbox, so the number is the signal.
   Widget _overlayCircleMessageButton({
     required VoidCallback onTap,
     required int unreadCount,
   }) {
-    final displayCount = unreadCount > 9 ? '9+' : '$unreadCount';
-    return BouncyTap(
-      onTap: onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          const Icon(
-            Icons.chat_bubble_outline_rounded,
-            color: Colors.white,
-            size: 28,
-          ),
-          if (unreadCount > 0)
-            Positioned(
-              right: -5,
-              top: -5,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: MemoryColors.accent,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.black, width: 1.2),
-                ),
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                alignment: Alignment.center,
-                child: Text(
-                  displayCount,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        MemoryIconButton(
+          icon: Icons.chat_bubble_outline_rounded,
+          semanticLabel: unreadCount > 0
+              ? 'Messages, $unreadCount unread'
+              : 'Messages',
+          color: Colors.white,
+          iconSize: 28,
+          onPressed: onTap,
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            // The badge already announces itself through the button's label.
+            child: ExcludeSemantics(
+              child: MemoryBadge(dark: true, count: unreadCount),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 
@@ -766,12 +742,12 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
             ? Stack(
                 alignment: Alignment.center,
                 children: [
-                  CircularProgressIndicator(
+                  MemoryLoading(
+                    size: 36,
                     value: uploadState.status == UploadStatus.uploading
                         ? uploadState.progress
                         : null,
                     color: MemoryColors.ink,
-                    strokeWidth: 3,
                   ),
                   const Icon(
                     Icons.close_rounded,
@@ -878,7 +854,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                             color: Colors.black,
                             child: Center(
                               child: _recordedVideoPath != null
-                                  ? CircularProgressIndicator(
+                                  ? MemoryLoading(
+                                      size: 24,
                                       color: dark
                                           ? MemoryColors.accent
                                           : MemoryColors.ink,
@@ -940,15 +917,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(
-                              width: 36,
-                              height: 36,
-                              child: CircularProgressIndicator(
-                                color: dark
-                                    ? MemoryColors.accent
-                                    : MemoryColors.ink,
-                                strokeWidth: 3,
-                              ),
+                            MemoryLoading(
+                              size: 36,
+                              color: dark
+                                  ? MemoryColors.accent
+                                  : MemoryColors.ink,
                             ),
                             const SizedBox(height: 16),
                             Text(

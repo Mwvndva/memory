@@ -34,7 +34,7 @@ class UnifiedImageWidget extends ConsumerWidget {
         future: cacheManager.getCachedFile(imageUrl),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const MemoryLoading();
+            return const MemoryLoading.block();
           }
           final file = snapshot.data;
           if (file == null || !file.existsSync()) {

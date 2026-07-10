@@ -157,14 +157,12 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 ),
                 child: Row(
                   children: [
-                    IconButton(
+                    MemoryIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      semanticLabel: 'Back',
+                      color: Colors.white,
+                      iconSize: 18,
                       onPressed: () => context.pop(),
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      tooltip: 'Back',
                     ),
                     const SizedBox(width: 4),
                     MemoryAvatar(
@@ -229,10 +227,8 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       ),
                     ),
                     if (_loadingHistory)
-                      Center(
-                        child: CircularProgressIndicator(
-                          color: dark ? MemoryColors.accent : MemoryColors.ink,
-                        ),
+                      MemoryLoading.block(
+                        color: dark ? MemoryColors.accent : MemoryColors.ink,
                       )
                     else if (messages.isEmpty)
                       Center(

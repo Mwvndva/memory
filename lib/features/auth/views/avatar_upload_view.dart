@@ -113,14 +113,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
                     children: [
                       if (_uploading) ...[
                         const SizedBox(height: 12),
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.amber,
-                          ),
-                        ),
+                        const MemoryLoading(size: 20),
                       ],
                       MemoryAvatar(
                         radius: 54,

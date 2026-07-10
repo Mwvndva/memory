@@ -107,10 +107,17 @@ class _DevDiagnosticsViewState extends ConsumerState<DevDiagnosticsView> {
       appBar: AppBar(
         title: const Text('Dev Diagnostics'),
         actions: [
-          IconButton(
-            icon: _loading ? const MemoryLoading() : const Icon(Icons.refresh),
-            onPressed: _loading ? null : _refreshAll,
-          ),
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: MemorySpacing.gutter),
+              child: Center(child: MemoryLoading()),
+            )
+          else
+            MemoryIconButton(
+              icon: Icons.refresh,
+              semanticLabel: 'Refresh diagnostics',
+              onPressed: _refreshAll,
+            ),
         ],
       ),
       body: SingleChildScrollView(

@@ -50,11 +50,10 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: dark ? MemoryColors.accent : MemoryColors.ink,
-          ),
+        leading: MemoryIconButton(
+          icon: Icons.arrow_back_ios_new_rounded,
+          semanticLabel: 'Back',
+          color: dark ? MemoryColors.accent : MemoryColors.ink,
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -67,16 +66,13 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         ),
         actions: [
           if (state.notifications.any((n) => !n.isRead))
-            TextButton(
+            MemoryButton(
+              label: 'Read All',
+              dark: dark,
+              variant: MemoryButtonVariant.text,
+              size: MemoryButtonSize.compact,
               onPressed: () =>
                   ref.read(notificationProvider.notifier).markAllAsRead(),
-              child: Text(
-                'Read All',
-                style: TextStyle(
-                  color: dark ? MemoryColors.accent : MemoryColors.ink,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
             ),
         ],
       ),
