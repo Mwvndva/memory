@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/core/api_config.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/design_system/design_system.dart';
 
 class InboxBubble extends ConsumerWidget {
@@ -57,7 +56,7 @@ class InboxBubble extends ConsumerWidget {
                 onTap: () {
                   showModalBottomSheet(
                     context: context,
-                    backgroundColor: kCharcoal,
+                    backgroundColor: MemoryColors.charcoal,
                     builder: (ctx) => SafeArea(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -115,15 +114,15 @@ class InboxBubble extends ConsumerWidget {
                 gradient: mine
                     ? LinearGradient(
                         colors: dark
-                            ? const [kYellow, Color(0xFFFFD54F)]
-                            : const [kBlack, Color(0xFF2C2C2C)],
+                            ? const [MemoryColors.accent, Color(0xFFFFD54F)]
+                            : const [MemoryColors.ink, Color(0xFF2C2C2C)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
                     : LinearGradient(
                         colors: dark
-                            ? const [kBlack, Color(0xFF1E1E1E)]
-                            : const [Colors.white, kCream],
+                            ? const [MemoryColors.ink, Color(0xFF1E1E1E)]
+                            : const [Colors.white, MemoryColors.cream],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -153,8 +152,8 @@ class InboxBubble extends ConsumerWidget {
                     msg.text,
                     style: TextStyle(
                       color: mine
-                          ? (dark ? kBlack : Colors.white)
-                          : (dark ? kCream : kCharcoal),
+                          ? (dark ? MemoryColors.ink : Colors.white)
+                          : (dark ? MemoryColors.cream : MemoryColors.charcoal),
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       height: 1.3,
@@ -169,8 +168,10 @@ class InboxBubble extends ConsumerWidget {
                         style: TextStyle(
                           color:
                               (mine
-                                      ? (dark ? kBlack : Colors.white)
-                                      : (dark ? kCream : kCharcoal))
+                                      ? (dark ? MemoryColors.ink : Colors.white)
+                                      : (dark
+                                            ? MemoryColors.cream
+                                            : MemoryColors.charcoal))
                                   .withValues(alpha: 0.5),
                           fontSize: 9,
                           fontWeight: FontWeight.w500,
@@ -184,7 +185,7 @@ class InboxBubble extends ConsumerWidget {
                             height: 10,
                             child: CircularProgressIndicator(
                               strokeWidth: 1.2,
-                              color: kYellow,
+                              color: MemoryColors.accent,
                             ),
                           )
                         else
@@ -194,7 +195,7 @@ class InboxBubble extends ConsumerWidget {
                                 : Icons.done_rounded,
                             size: 11,
                             color: dark
-                                ? kBlack.withValues(alpha: 0.5)
+                                ? MemoryColors.ink.withValues(alpha: 0.5)
                                 : Colors.white.withValues(alpha: 0.5),
                           ),
                       ],

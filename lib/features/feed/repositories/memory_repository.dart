@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:memory_app/core/api_client.dart';
 import 'package:memory_app/core/api_config.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/core/widget_manager.dart';
 import 'package:memory_app/features/auth/auth.dart';
@@ -18,6 +17,7 @@ import 'package:memory_app/realtime/realtime_providers.dart';
 import 'package:memory_app/media/cache_coordinator.dart';
 import 'package:memory_app/services/compression_service.dart';
 import 'package:memory_app/services/thumbnail_service.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 Color parseHexColor(String hexStr) {
   var clean = hexStr.replaceAll('#', '').trim();
@@ -44,8 +44,8 @@ class MemoryRepository {
       initial: 'A',
       time: '8 min ago',
       caption: 'The ridiculous cake moment',
-      avatar: kYellow,
-      colors: [Color(0xFFFF826E), kAmber, kMint],
+      avatar: MemoryColors.accent,
+      colors: [Color(0xFFFF826E), MemoryColors.amber, MemoryColors.mint],
       ageHours: .13,
     ),
     MemoryItem(
@@ -55,8 +55,8 @@ class MemoryRepository {
       initial: 'M',
       time: 'Yesterday',
       caption: 'Found your old school song',
-      avatar: kMint,
-      colors: [kMint, kSky, Color(0xFFFADA5E)],
+      avatar: MemoryColors.mint,
+      colors: [MemoryColors.mint, MemoryColors.sky, Color(0xFFFADA5E)],
       ageHours: 26,
     ),
     MemoryItem(
@@ -66,8 +66,8 @@ class MemoryRepository {
       initial: 'L',
       time: 'Friday',
       caption: 'Rainy walk after class',
-      avatar: kSky,
-      colors: [kSky, kLavender, Color(0xFFFADA5E)],
+      avatar: MemoryColors.sky,
+      colors: [MemoryColors.sky, MemoryColors.lavender, Color(0xFFFADA5E)],
       ageHours: 72,
     ),
     MemoryItem(
@@ -77,8 +77,8 @@ class MemoryRepository {
       initial: 'N',
       time: '2 days ago',
       caption: 'Sunset on the way home',
-      avatar: kLavender,
-      colors: [kLavender, kYellow, kAmber],
+      avatar: MemoryColors.lavender,
+      colors: [MemoryColors.lavender, MemoryColors.accent, MemoryColors.amber],
       ageHours: 48,
     ),
   ];
@@ -144,8 +144,12 @@ class MemoryRepository {
             initial: 'K',
             time: '3 days ago',
             caption: 'Saturday morning coffee run',
-            avatar: kLavender,
-            colors: [kLavender, kYellow, kSky],
+            avatar: MemoryColors.lavender,
+            colors: [
+              MemoryColors.lavender,
+              MemoryColors.accent,
+              MemoryColors.sky,
+            ],
             ageHours: 72,
           ),
           MemoryItem(
@@ -155,8 +159,12 @@ class MemoryRepository {
             initial: 'Z',
             time: '4 days ago',
             caption: 'Stretching after run',
-            avatar: kYellow,
-            colors: [kYellow, kMint, kAmber],
+            avatar: MemoryColors.accent,
+            colors: [
+              MemoryColors.accent,
+              MemoryColors.mint,
+              MemoryColors.amber,
+            ],
             ageHours: 96,
           ),
         ];
@@ -236,7 +244,7 @@ class MemoryRepository {
         initial: initial,
         time: 'Just now',
         caption: caption,
-        avatar: kYellow,
+        avatar: MemoryColors.accent,
         colors: colors,
         ageHours: 0.01,
         videoPath: videoPath,

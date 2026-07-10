@@ -6,7 +6,7 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/features/circle/circle.dart';
@@ -122,7 +122,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         return Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            color: dark ? kBlack : kYellow,
+            color: dark ? MemoryColors.ink : MemoryColors.accent,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
             boxShadow: [
               BoxShadow(
@@ -140,9 +140,8 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                 height: 5,
                 margin: const EdgeInsets.only(bottom: 18),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(
-                    alpha: 0.15,
-                  ),
+                  color: (dark ? Colors.white : MemoryColors.charcoal)
+                      .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -155,7 +154,8 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                 'Invite your friends to keep your circle alive! ⚡',
                 style: TextStyle(
                   fontSize: 12,
-                  color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+                  color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
+                      .withValues(alpha: 0.6),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -281,9 +281,8 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: (dark ? Colors.white : kCharcoal).withValues(
-                      alpha: 0.08,
-                    ),
+                    color: (dark ? Colors.white : MemoryColors.charcoal)
+                        .withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
@@ -291,14 +290,18 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                     children: [
                       Icon(
                         Icons.copy_rounded,
-                        color: dark ? kCream : kCharcoal,
+                        color: dark
+                            ? MemoryColors.cream
+                            : MemoryColors.charcoal,
                         size: 16,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Copy invite link',
                         style: TextStyle(
-                          color: dark ? kCream : kCharcoal,
+                          color: dark
+                              ? MemoryColors.cream
+                              : MemoryColors.charcoal,
                           fontSize: 13,
                           fontWeight: FontWeight.w900,
                         ),
@@ -328,8 +331,8 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final bg = dark ? kCharcoal : kCream;
-    final fg = dark ? kCream : kCharcoal;
+    final bg = dark ? MemoryColors.charcoal : MemoryColors.cream;
+    final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
 
     final List<Widget> listItems = [];
 
@@ -340,7 +343,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           child: Text(
             'Contacts already on Memory',
             style: TextStyle(
-              color: kBlack,
+              color: MemoryColors.ink,
               fontSize: 12,
               fontWeight: FontWeight.w900,
             ),
@@ -360,7 +363,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
             initial: initial,
             name: displayName,
             subtitle: '@${matchedUser.username}',
-            color: (dark ? kYellow : kBlack).withValues(alpha: 0.6),
+            color: (dark ? MemoryColors.accent : MemoryColors.ink).withValues(
+              alpha: 0.6,
+            ),
             fg: fg,
             dark: dark,
             isMock: kUseMockBackend,
@@ -389,7 +394,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Center(
-            child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
+            child: CircularProgressIndicator(
+              color: dark ? MemoryColors.accent : MemoryColors.ink,
+            ),
           ),
         ),
       );
@@ -532,7 +539,10 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [ref.watch(isDarkProvider) ? kYellow : kBlack, kAmber],
+          colors: [
+            ref.watch(isDarkProvider) ? MemoryColors.accent : MemoryColors.ink,
+            MemoryColors.amber,
+          ],
         ),
         borderRadius: BorderRadius.circular(24),
       ),
@@ -576,12 +586,12 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.share_rounded, color: kBlack, size: 16),
+                  Icon(Icons.share_rounded, color: MemoryColors.ink, size: 16),
                   SizedBox(width: 8),
                   Text(
                     'Invite a Friend',
                     style: TextStyle(
-                      color: kBlack,
+                      color: MemoryColors.ink,
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
                     ),

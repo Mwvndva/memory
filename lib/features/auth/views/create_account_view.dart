@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/core/countries.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import '../auth_background_painter.dart';
@@ -206,7 +206,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final fg = dark ? kCream : kCharcoal;
+    final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
 
     return Scaffold(
       body: Stack(
@@ -434,22 +434,24 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                         height: 22,
                                         decoration: BoxDecoration(
                                           color: acceptedTerms
-                                              ? kBlack
-                                              : kCream,
+                                              ? MemoryColors.ink
+                                              : MemoryColors.cream,
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
                                           border: Border.all(
                                             color: acceptedTerms
                                                 ? Colors.transparent
-                                                : kBlack.withValues(alpha: 0.2),
+                                                : MemoryColors.ink.withValues(
+                                                    alpha: 0.2,
+                                                  ),
                                             width: 1.5,
                                           ),
                                         ),
                                         child: acceptedTerms
                                             ? const Icon(
                                                 Icons.check_rounded,
-                                                color: kYellow,
+                                                color: MemoryColors.accent,
                                                 size: 14,
                                               )
                                             : null,
@@ -461,7 +463,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                             style: const TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
-                                              color: kCharcoal,
+                                              color: MemoryColors.charcoal,
                                             ),
                                             children: [
                                               const TextSpan(
@@ -478,7 +480,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                                   child: const Text(
                                                     'Terms and Conditions',
                                                     style: TextStyle(
-                                                      color: kBlack,
+                                                      color: MemoryColors.ink,
                                                       decoration: TextDecoration
                                                           .underline,
                                                     ),
@@ -529,7 +531,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           margin: const EdgeInsets.all(18),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           decoration: BoxDecoration(
-            color: dark ? kBlack : Colors.white,
+            color: dark ? MemoryColors.ink : Colors.white,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
@@ -546,9 +548,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 height: 5,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(
-                    alpha: 0.15,
-                  ),
+                  color: (dark ? Colors.white : MemoryColors.charcoal)
+                      .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -558,7 +559,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                   Text(
                     'Terms & Conditions',
                     style: TextStyle(
-                      color: dark ? kCream : kCharcoal,
+                      color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
                     ),
@@ -568,14 +569,16 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: (dark ? kCream : kCharcoal).withValues(
-                          alpha: 0.08,
-                        ),
+                        color:
+                            (dark ? MemoryColors.cream : MemoryColors.charcoal)
+                                .withValues(alpha: 0.08),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.close_rounded,
-                        color: dark ? kCream : kCharcoal,
+                        color: dark
+                            ? MemoryColors.cream
+                            : MemoryColors.charcoal,
                         size: 18,
                       ),
                     ),
@@ -592,9 +595,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       Text(
                         'Last Updated: June 2026',
                         style: TextStyle(
-                          color: (dark ? kCream : kCharcoal).withValues(
-                            alpha: 0.6,
-                          ),
+                          color:
+                              (dark
+                                      ? MemoryColors.cream
+                                      : MemoryColors.charcoal)
+                                  .withValues(alpha: 0.6),
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
@@ -643,7 +648,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     height: 44,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: dark ? kYellow : kBlack,
+                      color: dark ? MemoryColors.accent : MemoryColors.ink,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: const Text(
@@ -673,7 +678,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           Text(
             heading,
             style: const TextStyle(
-              color: kBlack,
+              color: MemoryColors.ink,
               fontSize: 13,
               fontWeight: FontWeight.w800,
             ),
@@ -683,8 +688,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
             body,
             style: TextStyle(
               color: dark
-                  ? kCream.withValues(alpha: 0.8)
-                  : kCharcoal.withValues(alpha: 0.8),
+                  ? MemoryColors.cream.withValues(alpha: 0.8)
+                  : MemoryColors.charcoal.withValues(alpha: 0.8),
               fontSize: 12.5,
               height: 1.45,
             ),
@@ -701,7 +706,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
         Text(
           'Phone number',
           style: TextStyle(
-            color: dark ? kCream : kCharcoal,
+            color: dark ? MemoryColors.cream : MemoryColors.charcoal,
             fontSize: 11,
             fontWeight: FontWeight.w900,
           ),
@@ -713,11 +718,12 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               width: 96,
               child: DropdownButtonFormField<CountryInfo>(
                 initialValue: selectedCountry,
-                dropdownColor: dark ? kBlack : kYellow,
+                dropdownColor: dark ? MemoryColors.ink : MemoryColors.accent,
                 borderRadius: BorderRadius.circular(16),
                 icon: Icon(
                   Icons.keyboard_arrow_down_rounded,
-                  color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+                  color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
+                      .withValues(alpha: 0.6),
                 ),
                 iconSize: 20,
                 isDense: true,
@@ -736,7 +742,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: dark ? kCream : kCharcoal,
+                                color: dark
+                                    ? MemoryColors.cream
+                                    : MemoryColors.charcoal,
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -744,9 +752,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                               c.dialCode,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: (dark ? kCream : kCharcoal).withValues(
-                                  alpha: 0.6,
-                                ),
+                                color:
+                                    (dark
+                                            ? MemoryColors.cream
+                                            : MemoryColors.charcoal)
+                                        .withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -765,7 +775,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w900,
-                              color: dark ? kCream : kCharcoal,
+                              color: dark
+                                  ? MemoryColors.cream
+                                  : MemoryColors.charcoal,
                             ),
                           ),
                         ],
@@ -776,7 +788,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     setState(() => selectedCountry = v ?? kCountries[0]),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: dark ? kDarkCream : kCream,
+                  fillColor: dark ? MemoryColors.ink : MemoryColors.cream,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,

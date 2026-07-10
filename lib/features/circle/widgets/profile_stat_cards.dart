@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/features/auth/repositories/auth_repository.dart';
-import 'package:memory_app/shared/widgets/social_marks.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 import '../views/profile_share_card.dart';
 
@@ -23,7 +22,7 @@ class ProfileStatCards extends ConsumerWidget {
           child: _StatCard(
             title: 'Memories',
             value: '${user.streakDays} days',
-            colors: const [kYellow, kAmber],
+            colors: const [MemoryColors.accent, MemoryColors.amber],
             dark: dark,
           ),
         ),
@@ -32,7 +31,7 @@ class ProfileStatCards extends ConsumerWidget {
           child: _StatCard(
             title: 'Circle Pulse',
             value: '${user.circlePulseDays} days',
-            colors: const [kMint, kSky],
+            colors: const [MemoryColors.mint, MemoryColors.sky],
             dark: dark,
           ),
         ),
@@ -64,7 +63,7 @@ class _StatCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: dark
-            ? kBlack
+            ? MemoryColors.ink
             : Color.alphaBlend(accent.withValues(alpha: 0.08), Colors.white),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accent.withValues(alpha: 0.18), width: 1),
@@ -97,7 +96,7 @@ class _StatCard extends StatelessWidget {
                 child: Text(
                   subtitle,
                   style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
+                    color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     fontSize: 8,
                     fontWeight: FontWeight.w800,
                   ),
@@ -109,7 +108,7 @@ class _StatCard extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: dark ? kCream : kCharcoal,
+              color: dark ? MemoryColors.cream : MemoryColors.charcoal,
               fontSize: 24,
               fontWeight: FontWeight.w900,
               height: 1,
@@ -119,7 +118,9 @@ class _StatCard extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
+              color: dark
+                  ? MemoryColors.mutedOnDark
+                  : MemoryColors.mutedOnLight,
               fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
@@ -130,7 +131,7 @@ class _StatCard extends StatelessWidget {
               Expanded(
                 child: _SharePill(
                   logo: const InstagramMark(color: Colors.white),
-                  bg: const Color(0xFFE1306C),
+                  bg: MemoryColors.instagram,
                   onTap: () => showShareCard(
                     context,
                     title: title,
@@ -144,7 +145,7 @@ class _StatCard extends StatelessWidget {
               Expanded(
                 child: _SharePill(
                   logo: const WhatsAppMark(color: Colors.white),
-                  bg: const Color(0xFF25D366),
+                  bg: MemoryColors.whatsApp,
                   onTap: () => showShareCard(
                     context,
                     title: title,

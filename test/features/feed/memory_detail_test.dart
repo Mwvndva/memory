@@ -7,7 +7,8 @@ import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/core/api_client.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 const _stubDetailItem = MemoryItem(
   id: 'detail-test-uuid',
@@ -16,8 +17,8 @@ const _stubDetailItem = MemoryItem(
   initial: 'T',
   time: 'Just now',
   caption: 'Original Caption',
-  avatar: kMint,
-  colors: [kMint],
+  avatar: MemoryColors.mint,
+  colors: [MemoryColors.mint],
   ageHours: 0.1,
 );
 

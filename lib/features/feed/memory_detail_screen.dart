@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/auth/auth.dart';
@@ -86,7 +86,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         detailState.memory == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: kYellow)),
+        body: Center(
+          child: CircularProgressIndicator(color: MemoryColors.accent),
+        ),
       );
     }
 
@@ -116,7 +118,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                       .read(memoryDetailProvider(widget.memoryId).notifier)
                       .loadMemory();
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: kYellow),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: MemoryColors.accent,
+                ),
                 child: const Text(
                   'Retry',
                   style: TextStyle(color: Colors.black),
@@ -131,14 +135,14 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     final m = detailState.memory!;
 
     return Scaffold(
-      backgroundColor: dark ? kBlack : const Color(0xFFFADA5E),
+      backgroundColor: dark ? MemoryColors.ink : const Color(0xFFFADA5E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: dark ? Colors.white : kCharcoal,
+            color: dark ? Colors.white : MemoryColors.charcoal,
           ),
           onPressed: () => context.pop(),
         ),
@@ -147,7 +151,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
             IconButton(
               icon: Icon(
                 Icons.download_rounded,
-                color: dark ? Colors.white : kCharcoal,
+                color: dark ? Colors.white : MemoryColors.charcoal,
               ),
               onPressed: () async {
                 try {
@@ -171,7 +175,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
           IconButton(
             icon: Icon(
               Icons.edit_rounded,
-              color: dark ? Colors.white : kCharcoal,
+              color: dark ? Colors.white : MemoryColors.charcoal,
             ),
             onPressed: () {
               ref
@@ -201,22 +205,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: AspectRatio(
                 aspectRatio: 3 / 2.2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    gradient: LinearGradient(
-                      colors: m.colors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
+                child: MemoryGradientSurface(
+                  colors: m.colors,
+                  borderRadius: BorderRadius.circular(MemoryRadius.xxl),
+                  shadows: MemoryShadows.raised(dark),
                   child: Stack(
                     children: [
                       if (detailState.isEditing)
@@ -279,7 +271,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                             .saveCaptionEdit();
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: kYellow,
+                                        backgroundColor: MemoryColors.accent,
                                       ),
                                       child: detailState.isSavingEdit
                                           ? const SizedBox(
@@ -376,7 +368,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                   Text(
                     'Comments',
                     style: TextStyle(
-                      color: dark ? Colors.white : kCharcoal,
+                      color: dark ? Colors.white : MemoryColors.charcoal,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -388,7 +380,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                       height: 14,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: kYellow,
+                        color: MemoryColors.accent,
                       ),
                     ),
                 ],
@@ -404,7 +396,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                         style: TextStyle(
                           color: dark
                               ? Colors.white38
-                              : kCharcoal.withValues(alpha: 0.4),
+                              : MemoryColors.charcoal.withValues(alpha: 0.4),
                         ),
                       ),
                     )
@@ -419,7 +411,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                           return const Center(
                             child: Padding(
                               padding: EdgeInsets.all(12.0),
-                              child: CircularProgressIndicator(color: kYellow),
+                              child: CircularProgressIndicator(
+                                color: MemoryColors.accent,
+                              ),
                             ),
                           );
                         }
@@ -437,7 +431,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                             borderRadius: BorderRadius.circular(16),
                             border: isOptimistic
                                 ? Border.all(
-                                    color: kYellow.withValues(alpha: 0.3),
+                                    color: MemoryColors.accent.withValues(
+                                      alpha: 0.3,
+                                    ),
                                     width: 1,
                                   )
                                 : null,
@@ -467,7 +463,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                           style: TextStyle(
                                             color: dark
                                                 ? Colors.white
-                                                : kCharcoal,
+                                                : MemoryColors.charcoal,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 12,
                                           ),
@@ -478,9 +474,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                           style: TextStyle(
                                             color: dark
                                                 ? Colors.white38
-                                                : kCharcoal.withValues(
-                                                    alpha: 0.5,
-                                                  ),
+                                                : MemoryColors.charcoal
+                                                      .withValues(alpha: 0.5),
                                             fontSize: 10,
                                           ),
                                         ),
@@ -492,7 +487,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                       style: TextStyle(
                                         color: dark
                                             ? Colors.white70
-                                            : kCharcoal,
+                                            : MemoryColors.charcoal,
                                         fontSize: 13,
                                       ),
                                     ),
@@ -524,7 +519,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: dark ? kBlack : Colors.white,
+                color: dark ? MemoryColors.ink : Colors.white,
                 border: Border(
                   top: BorderSide(
                     color: dark ? Colors.white12 : Colors.black12,
@@ -536,7 +531,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                   Expanded(
                     child: TextField(
                       controller: _commentController,
-                      style: TextStyle(color: dark ? Colors.white : kCharcoal),
+                      style: TextStyle(
+                        color: dark ? Colors.white : MemoryColors.charcoal,
+                      ),
                       decoration: const InputDecoration(
                         hintText: 'Write a comment...',
                         hintStyle: TextStyle(color: Colors.grey),
@@ -545,7 +542,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.send_rounded, color: kYellow),
+                    icon: const Icon(
+                      Icons.send_rounded,
+                      color: MemoryColors.accent,
+                    ),
                     onPressed: () {
                       final text = _commentController.text.trim();
                       if (text.isNotEmpty) {

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/auth/repositories/auth_repository.dart';
 
@@ -268,11 +267,11 @@ void showShareCard(
                   width: double.infinity,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: kYellow,
+                    color: MemoryColors.accent,
                     borderRadius: BorderRadius.circular(999),
                     boxShadow: [
                       BoxShadow(
-                        color: kYellow.withValues(alpha: 0.45),
+                        color: MemoryColors.accent.withValues(alpha: 0.45),
                         blurRadius: 18,
                         offset: const Offset(0, 6),
                       ),
@@ -281,7 +280,7 @@ void showShareCard(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(channelIcon, color: kBlack, size: 18),
+                      Icon(channelIcon, color: MemoryColors.ink, size: 18),
                       const SizedBox(width: 8),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -290,7 +289,7 @@ void showShareCard(
                           Text(
                             'Send to $channel',
                             style: const TextStyle(
-                              color: kBlack,
+                              color: MemoryColors.ink,
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
                               height: 1.1,
@@ -299,7 +298,7 @@ void showShareCard(
                           Text(
                             channelTagline,
                             style: TextStyle(
-                              color: kBlack.withValues(alpha: 0.62),
+                              color: MemoryColors.ink.withValues(alpha: 0.62),
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               height: 1.2,

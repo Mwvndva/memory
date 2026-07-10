@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/design_system/design_system.dart';
 
 class ChatInboxView extends ConsumerStatefulWidget {
@@ -145,7 +145,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 decoration: BoxDecoration(
-                  color: kBlack,
+                  color: MemoryColors.ink,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
@@ -223,7 +223,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                     Positioned.fill(
                       child: CustomPaint(
                         painter: ChatPatternPainter(
-                          patternColor: (dark ? Colors.white : kBlack)
+                          patternColor: (dark ? Colors.white : MemoryColors.ink)
                               .withValues(alpha: 0.04),
                         ),
                       ),
@@ -231,7 +231,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                     if (_loadingHistory)
                       Center(
                         child: CircularProgressIndicator(
-                          color: dark ? kYellow : kBlack,
+                          color: dark ? MemoryColors.accent : MemoryColors.ink,
                         ),
                       )
                     else if (messages.isEmpty)
@@ -242,7 +242,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                             const Text(
                               'No messages yet',
                               style: TextStyle(
-                                color: kCharcoal,
+                                color: MemoryColors.charcoal,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -252,7 +252,9 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                               'Say hello to start the conversation!',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: kCharcoal.withValues(alpha: 0.6),
+                                color: MemoryColors.charcoal.withValues(
+                                  alpha: 0.6,
+                                ),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -287,7 +289,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                                             color:
                                                 (dark
                                                         ? Colors.white
-                                                        : kCharcoal)
+                                                        : MemoryColors.charcoal)
                                                     .withValues(alpha: 0.6),
                                             fontSize: 11,
                                             fontStyle: FontStyle.italic,
@@ -339,7 +341,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: kBlack,
+          color: MemoryColors.ink,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -449,13 +451,13 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       height: 44,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: kYellow,
+                        color: MemoryColors.accent,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: const Text(
                         'Accept',
                         style: TextStyle(
-                          color: kBlack,
+                          color: MemoryColors.ink,
                           fontWeight: FontWeight.w900,
                           fontSize: 13,
                         ),
@@ -472,7 +474,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: kBlack,
+          color: MemoryColors.ink,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -535,7 +537,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
         height: 52,
         padding: const EdgeInsets.only(left: 18, right: 6),
         decoration: BoxDecoration(
-          color: kBlack,
+          color: MemoryColors.ink,
           borderRadius: BorderRadius.circular(999),
           boxShadow: [
             BoxShadow(
@@ -574,13 +576,13 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: kYellow,
+                  color: MemoryColors.accent,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: const Text(
                   'Send',
                   style: TextStyle(
-                    color: kBlack,
+                    color: MemoryColors.ink,
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                   ),
@@ -602,9 +604,11 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
       );
 
   BoxDecoration _softBackground(bool dark) => BoxDecoration(
-    color: dark ? kDarkCream : kCream,
+    color: dark ? MemoryColors.ink : MemoryColors.cream,
     gradient: LinearGradient(
-      colors: dark ? const [kDarkCream, kCharcoal] : const [kYellow, kYellow],
+      colors: dark
+          ? const [MemoryColors.ink, MemoryColors.charcoal]
+          : const [MemoryColors.accent, MemoryColors.accent],
       begin: Alignment.topRight,
       end: Alignment.bottomLeft,
     ),

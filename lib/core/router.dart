@@ -9,8 +9,7 @@ import 'package:memory_app/features/capture/capture.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import '../features/dev/views/dev_diagnostics.dart';
 import 'package:memory_app/features/notification/notification.dart';
-import 'package:memory_app/shared/widgets/main_app_scaffold.dart';
-import 'theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 // Key to hold state across routes
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -102,7 +101,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         navigatorKey: shellNavigatorKey,
         builder: (context, state, child) {
-          return MainAppScaffold(child: child);
+          // The shell adds no chrome of its own; the child is the screen.
+          return child;
         },
         routes: [
           GoRoute(
@@ -186,17 +186,17 @@ void showGlobalNotification({
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: dark ? kBlack : kYellow,
+                  color: dark ? MemoryColors.ink : MemoryColors.accent,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: kBlack.withValues(alpha: 0.12),
+                      color: MemoryColors.ink.withValues(alpha: 0.12),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
                   ],
                   border: Border.all(
-                    color: kBlack.withValues(alpha: 0.15),
+                    color: MemoryColors.ink.withValues(alpha: 0.15),
                     width: 1.5,
                   ),
                 ),
@@ -206,12 +206,12 @@ void showGlobalNotification({
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: dark ? kYellow : kBlack,
+                        color: dark ? MemoryColors.accent : MemoryColors.ink,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.notifications_active_rounded,
-                        color: dark ? kBlack : kYellow,
+                        color: dark ? MemoryColors.ink : MemoryColors.accent,
                         size: 20,
                       ),
                     ),
@@ -224,7 +224,9 @@ void showGlobalNotification({
                           Text(
                             title,
                             style: TextStyle(
-                              color: dark ? kYellow : kBlack,
+                              color: dark
+                                  ? MemoryColors.accent
+                                  : MemoryColors.ink,
                               fontWeight: FontWeight.w900,
                               fontSize: 13,
                             ),
@@ -233,9 +235,11 @@ void showGlobalNotification({
                           Text(
                             body,
                             style: TextStyle(
-                              color: (dark ? kYellow : kBlack).withValues(
-                                alpha: 0.7,
-                              ),
+                              color:
+                                  (dark
+                                          ? MemoryColors.accent
+                                          : MemoryColors.ink)
+                                      .withValues(alpha: 0.7),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),

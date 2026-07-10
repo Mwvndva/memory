@@ -12,6 +12,7 @@ library;
 
 export 'foundation/memory_colors.dart';
 export 'foundation/memory_elevation.dart';
+export 'foundation/memory_interactions.dart';
 export 'foundation/memory_motion.dart';
 export 'foundation/memory_radius.dart';
 export 'foundation/memory_spacing.dart';
@@ -27,6 +28,8 @@ export 'components/memory_states.dart';
 export 'components/memory_text_field.dart';
 export 'components/memory_top_bar.dart';
 export 'components/memory_bottom_sheet.dart';
+export 'components/memory_brand_marks.dart';
+export 'components/memory_gradient_surface.dart';
 export 'components/memory_button.dart';
 export 'components/memory_card.dart';
 export 'components/memory_divider.dart';

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/core/api_client.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/realtime/realtime_providers.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class DevDiagnosticsView extends ConsumerStatefulWidget {
   const DevDiagnosticsView({super.key});
@@ -107,9 +108,7 @@ class _DevDiagnosticsViewState extends ConsumerState<DevDiagnosticsView> {
         title: const Text('Dev Diagnostics'),
         actions: [
           IconButton(
-            icon: _loading
-                ? const CircularProgressIndicator.adaptive()
-                : const Icon(Icons.refresh),
+            icon: _loading ? const MemoryLoading() : const Icon(Icons.refresh),
             onPressed: _loading ? null : _refreshAll,
           ),
         ],

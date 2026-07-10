@@ -6,9 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/design_system/design_system.dart';
-import 'package:memory_app/core/playful.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/features/auth/auth.dart';
@@ -206,7 +205,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
             margin: const EdgeInsets.fromLTRB(18, 18, 18, 18),
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: dark ? kBlack : kYellow,
+              color: dark ? MemoryColors.ink : MemoryColors.accent,
               borderRadius: BorderRadius.circular(26),
             ),
             child: Column(
@@ -216,7 +215,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                   'Invite friends to share memories',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
+                    color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
                   ),
@@ -343,13 +342,13 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     height: 44,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: dark ? kCream : kCharcoal,
+                      color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       'Copy invite link',
                       style: TextStyle(
-                        color: dark ? kCharcoal : Colors.white,
+                        color: dark ? MemoryColors.charcoal : Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
                       ),
@@ -419,7 +418,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                           ? Icons.wifi_off_rounded
                           : Icons.error_outline_rounded,
                       size: 76,
-                      color: dark ? kBlack : kCharcoal,
+                      color: dark ? MemoryColors.ink : MemoryColors.charcoal,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -428,7 +427,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                           : 'Unable to load your memories.\nPlease try again later.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: dark ? kBlack : kCharcoal,
+                        color: dark ? MemoryColors.ink : MemoryColors.charcoal,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         height: 1.4,
@@ -437,7 +436,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     const SizedBox(height: 24),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: dark ? kBlack : kCharcoal,
+                        backgroundColor: dark
+                            ? MemoryColors.ink
+                            : MemoryColors.charcoal,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(999),
@@ -487,13 +488,13 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                       width: 76,
                       height: 76,
                       decoration: BoxDecoration(
-                        color: dark ? kYellow : kBlack,
+                        color: dark ? MemoryColors.accent : MemoryColors.ink,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: (dark ? kYellow : kBlack).withValues(
-                              alpha: 0.4,
-                            ),
+                            color:
+                                (dark ? MemoryColors.accent : MemoryColors.ink)
+                                    .withValues(alpha: 0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -511,8 +512,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     'invite friends to share memories',
                     style: TextStyle(
                       color: dark
-                          ? kCream.withValues(alpha: 0.8)
-                          : kCharcoal.withValues(alpha: 0.8),
+                          ? MemoryColors.cream.withValues(alpha: 0.8)
+                          : MemoryColors.charcoal.withValues(alpha: 0.8),
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -557,8 +558,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                         : Icons.history_toggle_off_rounded,
                     size: 76,
                     color: dark
-                        ? kCream.withValues(alpha: 0.8)
-                        : kCharcoal.withValues(alpha: 0.8),
+                        ? MemoryColors.cream.withValues(alpha: 0.8)
+                        : MemoryColors.charcoal.withValues(alpha: 0.8),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -568,8 +569,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: dark
-                          ? kCream.withValues(alpha: 0.8)
-                          : kCharcoal.withValues(alpha: 0.8),
+                          ? MemoryColors.cream.withValues(alpha: 0.8)
+                          : MemoryColors.charcoal.withValues(alpha: 0.8),
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       height: 1.4,
@@ -691,8 +692,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: dark
-                      ? kCream.withValues(alpha: 0.8)
-                      : kCharcoal.withValues(alpha: 0.8),
+                      ? MemoryColors.cream.withValues(alpha: 0.8)
+                      : MemoryColors.charcoal.withValues(alpha: 0.8),
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   height: 1.4,
@@ -853,7 +854,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
       return Container(
         color: Colors.black,
         child: Center(
-          child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
+          child: CircularProgressIndicator(
+            color: dark ? MemoryColors.accent : MemoryColors.ink,
+          ),
         ),
       );
     }
@@ -868,21 +871,13 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
         ),
       );
     }
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: m.colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-    );
+    return MemoryGradientSurface(colors: m.colors);
   }
 
   Widget _memoryGrid(List<MemoryItem> archived, bool dark) {
     if (archived.isEmpty) {
       return Container(
-        color: dark ? kBlack : kYellow,
+        color: dark ? MemoryColors.ink : MemoryColors.accent,
         padding: const EdgeInsets.fromLTRB(26, 82, 26, 90),
         child: Column(
           children: [
@@ -892,7 +887,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 Text(
                   'All memories',
                   style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
+                    color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                   ),
@@ -929,7 +924,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
         }
       },
       child: Container(
-        color: dark ? kBlack : kYellow,
+        color: dark ? MemoryColors.ink : MemoryColors.accent,
         padding: const EdgeInsets.fromLTRB(26, 82, 26, 90),
         child: Column(
           children: [
@@ -939,7 +934,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 Text(
                   'All memories',
                   style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
+                    color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1005,15 +1000,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                                 fallbackColors: m.colors,
                               )
                             else
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: m.colors,
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                ),
-                              ),
+                              MemoryGradientSurface(colors: m.colors),
                             // Avatar badge at bottom-left using stored avatar URL
                             Positioned(
                               left: 7,
@@ -1050,8 +1037,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                           : 'Load failed. ',
                       style: TextStyle(
                         color: dark
-                            ? kCream.withValues(alpha: 0.6)
-                            : kCharcoal.withValues(alpha: 0.6),
+                            ? MemoryColors.cream.withValues(alpha: 0.6)
+                            : MemoryColors.charcoal.withValues(alpha: 0.6),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1068,7 +1055,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                       child: const Text(
                         'Tap to retry',
                         style: TextStyle(
-                          color: kYellow,
+                          color: MemoryColors.accent,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           decoration: TextDecoration.underline,
@@ -1091,7 +1078,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
         height: 50,
         padding: const EdgeInsets.only(left: 16, right: 6),
         decoration: BoxDecoration(
-          color: (dark ? kBlack : Colors.white).withValues(alpha: 0.92),
+          color: (dark ? MemoryColors.ink : Colors.white).withValues(
+            alpha: 0.92,
+          ),
           borderRadius: BorderRadius.circular(999),
         ),
         child: Row(
@@ -1101,8 +1090,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 'Send ${m.person} a message',
                 style: TextStyle(
                   color: dark
-                      ? kCream.withValues(alpha: 0.6)
-                      : kCharcoal.withValues(alpha: 0.6),
+                      ? MemoryColors.cream.withValues(alpha: 0.6)
+                      : MemoryColors.charcoal.withValues(alpha: 0.6),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1113,10 +1102,14 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
               height: 38,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: kYellow,
+                color: MemoryColors.accent,
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: const Icon(Icons.send_rounded, color: kBlack, size: 18),
+              child: const Icon(
+                Icons.send_rounded,
+                color: MemoryColors.ink,
+                size: 18,
+              ),
             ),
           ],
         ),
@@ -1152,10 +1145,12 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: (dark ? kBlack : Colors.white).withValues(alpha: 0.85),
+              color: (dark ? MemoryColors.ink : Colors.white).withValues(
+                alpha: 0.85,
+              ),
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
-                color: kYellow.withValues(alpha: 0.3),
+                color: MemoryColors.accent.withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
@@ -1167,7 +1162,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 Text(
                   '${m.reactions[selectedEmoji]}',
                   style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
+                    color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1185,7 +1180,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
         constraints: const BoxConstraints(maxWidth: 320),
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          color: (dark ? kBlack : Colors.white).withValues(alpha: 0.82),
+          color: (dark ? MemoryColors.ink : Colors.white).withValues(
+            alpha: 0.82,
+          ),
           borderRadius: BorderRadius.circular(999),
           boxShadow: [
             BoxShadow(
@@ -1243,7 +1240,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 ),
                 child: Icon(
                   Icons.add,
-                  color: dark ? kCream : kCharcoal,
+                  color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                   size: 16,
                 ),
               ),
@@ -1322,12 +1319,12 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
       width: 34,
       height: 34,
       decoration: BoxDecoration(
-        color: dark ? kDarkCream : kCream,
+        color: dark ? MemoryColors.ink : MemoryColors.cream,
         shape: BoxShape.circle,
       ),
       child: Icon(
         Icons.close_rounded,
-        color: dark ? kCream : kCharcoal,
+        color: dark ? MemoryColors.cream : MemoryColors.charcoal,
         size: 18,
       ),
     ),

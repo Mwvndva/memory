@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/design_system/design_system.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/features/feed/feed.dart';
 
@@ -86,10 +86,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
       margin: const EdgeInsets.all(14),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: dark ? kBlack : Colors.white,
+        color: dark ? MemoryColors.ink : Colors.white,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
+          color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
+            alpha: 0.06,
+          ),
         ),
         boxShadow: [
           BoxShadow(
@@ -106,7 +108,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
             height: 5,
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
-              color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12),
+              color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
+                alpha: 0.12,
+              ),
               borderRadius: BorderRadius.circular(999),
             ),
           ),
@@ -121,15 +125,14 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: (dark ? Colors.white : kCharcoal).withValues(
-                      alpha: 0.05,
-                    ),
+                    color: (dark ? Colors.white : MemoryColors.charcoal)
+                        .withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     'Close',
                     style: TextStyle(
-                      color: dark ? kCream : kCharcoal,
+                      color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -142,9 +145,8 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(
-                    alpha: 0.05,
-                  ),
+                  color: (dark ? Colors.white : MemoryColors.charcoal)
+                      .withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -160,7 +162,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     Text(
                       '#${user.countryRank}',
                       style: TextStyle(
-                        color: dark ? kCream : kCharcoal,
+                        color: dark
+                            ? MemoryColors.cream
+                            : MemoryColors.charcoal,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                       ),
@@ -169,14 +173,18 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       const SizedBox(width: 10),
                       Icon(
                         Icons.public_rounded,
-                        color: dark ? kCream : kCharcoal,
+                        color: dark
+                            ? MemoryColors.cream
+                            : MemoryColors.charcoal,
                         size: 13,
                       ),
                       const SizedBox(width: 5),
                       Text(
                         '#${user.globalRank}',
                         style: TextStyle(
-                          color: dark ? kCream : kCharcoal,
+                          color: dark
+                              ? MemoryColors.cream
+                              : MemoryColors.charcoal,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
@@ -197,12 +205,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: dark ? kBlack : Colors.white,
+                      color: dark ? MemoryColors.ink : Colors.white,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: (dark ? Colors.white : kCharcoal).withValues(
-                          alpha: 0.08,
-                        ),
+                        color: (dark ? Colors.white : MemoryColors.charcoal)
+                            .withValues(alpha: 0.08),
                         width: 1,
                       ),
                       boxShadow: [
@@ -225,7 +232,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: dark ? kYellow : kBlack,
+                                  color: dark
+                                      ? MemoryColors.accent
+                                      : MemoryColors.ink,
                                 ),
                                 child: MemoryAvatar(
                                   radius: 34,
@@ -249,16 +258,20 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: kBlack,
+                                    color: MemoryColors.ink,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: dark ? kYellow : kBlack,
+                                      color: dark
+                                          ? MemoryColors.accent
+                                          : MemoryColors.ink,
                                       width: 2,
                                     ),
                                   ),
                                   child: Icon(
                                     Icons.camera_alt_rounded,
-                                    color: dark ? kYellow : kBlack,
+                                    color: dark
+                                        ? MemoryColors.accent
+                                        : MemoryColors.ink,
                                     size: 14,
                                   ),
                                 ),
@@ -270,7 +283,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         Text(
                           '$displayFirstName $displayLastName',
                           style: TextStyle(
-                            color: dark ? kCream : kCharcoal,
+                            color: dark
+                                ? MemoryColors.cream
+                                : MemoryColors.charcoal,
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                           ),
@@ -279,9 +294,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         Text(
                           '@$displayUsername',
                           style: TextStyle(
-                            color: (dark ? kCream : kCharcoal).withValues(
-                              alpha: 0.66,
-                            ),
+                            color:
+                                (dark
+                                        ? MemoryColors.cream
+                                        : MemoryColors.charcoal)
+                                    .withValues(alpha: 0.66),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -293,17 +310,18 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: (dark ? Colors.white : kCharcoal).withValues(
-                              alpha: 0.08,
-                            ),
+                            color: (dark ? Colors.white : MemoryColors.charcoal)
+                                .withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             'Tap your photo to update it',
                             style: TextStyle(
-                              color: (dark ? kCream : kCharcoal).withValues(
-                                alpha: 0.66,
-                              ),
+                              color:
+                                  (dark
+                                          ? MemoryColors.cream
+                                          : MemoryColors.charcoal)
+                                      .withValues(alpha: 0.66),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),

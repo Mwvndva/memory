@@ -11,7 +11,7 @@ import 'package:memory_app/main.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/core/secure_storage.dart';
 import 'package:memory_app/core/api_client.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

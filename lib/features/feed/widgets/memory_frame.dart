@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/core/error_handler.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class MemoryFrame extends ConsumerWidget {
   final MemoryItem memory;
@@ -43,7 +43,7 @@ class MemoryFrame extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(radius),
-          border: Border.all(color: kYellow, width: 3),
+          border: Border.all(color: MemoryColors.accent, width: 3),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(radius - 8),

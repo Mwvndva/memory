@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memory_app/features/feed/feed.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 const _stubItem = MemoryItem(
   id: 'recovery-test-uuid',
@@ -13,8 +14,8 @@ const _stubItem = MemoryItem(
   initial: 'T',
   time: 'Just now',
   caption: 'Testing recovery states',
-  avatar: kMint,
-  colors: [kMint],
+  avatar: MemoryColors.mint,
+  colors: [MemoryColors.mint],
   ageHours: 0.1,
 );
 

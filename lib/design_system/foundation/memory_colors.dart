@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 /// Memory's colour palette.
 ///
 /// Every value here is lifted verbatim from the constants that were previously
-/// scattered across feature code, so adopting these tokens changes nothing on
-/// screen. `lib/core/theme.dart` re-exports the historical `k*` names, which
-/// remain as deprecated aliases until the last screen is migrated.
+/// scattered across feature code, so adopting these tokens changed nothing on
+/// screen. Those legacy `k*` constants have since been deleted: this class is
+/// now the only place a colour is defined.
 abstract final class MemoryColors {
   // ── Brand ────────────────────────────────────────────────────────────────
   /// The single accent. Used sparingly: primary actions, active state, focus.

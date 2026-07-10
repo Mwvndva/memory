@@ -7,9 +7,8 @@ import 'package:camera/camera.dart';
 import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/design_system/design_system.dart';
-import 'package:memory_app/core/playful.dart';
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/features/capture/capture.dart';
 import 'package:memory_app/features/feed/feed.dart';
@@ -508,7 +507,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                               alignment: Alignment.center,
                                               decoration: const BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: kYellow,
+                                                color: MemoryColors.accent,
                                               ),
                                               child: Image.asset(
                                                 'assets/images/memory-logo.png',
@@ -633,7 +632,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
               Text(
                 '+${friendsCount - 3} ',
                 style: const TextStyle(
-                  color: kYellow,
+                  color: MemoryColors.accent,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                 ),
@@ -712,7 +711,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
-                  color: kYellow,
+                  color: MemoryColors.accent,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.black, width: 1.2),
                 ),
@@ -753,7 +752,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
         height: 76,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: kYellow,
+          color: MemoryColors.accent,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
@@ -771,13 +770,17 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                     value: uploadState.status == UploadStatus.uploading
                         ? uploadState.progress
                         : null,
-                    color: kBlack,
+                    color: MemoryColors.ink,
                     strokeWidth: 3,
                   ),
-                  const Icon(Icons.close_rounded, color: kBlack, size: 20),
+                  const Icon(
+                    Icons.close_rounded,
+                    color: MemoryColors.ink,
+                    size: 20,
+                  ),
                 ],
               )
-            : const Icon(Icons.send_rounded, color: kBlack, size: 32),
+            : const Icon(Icons.send_rounded, color: MemoryColors.ink, size: 32),
       ),
     );
   }
@@ -876,7 +879,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                             child: Center(
                               child: _recordedVideoPath != null
                                   ? CircularProgressIndicator(
-                                      color: dark ? kYellow : kBlack,
+                                      color: dark
+                                          ? MemoryColors.accent
+                                          : MemoryColors.ink,
                                     )
                                   : const Text(
                                       'Mock Video Preview\n(Looping Simulation)',
@@ -939,7 +944,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                               width: 36,
                               height: 36,
                               child: CircularProgressIndicator(
-                                color: dark ? kYellow : kBlack,
+                                color: dark
+                                    ? MemoryColors.accent
+                                    : MemoryColors.ink,
                                 strokeWidth: 3,
                               ),
                             ),
@@ -1003,11 +1010,14 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                             margin: const EdgeInsets.symmetric(horizontal: 24),
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: dark ? kBlack : Colors.white,
+                              color: dark ? MemoryColors.ink : Colors.white,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: (dark ? Colors.white : kCharcoal)
-                                    .withValues(alpha: 0.12),
+                                color:
+                                    (dark
+                                            ? Colors.white
+                                            : MemoryColors.charcoal)
+                                        .withValues(alpha: 0.12),
                               ),
                               boxShadow: [
                                 BoxShadow(
@@ -1023,7 +1033,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                 Text(
                                   _getUploadStageMessage(uploadState.status),
                                   style: TextStyle(
-                                    color: dark ? kCream : kCharcoal,
+                                    color: dark
+                                        ? MemoryColors.cream
+                                        : MemoryColors.charcoal,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -1033,9 +1045,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                     UploadStatus.uploading) ...[
                                   LinearProgressIndicator(
                                     value: uploadState.progress,
-                                    color: kYellow,
+                                    color: MemoryColors.accent,
                                     backgroundColor:
-                                        (dark ? Colors.white : kCharcoal)
+                                        (dark
+                                                ? Colors.white
+                                                : MemoryColors.charcoal)
                                             .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -1043,16 +1057,20 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                   Text(
                                     '${(uploadState.progress * 100).toInt()}%',
                                     style: TextStyle(
-                                      color: dark ? kYellow : kBlack,
+                                      color: dark
+                                          ? MemoryColors.accent
+                                          : MemoryColors.ink,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
                                 ] else ...[
                                   LinearProgressIndicator(
-                                    color: kYellow,
+                                    color: MemoryColors.accent,
                                     backgroundColor:
-                                        (dark ? Colors.white : kCharcoal)
+                                        (dark
+                                                ? Colors.white
+                                                : MemoryColors.charcoal)
                                             .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(10),
                                   ),

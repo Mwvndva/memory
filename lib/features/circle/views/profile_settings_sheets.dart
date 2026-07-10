@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/notification/models/notification_item.dart';
 import 'package:memory_app/features/notification/services/notification_services.dart';
@@ -38,14 +37,17 @@ class _NotificationPreferencesSheetState
     Widget typeSwitch(String label, NotificationType type) => SwitchListTile(
       title: Text(
         label,
-        style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13),
+        style: TextStyle(
+          color: dark ? MemoryColors.cream : MemoryColors.charcoal,
+          fontSize: 13,
+        ),
       ),
       value: prefService.isNotificationTypeEnabled(type),
       onChanged: (val) async {
         await prefService.setNotificationTypeEnabled(type, val);
         if (mounted) setState(() {});
       },
-      activeThumbColor: kYellow,
+      activeThumbColor: MemoryColors.accent,
     );
 
     return MemoryBottomSheet(
@@ -57,7 +59,7 @@ class _NotificationPreferencesSheetState
           Text(
             'Notification Preferences',
             style: TextStyle(
-              color: dark ? kCream : kCharcoal,
+              color: dark ? MemoryColors.cream : MemoryColors.charcoal,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -66,14 +68,17 @@ class _NotificationPreferencesSheetState
           SwitchListTile(
             title: Text(
               'Push Notifications',
-              style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13),
+              style: TextStyle(
+                color: dark ? MemoryColors.cream : MemoryColors.charcoal,
+                fontSize: 13,
+              ),
             ),
             value: prefService.isAllNotificationsEnabled(),
             onChanged: (val) async {
               await prefService.setAllNotificationsEnabled(val);
               if (mounted) setState(() {});
             },
-            activeThumbColor: kYellow,
+            activeThumbColor: MemoryColors.accent,
           ),
           typeSwitch('Comments', NotificationType.reaction),
           typeSwitch('Messages', NotificationType.message),
@@ -123,14 +128,17 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
     ) => SwitchListTile(
       title: Text(
         label,
-        style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13),
+        style: TextStyle(
+          color: dark ? MemoryColors.cream : MemoryColors.charcoal,
+          fontSize: 13,
+        ),
       ),
       value: value,
       onChanged: (val) async {
         await onSet(val);
         if (mounted) setState(() {});
       },
-      activeThumbColor: kYellow,
+      activeThumbColor: MemoryColors.accent,
     );
 
     return MemoryBottomSheet(
@@ -142,7 +150,7 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
           Text(
             'Privacy Settings',
             style: TextStyle(
-              color: dark ? kCream : kCharcoal,
+              color: dark ? MemoryColors.cream : MemoryColors.charcoal,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -245,7 +253,7 @@ class _SecuritySettingsSheetState
           Text(
             'Security & Active Sessions',
             style: TextStyle(
-              color: dark ? kCream : kCharcoal,
+              color: dark ? MemoryColors.cream : MemoryColors.charcoal,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -266,7 +274,8 @@ class _SecuritySettingsSheetState
                   child: Text(
                     'Could not load your active sessions.',
                     style: TextStyle(
-                      color: (dark ? kCream : kCharcoal).withValues(alpha: 0.7),
+                      color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
+                          .withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),
@@ -280,7 +289,8 @@ class _SecuritySettingsSheetState
                   child: Text(
                     'No active sessions.',
                     style: TextStyle(
-                      color: (dark ? kCream : kCharcoal).withValues(alpha: 0.7),
+                      color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
+                          .withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),
@@ -295,7 +305,9 @@ class _SecuritySettingsSheetState
                       title: Text(
                         s.isCurrent ? '${s.device} (this device)' : s.device,
                         style: TextStyle(
-                          color: dark ? kCream : kCharcoal,
+                          color: dark
+                              ? MemoryColors.cream
+                              : MemoryColors.charcoal,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
@@ -303,14 +315,20 @@ class _SecuritySettingsSheetState
                       subtitle: Text(
                         s.lastActive,
                         style: TextStyle(
-                          color: (dark ? kCream : kCharcoal).withValues(
-                            alpha: 0.6,
-                          ),
+                          color:
+                              (dark
+                                      ? MemoryColors.cream
+                                      : MemoryColors.charcoal)
+                                  .withValues(alpha: 0.6),
                           fontSize: 11,
                         ),
                       ),
                       trailing: s.isCurrent
-                          ? Icon(Icons.check_circle, color: kMint, size: 18)
+                          ? Icon(
+                              Icons.check_circle,
+                              color: MemoryColors.mint,
+                              size: 18,
+                            )
                           : null,
                     ),
                 ],

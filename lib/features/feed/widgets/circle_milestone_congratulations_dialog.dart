@@ -6,8 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:memory_app/core/theme.dart';
-import 'package:memory_app/core/playful.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 import 'circle_milestone_card_widget.dart';
 import 'milestone_card_widget.dart';
@@ -179,7 +178,7 @@ class _CircleMilestoneCongratulationsDialogState
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
-                                  color: kBlack,
+                                  color: MemoryColors.ink,
                                   strokeWidth: 2,
                                 ),
                               )
@@ -188,14 +187,14 @@ class _CircleMilestoneCongratulationsDialogState
                                 children: [
                                   Icon(
                                     Icons.share_rounded,
-                                    color: kBlack,
+                                    color: MemoryColors.ink,
                                     size: 16,
                                   ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Share Card',
                                     style: TextStyle(
-                                      color: kBlack,
+                                      color: MemoryColors.ink,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w900,
                                     ),

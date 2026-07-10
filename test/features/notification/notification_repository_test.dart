@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:memory_app/core/api_client.dart';
-import 'package:memory_app/core/theme.dart'; // sharedPreferencesProvider
+import 'package:memory_app/core/app_providers.dart'; // sharedPreferencesProvider
 import 'package:memory_app/features/notification/notification.dart';
 
 /// Serves the payloads emitted by the backend's NotificationsController:

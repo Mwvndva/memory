@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/notification/widgets/notification_card.dart';
 import 'package:memory_app/features/notification/notification.dart';
@@ -44,7 +43,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(notificationProvider);
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final bg = dark ? kDarkCream : kCream;
+    final bg = dark ? MemoryColors.ink : MemoryColors.cream;
 
     return Scaffold(
       backgroundColor: bg,
@@ -54,14 +53,14 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: dark ? kYellow : kBlack,
+            color: dark ? MemoryColors.accent : MemoryColors.ink,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Notifications',
           style: TextStyle(
-            color: dark ? kYellow : kBlack,
+            color: dark ? MemoryColors.accent : MemoryColors.ink,
             fontWeight: FontWeight.w900,
             fontSize: 20,
           ),
@@ -74,7 +73,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
               child: Text(
                 'Read All',
                 style: TextStyle(
-                  color: dark ? kYellow : kBlack,
+                  color: dark ? MemoryColors.accent : MemoryColors.ink,
                   fontWeight: FontWeight.w700,
                 ),
               ),

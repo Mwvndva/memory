@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/design_system/design_system.dart';
@@ -72,8 +72,8 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final bg = dark ? kCharcoal : kCream;
-    final fg = dark ? kCream : kCharcoal;
+    final bg = dark ? MemoryColors.charcoal : MemoryColors.cream;
+    final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
     final user = ref.watch(authProvider);
 
     final initialText = user.firstName.isNotEmpty

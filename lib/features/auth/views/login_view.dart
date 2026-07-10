@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import '../auth_background_painter.dart';
 import 'package:memory_app/design_system/design_system.dart';
@@ -122,7 +122,7 @@ class _LoginViewState extends ConsumerState<LoginView>
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final fg = dark ? kCream : kCharcoal;
+    final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
     return Scaffold(

@@ -6,12 +6,13 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:memory_app/core/router.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/features/capture/capture.dart';
 import 'firebase_options.dart';
 import 'package:memory_app/realtime/realtime_providers.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/features/notification/notification.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,7 +67,7 @@ class MemoryApp extends ConsumerWidget {
           ThemeData.light().textTheme,
         ),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: kYellow,
+          seedColor: MemoryColors.accent,
           brightness: Brightness.light,
         ),
       ),
@@ -76,7 +77,7 @@ class MemoryApp extends ConsumerWidget {
           ThemeData.dark().textTheme,
         ),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: kYellow,
+          seedColor: MemoryColors.accent,
           brightness: Brightness.dark,
         ),
       ),
@@ -85,7 +86,7 @@ class MemoryApp extends ConsumerWidget {
         final viewport = MediaQuery.sizeOf(context);
         final useDeviceViewport = viewport.width < 430;
         final dark = ref.watch(isDarkProvider);
-        final bg = dark ? kDarkCream : kCream;
+        final bg = dark ? MemoryColors.ink : MemoryColors.cream;
 
         return Scaffold(
           backgroundColor: bg,

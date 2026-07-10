@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 import 'media_cache_manager.dart';
 import 'playback_coordinator.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class UnifiedImageWidget extends ConsumerWidget {
   const UnifiedImageWidget({
@@ -33,7 +34,7 @@ class UnifiedImageWidget extends ConsumerWidget {
         future: cacheManager.getCachedFile(imageUrl),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator.adaptive());
+            return const MemoryLoading();
           }
           final file = snapshot.data;
           if (file == null || !file.existsSync()) {

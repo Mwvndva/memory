@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 TextStyle headlineStyle(Color color) => TextStyle(
   color: color,
@@ -17,7 +17,7 @@ Widget authStatusIndicator(String text, bool ok) => Padding(
   child: Text(
     text,
     style: TextStyle(
-      color: ok ? const Color(0xFF20A978) : kBlack,
+      color: ok ? const Color(0xFF20A978) : MemoryColors.ink,
       fontSize: 10,
       fontWeight: FontWeight.w900,
     ),
@@ -38,7 +38,7 @@ Widget authInputField(
     Text(
       label,
       style: TextStyle(
-        color: dark ? kCream : kCharcoal,
+        color: dark ? MemoryColors.cream : MemoryColors.charcoal,
         fontSize: 11,
         fontWeight: FontWeight.w900,
       ),
@@ -54,17 +54,19 @@ Widget authInputField(
       style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w900,
-        color: dark ? kBlack : Colors.white,
+        color: dark ? MemoryColors.ink : Colors.white,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
-          color: (dark ? kBlack : Colors.white).withValues(alpha: 0.35),
+          color: (dark ? MemoryColors.ink : Colors.white).withValues(
+            alpha: 0.35,
+          ),
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
         filled: true,
-        fillColor: dark ? kYellow : kBlack,
+        fillColor: dark ? MemoryColors.accent : MemoryColors.ink,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -84,7 +86,7 @@ Widget authInputField(
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
                     size: 20,
-                    color: (dark ? kBlack : Colors.white).withValues(
+                    color: (dark ? MemoryColors.ink : Colors.white).withValues(
                       alpha: 0.8,
                     ),
                   ),
@@ -111,7 +113,7 @@ Widget passwordValidationIndicator(String pass, String confirm) {
         Icon(
           ok ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
           size: 14,
-          color: ok ? const Color(0xFF20A978) : kBlack,
+          color: ok ? const Color(0xFF20A978) : MemoryColors.ink,
         ),
         const SizedBox(width: 8),
         Text(
@@ -119,7 +121,7 @@ Widget passwordValidationIndicator(String pass, String confirm) {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: kBlack,
+            color: MemoryColors.ink,
           ),
         ),
       ],
@@ -140,7 +142,9 @@ Widget passwordValidationIndicator(String pass, String confirm) {
           child: Text(
             pass == confirm ? 'Passwords match' : 'Passwords do not match',
             style: TextStyle(
-              color: pass == confirm ? const Color(0xFF20A978) : kBlack,
+              color: pass == confirm
+                  ? const Color(0xFF20A978)
+                  : MemoryColors.ink,
               fontWeight: FontWeight.w800,
               fontSize: 12,
             ),

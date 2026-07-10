@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/core/api_config.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/design_system/design_system.dart';
-import 'package:memory_app/core/playful.dart';
 import 'package:memory_app/core/error_handler.dart';
 import '../circle_state_manager.dart';
 
@@ -18,15 +16,17 @@ class RequestRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final name = req.firstName.isNotEmpty ? req.firstName : req.username;
-    final fg = dark ? kCream : kCharcoal;
+    final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: dark ? kBlack : Colors.white,
+        color: dark ? MemoryColors.ink : Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.07),
+          color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
+            alpha: 0.07,
+          ),
           width: 1,
         ),
         boxShadow: [
@@ -96,13 +96,13 @@ class RequestRow extends ConsumerWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: dark ? kYellow : kBlack,
+                    color: dark ? MemoryColors.accent : MemoryColors.ink,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     'Accept',
                     style: TextStyle(
-                      color: dark ? kBlack : Colors.white,
+                      color: dark ? MemoryColors.ink : Colors.white,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
@@ -131,9 +131,8 @@ class RequestRow extends ConsumerWidget {
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: (dark ? Colors.white : kCharcoal).withValues(
-                        alpha: 0.12,
-                      ),
+                      color: (dark ? Colors.white : MemoryColors.charcoal)
+                          .withValues(alpha: 0.12),
                     ),
                   ),
                   child: Text(
@@ -173,10 +172,12 @@ class ChatRow extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: dark ? kBlack : Colors.white,
+        color: dark ? MemoryColors.ink : Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.07),
+          color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
+            alpha: 0.07,
+          ),
           width: 1,
         ),
         boxShadow: [
@@ -235,7 +236,9 @@ class ChatRow extends ConsumerWidget {
                             Text(
                               name,
                               style: TextStyle(
-                                color: dark ? kCream : kCharcoal,
+                                color: dark
+                                    ? MemoryColors.cream
+                                    : MemoryColors.charcoal,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14,
                               ),
@@ -284,8 +287,11 @@ class ChatRow extends ConsumerWidget {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: (dark ? kYellow : kBlack)
-                                            .withValues(alpha: 0.1),
+                                        color:
+                                            (dark
+                                                    ? MemoryColors.accent
+                                                    : MemoryColors.ink)
+                                                .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Row(
@@ -294,7 +300,9 @@ class ChatRow extends ConsumerWidget {
                                           Text(
                                             member.role.name.toUpperCase(),
                                             style: TextStyle(
-                                              color: dark ? kYellow : kBlack,
+                                              color: dark
+                                                  ? MemoryColors.accent
+                                                  : MemoryColors.ink,
                                               fontSize: 8,
                                               fontWeight: FontWeight.w900,
                                             ),
@@ -303,7 +311,9 @@ class ChatRow extends ConsumerWidget {
                                           Icon(
                                             Icons.arrow_drop_down,
                                             size: 10,
-                                            color: dark ? kYellow : kBlack,
+                                            color: dark
+                                                ? MemoryColors.accent
+                                                : MemoryColors.ink,
                                           ),
                                         ],
                                       ),
@@ -316,14 +326,19 @@ class ChatRow extends ConsumerWidget {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: (dark ? kYellow : kBlack)
-                                          .withValues(alpha: 0.1),
+                                      color:
+                                          (dark
+                                                  ? MemoryColors.accent
+                                                  : MemoryColors.ink)
+                                              .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
                                       member.role.name.toUpperCase(),
                                       style: TextStyle(
-                                        color: dark ? kYellow : kBlack,
+                                        color: dark
+                                            ? MemoryColors.accent
+                                            : MemoryColors.ink,
                                         fontSize: 8,
                                         fontWeight: FontWeight.w900,
                                       ),
@@ -351,7 +366,9 @@ class ChatRow extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: hasUnread
-                                    ? (dark ? kCream : kCharcoal)
+                                    ? (dark
+                                          ? MemoryColors.cream
+                                          : MemoryColors.charcoal)
                                     : (dark
                                           ? const Color(0xFFC9B8AA)
                                           : const Color(0xFF776B62)),
@@ -431,9 +448,8 @@ class ChatRow extends ConsumerWidget {
                         color: Colors.transparent,
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
-                          color: (dark ? Colors.white : kCharcoal).withValues(
-                            alpha: 0.12,
-                          ),
+                          color: (dark ? Colors.white : MemoryColors.charcoal)
+                              .withValues(alpha: 0.12),
                         ),
                       ),
                       child: Text(
