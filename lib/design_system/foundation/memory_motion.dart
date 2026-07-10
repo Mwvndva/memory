@@ -20,6 +20,9 @@ abstract final class MemoryDurations {
 
   /// 420ms — celebratory entrances only.
   static const Duration deliberate = Duration(milliseconds: 420);
+
+  /// 900ms — one half-cycle of the skeleton shimmer.
+  static const Duration shimmer = Duration(milliseconds: 900);
 }
 
 /// Curves paired with [MemoryDurations].

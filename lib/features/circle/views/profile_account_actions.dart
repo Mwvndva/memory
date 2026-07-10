@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 import '../services/profile_services.dart';
 
@@ -11,32 +11,22 @@ import '../services/profile_services.dart';
 // after the dialog has already been popped.
 
 void showExportDialog(BuildContext context, bool dark) {
-  showDialog(
+  MemoryDialog.show(
     context: context,
     builder: (ctx) => Consumer(
-      builder: (_, ref, _) => AlertDialog(
-        backgroundColor: dark ? kBlack : Colors.white,
-        title: Text(
-          'Export My Data',
-          style: TextStyle(color: dark ? kCream : kCharcoal),
-        ),
-        content: Text(
-          'Requesting an export will compile all your Profile statistics, Memories, Messages, Settings, and Activity history into an archive. Compile starts in the background.',
-          style: TextStyle(
-            color: (dark ? kCream : kCharcoal).withValues(alpha: 0.8),
-          ),
-        ),
+      builder: (_, ref, _) => MemoryDialog(
+        title: 'Export My Data',
+        dark: dark,
+        message:
+            'Requesting an export will compile all your Profile statistics, Memories, Messages, Settings, and Activity history into an archive. Compile starts in the background.',
         actions: [
-          TextButton(
+          MemoryDialogAction(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
-              ),
-            ),
           ),
-          TextButton(
+          MemoryDialogAction(
+            label: 'Request Export',
+            isPrimary: true,
             onPressed: () async {
               Navigator.pop(ctx);
               final exportService = ref.read(accountExportServiceProvider);
@@ -54,10 +44,6 @@ void showExportDialog(BuildContext context, bool dark) {
                 }
               }
             },
-            child: const Text(
-              'Request Export',
-              style: TextStyle(color: kYellow, fontWeight: FontWeight.bold),
-            ),
           ),
         ],
       ),
@@ -66,37 +52,26 @@ void showExportDialog(BuildContext context, bool dark) {
 }
 
 void showDeleteAccountDialog(BuildContext context, bool dark) {
-  showDialog(
+  MemoryDialog.show(
     context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: dark ? kBlack : Colors.white,
-      title: const Text(
-        'Delete Account',
-        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-      ),
-      content: const Text(
-        'WARNING: Deleting your account is permanent and irreversible. All your memories, messages, circle associations, and history will be securely deleted from our databases.',
-        style: TextStyle(color: Colors.red),
-      ),
+    builder: (ctx) => MemoryDialog(
+      title: 'Delete Account',
+      dark: dark,
+      isDestructive: true,
+      message:
+          'WARNING: Deleting your account is permanent and irreversible. All your memories, messages, circle associations, and history will be securely deleted from our databases.',
       actions: [
-        TextButton(
+        MemoryDialogAction(
+          label: 'Cancel',
           onPressed: () => Navigator.pop(ctx),
-          child: Text(
-            'Cancel',
-            style: TextStyle(
-              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
-            ),
-          ),
         ),
-        TextButton(
+        MemoryDialogAction(
+          label: 'Continue Deletion',
+          isDestructive: true,
           onPressed: () {
             Navigator.pop(ctx);
             _confirmAccountDeletion(context, dark);
           },
-          child: const Text(
-            'Continue Deletion',
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-          ),
         ),
       ],
     ),
@@ -104,30 +79,23 @@ void showDeleteAccountDialog(BuildContext context, bool dark) {
 }
 
 void _confirmAccountDeletion(BuildContext context, bool dark) {
-  showDialog(
+  MemoryDialog.show(
     context: context,
     builder: (ctx) => Consumer(
-      builder: (_, ref, _) => AlertDialog(
-        backgroundColor: dark ? kBlack : Colors.white,
-        title: const Text(
-          'Final Confirmation',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'Please confirm you wish to remove your account. We will proceed to validate requests and sign you out.',
-          style: TextStyle(color: dark ? kCream : kCharcoal),
-        ),
+      builder: (_, ref, _) => MemoryDialog(
+        title: 'Final Confirmation',
+        dark: dark,
+        isDestructive: true,
+        message:
+            'Please confirm you wish to remove your account. We will proceed to validate requests and sign you out.',
         actions: [
-          TextButton(
+          MemoryDialogAction(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
-              ),
-            ),
           ),
-          TextButton(
+          MemoryDialogAction(
+            label: 'Delete Permanently',
+            isDestructive: true,
             onPressed: () async {
               Navigator.pop(ctx); // Close dialog
               final deletionService = ref.read(accountDeletionServiceProvider);
@@ -141,10 +109,6 @@ void _confirmAccountDeletion(BuildContext context, bool dark) {
                 }
               }
             },
-            child: const Text(
-              'Delete Permanently',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
           ),
         ],
       ),

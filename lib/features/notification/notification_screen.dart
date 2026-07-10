@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
+import 'package:memory_app/features/notification/widgets/notification_card.dart';
 import 'package:memory_app/features/notification/notification.dart';
 
 class NotificationScreen extends ConsumerStatefulWidget {
@@ -80,7 +82,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         ],
       ),
       body: state.isLoading && state.notifications.isEmpty
-          ? const Center(child: CircularProgressIndicator.adaptive())
+          ? MemoryLoading.block(color: dark ? null : MemoryColors.ink)
           : state.notifications.isEmpty
           ? _buildEmptyState(dark)
           : _buildList(state.notifications, dark),
@@ -89,24 +91,14 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
 
   Widget _buildEmptyState(bool dark) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.notifications_none_rounded,
-            size: 80,
-            color: (dark ? kYellow : kBlack).withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'All caught up!',
-            style: TextStyle(
-              color: (dark ? kYellow : kBlack).withValues(alpha: 0.6),
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: MemorySpacing.section),
+        child: MemoryEmptyState(
+          icon: Icons.notifications_none_rounded,
+          title: 'All caught up!',
+          message: 'New reactions, messages and circle requests land here.',
+          dark: dark,
+        ),
       ),
     );
   }
@@ -114,7 +106,10 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   Widget _buildList(List<NotificationItem> items, bool dark) {
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: MemorySpacing.gutter,
+        vertical: MemorySpacing.md,
+      ),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
@@ -124,131 +119,13 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   }
 
   Widget _buildRow(NotificationItem item, bool dark) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: item.isRead
-            ? Colors.transparent
-            : (dark ? kBlack.withValues(alpha: 0.4) : Colors.white),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: (dark ? kYellow : kBlack).withValues(
-            alpha: item.isRead ? 0.05 : 0.15,
-          ),
-          width: 1.5,
-        ),
-        boxShadow: item.isRead
-            ? []
-            : [
-                BoxShadow(
-                  color: kBlack.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            ref.read(notificationProvider.notifier).markAsRead(item.id);
-            NotificationRouter.routeToDestination(context, item);
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                _buildTypeBadge(item.type, dark),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        style: TextStyle(
-                          color: dark ? kYellow : kBlack,
-                          fontWeight: item.isRead
-                              ? FontWeight.w700
-                              : FontWeight.w900,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        item.body,
-                        style: TextStyle(
-                          color: (dark ? kYellow : kBlack).withValues(
-                            alpha: 0.7,
-                          ),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (!item.isRead)
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTypeBadge(NotificationType type, bool dark) {
-    IconData icon;
-    Color color;
-    switch (type) {
-      case NotificationType.message:
-        icon = Icons.chat_bubble_outline_rounded;
-        color = kYellow;
-      case NotificationType.reaction:
-        icon = Icons.favorite_outline_rounded;
-        color = Colors.redAccent;
-      case NotificationType.memory:
-        icon = Icons.camera_alt_outlined;
-        color = Colors.lightBlueAccent;
-      case NotificationType.circleRequest:
-        icon = Icons.group_add_outlined;
-        color = Colors.tealAccent;
-      case NotificationType.circleMilestone:
-        icon = Icons.celebration_outlined;
-        color = Colors.orangeAccent;
-    }
-
-    return Container(
-      width: 38,
-      height: 38,
-      decoration: BoxDecoration(
-        color: dark ? kBlack : color.withValues(alpha: 0.15),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: dark
-              ? kYellow.withValues(alpha: 0.2)
-              : color.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      child: Icon(
-        icon,
-        color: dark
-            ? kYellow
-            : (dark ? Colors.white : color.withValues(alpha: 0.95)),
-        size: 18,
-      ),
+    return NotificationCard(
+      item: item,
+      dark: dark,
+      onTap: () {
+        ref.read(notificationProvider.notifier).markAsRead(item.id);
+        NotificationRouter.routeToDestination(context, item);
+      },
     );
   }
 }

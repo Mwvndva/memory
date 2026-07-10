@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/core/playful.dart';
 import 'package:memory_app/core/error_handler.dart';
 import '../circle_state_manager.dart';
@@ -38,22 +39,13 @@ class RequestRow extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
+          MemoryAvatar(
             radius: 22,
-            backgroundColor: dark ? kYellow : kBlack,
-            backgroundImage:
-                (req.avatarUrl != null && req.avatarUrl!.isNotEmpty)
-                ? NetworkImage(formatImageUrl(req.avatarUrl!)) as ImageProvider
-                : null,
-            child: (req.avatarUrl == null || req.avatarUrl!.isEmpty)
-                ? Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  )
-                : null,
+            dark: dark,
+            imageUrl: req.avatarUrl == null || req.avatarUrl!.isEmpty
+                ? null
+                : formatImageUrl(req.avatarUrl!),
+            initial: name,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -208,26 +200,15 @@ class ChatRow extends ConsumerWidget {
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      CircleAvatar(
+                      MemoryAvatar(
                         radius: 22,
-                        backgroundColor: dark ? kYellow : kBlack,
-                        backgroundImage:
-                            (member.avatarUrl != null &&
-                                member.avatarUrl!.isNotEmpty)
-                            ? NetworkImage(formatImageUrl(member.avatarUrl!))
-                                  as ImageProvider
-                            : null,
-                        child:
-                            (member.avatarUrl == null ||
-                                member.avatarUrl!.isEmpty)
-                            ? Text(
-                                name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              )
-                            : null,
+                        dark: dark,
+                        imageUrl:
+                            member.avatarUrl == null ||
+                                member.avatarUrl!.isEmpty
+                            ? null
+                            : formatImageUrl(member.avatarUrl!),
+                        initial: name,
                       ),
                       Builder(
                         builder: (context) {
@@ -238,18 +219,7 @@ class ChatRow extends ConsumerWidget {
                           return Positioned(
                             top: -2,
                             right: -2,
-                            child: Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                color: kYellow,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: dark ? kBlack : Colors.white,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
+                            child: MemoryBadge(dark: dark),
                           );
                         },
                       ),
@@ -420,50 +390,22 @@ class ChatRow extends ConsumerWidget {
                   const SizedBox(width: 10),
                   GestureDetector(
                     onTap: () async {
-                      final confirm = await showDialog<bool>(
+                      final confirm = await MemoryDialog.show<bool>(
                         context: context,
-                        builder: (context) => AlertDialog(
-                          backgroundColor: dark ? kBlack : Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          title: Text(
-                            'Remove from Circle',
-                            style: TextStyle(
-                              color: dark ? kCream : kCharcoal,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          content: Text(
-                            'Are you sure you want to remove $name from your circle? You will no longer share memories or chat with each other.',
-                            style: TextStyle(
-                              color: dark
-                                  ? kCream.withValues(alpha: 0.8)
-                                  : kCharcoal.withValues(alpha: 0.8),
-                              fontSize: 13,
-                            ),
-                          ),
+                        builder: (ctx) => MemoryDialog(
+                          title: 'Remove from Circle',
+                          dark: dark,
+                          message:
+                              'Are you sure you want to remove $name from your circle? You will no longer share memories or chat with each other.',
                           actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  color: dark
-                                      ? kCream.withValues(alpha: 0.6)
-                                      : kCharcoal.withValues(alpha: 0.6),
-                                ),
-                              ),
+                            MemoryDialogAction(
+                              label: 'Cancel',
+                              onPressed: () => Navigator.of(ctx).pop(false),
                             ),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              child: Text(
-                                'Remove',
-                                style: TextStyle(
-                                  color: dark ? kYellow : kBlack,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            MemoryDialogAction(
+                              label: 'Remove',
+                              isDestructive: true,
+                              onPressed: () => Navigator.of(ctx).pop(true),
                             ),
                           ],
                         ),
