@@ -153,11 +153,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                     const SizedBox(width: 6),
                     Text(
                       '#${user.countryRank}',
-                      style: TextStyle(
+                      style: MemoryTypography.buttonCompact.copyWith(
                         color: dark
                             ? MemoryColors.cream
                             : MemoryColors.charcoal,
-                        fontSize: 10,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -173,11 +172,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       const SizedBox(width: 5),
                       Text(
                         '#${user.globalRank}',
-                        style: TextStyle(
+                        style: MemoryTypography.caption.copyWith(
                           color: dark
                               ? MemoryColors.cream
                               : MemoryColors.charcoal,
-                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -283,13 +281,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         const SizedBox(height: 4),
                         Text(
                           '@$displayUsername',
-                          style: TextStyle(
+                          style: MemoryTypography.bodySmall.copyWith(
                             color:
                                 (dark
                                         ? MemoryColors.cream
                                         : MemoryColors.charcoal)
                                     .withValues(alpha: 0.66),
-                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -306,13 +303,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                           ),
                           child: Text(
                             'Tap your photo to update it',
-                            style: TextStyle(
+                            style: MemoryTypography.caption.copyWith(
                               color:
                                   (dark
                                           ? MemoryColors.cream
                                           : MemoryColors.charcoal)
                                       .withValues(alpha: 0.66),
-                              fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

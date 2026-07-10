@@ -123,9 +123,12 @@ class MemoryButton extends StatelessWidget {
         onTap: _disabled ? null : onPressed,
         child: Container(
           // A text button hugs its label; every other variant fills its slot.
+          // `alignment` is left null when hugging: a Container with an
+          // alignment and no width expands to its constraints, which would
+          // stretch the label across the whole row.
           width: width ?? (_isText ? null : double.infinity),
           height: _compact ? 34 : 46,
-          alignment: Alignment.center,
+          alignment: _isText && width == null ? null : Alignment.center,
           padding: _isText
               ? const EdgeInsets.symmetric(horizontal: MemorySpacing.xl)
               : null,
@@ -134,26 +137,30 @@ class MemoryButton extends StatelessWidget {
             borderRadius: MemoryRadius.allPill,
             border: _resolveBorder(),
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Opacity(
-                opacity: isLoading ? 0 : 1,
-                child: Text(
-                  label,
-                  style:
-                      (_compact
-                              ? MemoryTypography.buttonCompact
-                              : MemoryTypography.button)
-                          .copyWith(color: _resolveForeground()),
+          // The label is already the button's semantic name; without this a
+          // screen reader reads it twice.
+          child: ExcludeSemantics(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Opacity(
+                  opacity: isLoading ? 0 : 1,
+                  child: Text(
+                    label,
+                    style:
+                        (_compact
+                                ? MemoryTypography.buttonCompact
+                                : MemoryTypography.button)
+                            .copyWith(color: _resolveForeground()),
+                  ),
                 ),
-              ),
-              // The spinner must take the label's colour, not the ambient
-              // theme's: an accent-filled button would otherwise spin in
-              // accent-on-accent and show nothing at all.
-              if (isLoading)
-                MemoryLoading(size: 18, color: _resolveForeground()),
-            ],
+                // The spinner must take the label's colour, not the ambient
+                // theme's: an accent-filled button would otherwise spin in
+                // accent-on-accent and show nothing at all.
+                if (isLoading)
+                  MemoryLoading(size: 18, color: _resolveForeground()),
+              ],
+            ),
           ),
         ),
       ),

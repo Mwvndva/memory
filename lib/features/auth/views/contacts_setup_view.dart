@@ -147,7 +147,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               ),
               const Text(
                 'No contacts on Memory yet',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                style: MemoryTypography.heading,
               ),
               const SizedBox(height: 6),
               Text(
@@ -260,9 +260,8 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
           child: Text(
             'Contacts already on Memory',
-            style: TextStyle(
+            style: MemoryTypography.bodySmall.copyWith(
               color: MemoryColors.ink,
-              fontSize: 12,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -324,11 +323,11 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Build your circle', style: _headline(fg, 32)),
+              Text('Build your circle', style: headlineStyle(fg)),
               const SizedBox(height: 8),
               Text(
                 'People from your contacts already on Memory.',
-                style: _small(fg.withValues(alpha: .68)),
+                style: smallStyle(fg.withValues(alpha: .68)),
               ),
               const SizedBox(height: 18),
               Expanded(
@@ -398,7 +397,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                   name,
                   style: TextStyle(color: fg, fontWeight: FontWeight.w900),
                 ),
-                Text(subtitle, style: _small(fg.withValues(alpha: .58))),
+                Text(subtitle, style: smallStyle(fg.withValues(alpha: .58))),
               ],
             ),
           ),
@@ -463,20 +462,15 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Invite to circle',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
+            style: MemoryTypography.heading.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Bring in someone who should see the real version of your life.',
-            style: TextStyle(
+            style: MemoryTypography.bodySmall.copyWith(
               color: Colors.white,
-              fontSize: 12,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -497,16 +491,15 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.share_rounded, color: MemoryColors.ink, size: 16),
                   SizedBox(width: 8),
                   Text(
                     'Invite a Friend',
-                    style: TextStyle(
+                    style: MemoryTypography.bodySmall.copyWith(
                       color: MemoryColors.ink,
-                      fontSize: 12,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -519,7 +512,3 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     );
   }
 }
-
-TextStyle _headline(Color color, double size) =>
-    headlineStyle(color).copyWith(fontSize: size);
-TextStyle _small(Color color) => smallStyle(color);

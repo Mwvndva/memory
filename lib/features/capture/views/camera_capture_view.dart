@@ -647,11 +647,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   "Today's Memories",
-                  style: TextStyle(
+                  style: MemoryTypography.caption.copyWith(
                     color: Colors.white,
-                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5,
                   ),
@@ -659,9 +658,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                 if (friendsCount > 0)
                   Text(
                     '$friendsCount friends posted',
-                    style: TextStyle(
+                    style: MemoryTypography.micro.copyWith(
                       color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 8,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -857,12 +855,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                           ? MemoryColors.accent
                                           : MemoryColors.ink,
                                     )
-                                  : const Text(
+                                  : Text(
                                       'Mock Video Preview\n(Looping Simulation)',
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(
+                                      style: MemoryTypography.subtitle.copyWith(
                                         color: Colors.white70,
-                                        fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -896,9 +893,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                             const SizedBox(height: 12),
                             Text(
                               'No camera detected',
-                              style: TextStyle(
+                              style: MemoryTypography.bodyStrong.copyWith(
                                 color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -923,9 +919,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                             const SizedBox(height: 16),
                             Text(
                               'Starting camera...',
-                              style: TextStyle(
+                              style: MemoryTypography.body.copyWith(
                                 color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.5,
                               ),
@@ -953,11 +948,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                               color: Colors.black38,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
+                            child: Text(
                               'REC',
-                              style: TextStyle(
+                              style: MemoryTypography.buttonCompact.copyWith(
                                 color: Colors.red,
-                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -1024,11 +1018,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                   const SizedBox(height: 10),
                                   Text(
                                     '${(uploadState.progress * 100).toInt()}%',
-                                    style: TextStyle(
+                                    style: MemoryTypography.bodySmall.copyWith(
                                       color: dark
                                           ? MemoryColors.accent
                                           : MemoryColors.ink,
-                                      fontSize: 12,
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),

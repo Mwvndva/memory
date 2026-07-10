@@ -12,6 +12,14 @@ import 'memory_colors.dart';
 /// Memory leans on weight rather than size for hierarchy: a heavy small label
 /// reads as a section header, not a shouty one.
 abstract final class MemoryTypography {
+  /// 32/w900 — the auth screens' opening line. The largest type in the app
+  /// that is still a sentence rather than a number.
+  static const TextStyle displayLarge = TextStyle(
+    fontSize: 32,
+    height: 1,
+    fontWeight: FontWeight.w900,
+  );
+
   /// 30/w900 — screen titles ("Your circle").
   static const TextStyle display = TextStyle(
     fontSize: 30,
@@ -25,9 +33,23 @@ abstract final class MemoryTypography {
     fontWeight: FontWeight.w900,
   );
 
+  /// 20/w900 — the title of a screen that is not the app's own ("Terms &
+  /// Conditions", "Notifications").
+  static const TextStyle sectionTitle = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w900,
+  );
+
   /// 19/w900 — a card's headline number ("12 Day Memory Streak").
   static const TextStyle headline = TextStyle(
     fontSize: 19,
+    fontWeight: FontWeight.w900,
+  );
+
+  /// 18/w900 — what an empty screen says ("No messages yet"), and the
+  /// heading above a list.
+  static const TextStyle heading = TextStyle(
+    fontSize: 18,
     fontWeight: FontWeight.w900,
   );
 

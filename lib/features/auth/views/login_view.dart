@@ -174,7 +174,12 @@ class _LoginViewState extends ConsumerState<LoginView>
                       ),
                     ),
                     const SizedBox(height: 24), // Increased spacing
-                    Text('Memory', style: _headline(fg, 36)),
+                    // The wordmark, the one place the brand name is set larger than
+                    // any other type in the app.
+                    Text(
+                      'Memory',
+                      style: headlineStyle(fg).copyWith(fontSize: 36),
+                    ),
                     const SizedBox(height: 10), // Increased spacing
                     Text(
                       'Share memories with your circle', // Canonical tagline
@@ -226,9 +231,8 @@ class _LoginViewState extends ConsumerState<LoginView>
                             const SizedBox(height: 12),
                             Text(
                               _errorMessage,
-                              style: TextStyle(
+                              style: MemoryTypography.caption.copyWith(
                                 color: Colors.redAccent.shade700,
-                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -264,8 +268,6 @@ class _LoginViewState extends ConsumerState<LoginView>
   }
 }
 
-TextStyle _headline(Color color, double size) =>
-    headlineStyle(color).copyWith(fontSize: size);
 Widget _field(
   String label,
   TextEditingController controller,

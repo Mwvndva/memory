@@ -423,13 +423,13 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                       children: [
                                         Text(
                                           c.person,
-                                          style: TextStyle(
-                                            color: dark
-                                                ? Colors.white
-                                                : MemoryColors.charcoal,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
+                                          style: MemoryTypography.bodySmall
+                                              .copyWith(
+                                                color: dark
+                                                    ? Colors.white
+                                                    : MemoryColors.charcoal,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
                                         const SizedBox(width: 6),
                                         Text(

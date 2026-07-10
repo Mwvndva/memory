@@ -115,11 +115,10 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             title,
-            style: TextStyle(
+            style: MemoryTypography.buttonCompact.copyWith(
               color: dark
                   ? MemoryColors.mutedOnDark
                   : MemoryColors.mutedOnLight,
-              fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
           ),

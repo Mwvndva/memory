@@ -43,7 +43,7 @@ class ProfileAddPersonCard extends StatelessWidget {
               Text(
                 '$circleCount / $maxCircleSize',
                 style: MemoryTypography.onSurface(
-                  MemoryTypography.headline.copyWith(fontSize: 19),
+                  MemoryTypography.headline,
                   dark,
                 ),
               ),

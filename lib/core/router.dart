@@ -232,13 +232,12 @@ void showGlobalNotification({
                           const SizedBox(height: 2),
                           Text(
                             body,
-                            style: TextStyle(
+                            style: MemoryTypography.bodySmall.copyWith(
                               color:
                                   (dark
                                           ? MemoryColors.accent
                                           : MemoryColors.ink)
                                       .withValues(alpha: 0.7),
-                              fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
                           ),

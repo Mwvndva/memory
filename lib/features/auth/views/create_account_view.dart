@@ -249,8 +249,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                           children: [
                             Text(
                               'Step $_currentStep of 3', // Simple step indicator
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: MemoryTypography.caption.copyWith(
                                 fontWeight: FontWeight.w900,
                                 color: fg.withValues(alpha: 0.5),
                                 letterSpacing: 1.0,
@@ -263,7 +262,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                   : _currentStep == 2
                                   ? 'Account Details'
                                   : 'Terms & Finish',
-                              style: _headline(fg, 24),
+                              // Smaller than the other auth headlines: this line is two lines long.
+                              style: headlineStyle(fg).copyWith(fontSize: 24),
                             ),
                           ],
                         ),
@@ -460,11 +460,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                       Expanded(
                                         child: RichText(
                                           text: TextSpan(
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
-                                              color: MemoryColors.charcoal,
-                                            ),
+                                            style: MemoryTypography.bodySmall
+                                                .copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: MemoryColors.charcoal,
+                                                ),
                                             children: [
                                               const TextSpan(
                                                 text: 'I agree to the ',
@@ -558,10 +558,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 children: [
                   Text(
                     'Terms & Conditions',
-                    style: TextStyle(
+                    style: MemoryTypography.sectionTitle.copyWith(
                       color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
                     ),
                   ),
                   GestureDetector(
@@ -594,13 +592,12 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     children: [
                       Text(
                         'Last Updated: June 2026',
-                        style: TextStyle(
+                        style: MemoryTypography.caption.copyWith(
                           color:
                               (dark
                                       ? MemoryColors.cream
                                       : MemoryColors.charcoal)
                                   .withValues(alpha: 0.6),
-                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -675,9 +672,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
         children: [
           Text(
             heading,
-            style: const TextStyle(
+            style: MemoryTypography.body.copyWith(
               color: MemoryColors.ink,
-              fontSize: 13,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -703,9 +699,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       children: [
         Text(
           'Phone number',
-          style: TextStyle(
+          style: MemoryTypography.caption.copyWith(
             color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-            fontSize: 11,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -823,8 +818,6 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   }
 }
 
-TextStyle _headline(Color color, double size) =>
-    headlineStyle(color).copyWith(fontSize: size);
 Widget _status(String text, bool ok) => authStatusIndicator(text, ok);
 Widget _field(
   String label,

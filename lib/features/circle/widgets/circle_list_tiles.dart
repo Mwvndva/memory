@@ -95,9 +95,8 @@ class RequestRow extends ConsumerWidget {
                   ),
                   child: Text(
                     'Accept',
-                    style: TextStyle(
+                    style: MemoryTypography.caption.copyWith(
                       color: dark ? MemoryColors.ink : Colors.white,
-                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -131,11 +130,10 @@ class RequestRow extends ConsumerWidget {
                   ),
                   child: Text(
                     'Ignore',
-                    style: TextStyle(
+                    style: MemoryTypography.caption.copyWith(
                       color: dark
                           ? MemoryColors.mutedOnDark
                           : MemoryColors.mutedOnLight,
-                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -266,10 +264,11 @@ class ChatRow extends ConsumerWidget {
                                             value: role,
                                             child: Text(
                                               role.name.toUpperCase(),
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                              style: MemoryTypography
+                                                  .buttonCompact
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                             ),
                                           );
                                         }).toList(),
@@ -291,13 +290,13 @@ class ChatRow extends ConsumerWidget {
                                         children: [
                                           Text(
                                             member.role.name.toUpperCase(),
-                                            style: TextStyle(
-                                              color: dark
-                                                  ? MemoryColors.accent
-                                                  : MemoryColors.ink,
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w900,
-                                            ),
+                                            style: MemoryTypography.micro
+                                                .copyWith(
+                                                  color: dark
+                                                      ? MemoryColors.accent
+                                                      : MemoryColors.ink,
+                                                  fontWeight: FontWeight.w900,
+                                                ),
                                           ),
                                           const SizedBox(width: 2),
                                           Icon(
@@ -327,11 +326,10 @@ class ChatRow extends ConsumerWidget {
                                     ),
                                     child: Text(
                                       member.role.name.toUpperCase(),
-                                      style: TextStyle(
+                                      style: MemoryTypography.micro.copyWith(
                                         color: dark
                                             ? MemoryColors.accent
                                             : MemoryColors.ink,
-                                        fontSize: 8,
                                         fontWeight: FontWeight.w900,
                                       ),
                                     ),
@@ -356,7 +354,7 @@ class ChatRow extends ConsumerWidget {
                               lastMessage,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: MemoryTypography.caption.copyWith(
                                 color: hasUnread
                                     ? (dark
                                           ? MemoryColors.cream
@@ -364,7 +362,6 @@ class ChatRow extends ConsumerWidget {
                                     : (dark
                                           ? MemoryColors.mutedOnDark
                                           : MemoryColors.mutedOnLight),
-                                fontSize: 11,
                                 fontWeight: hasUnread
                                     ? FontWeight.w900
                                     : FontWeight.w500,
@@ -446,11 +443,10 @@ class ChatRow extends ConsumerWidget {
                       ),
                       child: Text(
                         'Remove',
-                        style: TextStyle(
+                        style: MemoryTypography.caption.copyWith(
                           color: dark
                               ? MemoryColors.mutedOnDark
                               : MemoryColors.mutedOnLight,
-                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                         ),
                       ),

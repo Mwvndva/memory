@@ -71,11 +71,10 @@ class CircleChatListView extends ConsumerWidget {
                           ),
                           child: Text(
                             'SHARE REQUESTS',
-                            style: TextStyle(
+                            style: MemoryTypography.caption.copyWith(
                               color: dark
                                   ? MemoryColors.mutedOnDark
                                   : MemoryColors.mutedOnLight,
-                              fontSize: 11,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.0,
                             ),

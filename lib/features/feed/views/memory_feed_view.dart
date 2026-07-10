@@ -214,9 +214,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 Text(
                   'Invite friends to share memories',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: MemoryTypography.subtitle.copyWith(
                     color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                    fontSize: 16,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -269,9 +268,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     ),
                     child: Text(
                       'Copy invite link',
-                      style: TextStyle(
+                      style: MemoryTypography.bodySmall.copyWith(
                         color: dark ? MemoryColors.charcoal : Colors.white,
-                        fontSize: 12,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -348,9 +346,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                           ? 'No internet connection.\nPlease check your network settings.'
                           : 'Unable to load your memories.\nPlease try again later.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: MemoryTypography.subtitle.copyWith(
                         color: dark ? MemoryColors.ink : MemoryColors.charcoal,
-                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         height: 1.4,
                       ),
@@ -418,11 +415,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                   const SizedBox(height: 16),
                   Text(
                     'invite friends to share memories',
-                    style: TextStyle(
+                    style: MemoryTypography.bodyStrong.copyWith(
                       color: dark
                           ? MemoryColors.cream.withValues(alpha: 0.8)
                           : MemoryColors.charcoal.withValues(alpha: 0.8),
-                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -475,11 +471,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                         ? 'no internet connection\nshowing cached state if available'
                         : 'no memories posted in last 24hrs',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: MemoryTypography.subtitle.copyWith(
                       color: dark
                           ? MemoryColors.cream.withValues(alpha: 0.8)
                           : MemoryColors.charcoal.withValues(alpha: 0.8),
-                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       height: 1.4,
                     ),
@@ -598,11 +593,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
               child: Text(
                 'No active memories in the last 24h.\nTap the grid icon to view history.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: MemoryTypography.emptyTitle.copyWith(
                   color: dark
                       ? MemoryColors.cream.withValues(alpha: 0.8)
                       : MemoryColors.charcoal.withValues(alpha: 0.8),
-                  fontSize: 15,
                   fontWeight: FontWeight.w700,
                   height: 1.4,
                 ),
@@ -676,18 +670,16 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     const SizedBox(height: 4),
                     Text(
                       m.person,
-                      style: const TextStyle(
+                      style: MemoryTypography.body.copyWith(
                         color: Colors.white,
-                        fontSize: 13,
                         fontWeight: FontWeight.w800,
                         shadows: [Shadow(color: Colors.black, blurRadius: 4)],
                       ),
                     ),
                     Text(
                       m.time,
-                      style: const TextStyle(
+                      style: MemoryTypography.buttonCompact.copyWith(
                         color: Colors.white70,
-                        fontSize: 10,
                         fontWeight: FontWeight.w600,
                         shadows: [Shadow(color: Colors.black, blurRadius: 4)],
                       ),
@@ -1048,9 +1040,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 const SizedBox(width: 4),
                 Text(
                   '${m.reactions[selectedEmoji]}',
-                  style: TextStyle(
+                  style: MemoryTypography.bodySmall.copyWith(
                     color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

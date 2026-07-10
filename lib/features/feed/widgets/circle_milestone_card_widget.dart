@@ -234,9 +234,8 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                         Text(
                           message,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: MemoryTypography.bodySmall.copyWith(
                             color: Colors.white,
-                            fontSize: 12,
                             height: 1.35,
                             fontWeight: FontWeight.w700,
                             shadows: [

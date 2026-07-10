@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:memory_app/design_system/design_system.dart';
 
-TextStyle headlineStyle(Color color) => TextStyle(
-  color: color,
-  fontSize: 32,
-  fontWeight: FontWeight.w900,
-  height: 1,
-);
+TextStyle headlineStyle(Color color) =>
+    MemoryTypography.displayLarge.copyWith(color: color);
 
-TextStyle smallStyle(Color color) =>
-    TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900);
+TextStyle smallStyle(Color color) => MemoryTypography.caption.copyWith(
+  color: color,
+  fontWeight: FontWeight.w900,
+);
 
 Widget authStatusIndicator(String text, bool ok) => Padding(
   padding: const EdgeInsets.only(top: 6),
@@ -35,9 +33,8 @@ Widget authInputField(
   children: [
     Text(
       label,
-      style: TextStyle(
+      style: MemoryTypography.caption.copyWith(
         color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-        fontSize: 11,
         fontWeight: FontWeight.w900,
       ),
     ),
@@ -54,11 +51,10 @@ Widget authInputField(
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(
+        hintStyle: MemoryTypography.body.copyWith(
           color: (dark ? MemoryColors.ink : Colors.white).withValues(
             alpha: 0.35,
           ),
-          fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
         filled: true,
@@ -114,8 +110,7 @@ Widget passwordValidationIndicator(String pass, String confirm) {
         const SizedBox(width: 8),
         Text(
           text,
-          style: const TextStyle(
-            fontSize: 12,
+          style: MemoryTypography.bodySmall.copyWith(
             fontWeight: FontWeight.w700,
             color: MemoryColors.ink,
           ),
@@ -137,10 +132,9 @@ Widget passwordValidationIndicator(String pass, String confirm) {
           padding: const EdgeInsets.only(top: 6),
           child: Text(
             pass == confirm ? 'Passwords match' : 'Passwords do not match',
-            style: TextStyle(
+            style: MemoryTypography.bodySmall.copyWith(
               color: pass == confirm ? MemoryColors.success : MemoryColors.ink,
               fontWeight: FontWeight.w800,
-              fontSize: 12,
             ),
           ),
         ),

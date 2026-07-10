@@ -100,10 +100,13 @@ class _BouncyTapState extends State<BouncyTap>
       onTapDown: _active ? _down : null,
       onTapUp: _active ? _up : null,
       onTapCancel: _active ? _cancel : null,
-      onLongPress: _active
+      // Wired only when there is something to long-press. Otherwise every
+      // button would advertise a long-press action to a screen reader and
+      // then do nothing with it.
+      onLongPress: _active && widget.onLongPress != null
           ? () {
               if (widget.haptic) HapticFeedback.mediumImpact();
-              widget.onLongPress?.call();
+              widget.onLongPress!.call();
             }
           : null,
       child: AnimatedBuilder(

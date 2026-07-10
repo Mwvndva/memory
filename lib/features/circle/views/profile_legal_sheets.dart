@@ -84,7 +84,7 @@ class _TermsSheet extends StatelessWidget {
               Text(
                 'Terms & Conditions',
                 style: MemoryTypography.onSurface(
-                  MemoryTypography.display.copyWith(fontSize: 20, height: 1.0),
+                  MemoryTypography.sectionTitle.copyWith(height: 1.0),
                   dark,
                 ),
               ),

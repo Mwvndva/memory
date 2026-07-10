@@ -186,9 +186,8 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         children: [
                           Text(
                             widget.contactName,
-                            style: const TextStyle(
+                            style: MemoryTypography.emptyTitle.copyWith(
                               color: Colors.white,
-                              fontSize: 15,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -233,12 +232,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               'No messages yet',
-                              style: TextStyle(
+                              style: MemoryTypography.heading.copyWith(
                                 color: MemoryColors.charcoal,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -277,16 +274,17 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                                         const SizedBox(width: 36),
                                         Text(
                                           '${widget.contactName} is typing...',
-                                          style: TextStyle(
-                                            color:
-                                                (dark
-                                                        ? Colors.white
-                                                        : MemoryColors.charcoal)
-                                                    .withValues(alpha: 0.6),
-                                            fontSize: 11,
-                                            fontStyle: FontStyle.italic,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: MemoryTypography.caption
+                                              .copyWith(
+                                                color:
+                                                    (dark
+                                                            ? Colors.white
+                                                            : MemoryColors
+                                                                  .charcoal)
+                                                        .withValues(alpha: 0.6),
+                                                fontStyle: FontStyle.italic,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -350,19 +348,17 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             Text(
               '${widget.contactName} wants to share memories',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: MemoryTypography.bodyStrong.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: 14,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Accept to start messaging and sharing memories.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: MemoryTypography.caption.copyWith(
                 color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -479,19 +475,17 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             Text(
               '${widget.contactName} is not in your circle',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: MemoryTypography.bodyStrong.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: 14,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'You can only message after a circle request is accepted.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: MemoryTypography.caption.copyWith(
                 color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -536,9 +530,8 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             Expanded(
               child: TextField(
                 controller: _messageController,
-                style: const TextStyle(
+                style: MemoryTypography.bodyStrong.copyWith(
                   color: Colors.white,
-                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
                 onSubmitted: (_) => _sendMessage(),
@@ -563,11 +556,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                   color: MemoryColors.accent,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Text(
+                child: Text(
                   'Send',
-                  style: TextStyle(
+                  style: MemoryTypography.bodySmall.copyWith(
                     color: MemoryColors.ink,
-                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                   ),
                 ),

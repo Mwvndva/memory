@@ -210,18 +210,16 @@ void showShareCard(
                         children: [
                           Text(
                             'Send to $channel',
-                            style: const TextStyle(
+                            style: MemoryTypography.bodyStrong.copyWith(
                               color: MemoryColors.ink,
-                              fontSize: 14,
                               fontWeight: FontWeight.w900,
                               height: 1.1,
                             ),
                           ),
                           Text(
                             channelTagline,
-                            style: TextStyle(
+                            style: MemoryTypography.buttonCompact.copyWith(
                               color: MemoryColors.ink.withValues(alpha: 0.62),
-                              fontSize: 10,
                               fontWeight: FontWeight.w600,
                               height: 1.2,
                             ),

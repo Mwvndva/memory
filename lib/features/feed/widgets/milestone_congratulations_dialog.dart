@@ -220,11 +220,10 @@ class _MilestoneCongratulationsDialogState
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Keep Going! ⚡',
-                          style: TextStyle(
+                          style: MemoryTypography.bodySmall.copyWith(
                             color: Colors.white,
-                            fontSize: 12,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
