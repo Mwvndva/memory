@@ -76,7 +76,17 @@ class MemoryTextField extends StatelessWidget {
           controller: controller,
           enabled: enabled,
           obscureText: obscureText,
-          keyboardType: keyboardType,
+          // A password field must opt out of the keyboard's help. With
+          // suggestions and autocorrect left on, Gboard and Samsung's keyboard
+          // treat the hidden value as a word to complete and rewrite it as you
+          // type, so the password you send is not the one you keyed. Obscured
+          // fields also want the password keyboard, never an autofilling text
+          // one.
+          autocorrect: !obscureText,
+          enableSuggestions: !obscureText,
+          keyboardType:
+              keyboardType ??
+              (obscureText ? TextInputType.visiblePassword : null),
           textCapitalization: textCapitalization,
           maxLength: maxLength,
           onChanged: onChanged,
