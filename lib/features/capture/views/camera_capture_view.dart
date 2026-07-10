@@ -442,7 +442,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8), // Move camera frame higher
+                      const SizedBox(
+                        height: MemorySpacing.md,
+                      ), // Move camera frame higher
                       // Camera card preview (not full screen) with taller 3:4.3 ratio
                       Center(
                         child: AspectRatio(
@@ -586,10 +588,13 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
     return BouncyTap(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: MemorySpacing.xxl,
+          vertical: MemorySpacing.md,
+        ),
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(MemoryRadius.pill),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.15),
             width: 1.2,
@@ -633,7 +638,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                 }),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: MemorySpacing.md),
             if (friendsCount > 3) ...[
               Text(
                 '+${friendsCount - 3} ',
@@ -641,7 +646,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                   color: MemoryColors.accent,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: MemorySpacing.xs),
             ],
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -890,7 +895,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                               color: Colors.white.withValues(alpha: 0.3),
                               size: 48,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: MemorySpacing.xl),
                             Text(
                               'No camera detected',
                               style: MemoryTypography.bodyStrong.copyWith(
@@ -916,7 +921,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                   ? MemoryColors.accent
                                   : MemoryColors.ink,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: MemorySpacing.gutter),
                             Text(
                               'Starting camera...',
                               style: MemoryTypography.body.copyWith(
@@ -938,15 +943,17 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                       child: Row(
                         children: [
                           const PulseRedDot(),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: MemorySpacing.sm),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: MemorySpacing.sm,
+                              vertical: MemorySpacing.xxs,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.black38,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(
+                                MemoryRadius.xs,
+                              ),
                             ),
                             child: Text(
                               'REC',
@@ -972,10 +979,14 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                         child: Center(
                           child: Container(
                             margin: const EdgeInsets.symmetric(horizontal: 24),
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(
+                              MemorySpacing.section,
+                            ),
                             decoration: BoxDecoration(
                               color: dark ? MemoryColors.ink : Colors.white,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(
+                                MemoryRadius.lg,
+                              ),
                               border: Border.all(
                                 color:
                                     (dark
@@ -1002,7 +1013,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                         : MemoryColors.charcoal,
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: MemorySpacing.gutter),
                                 if (uploadState.status ==
                                     UploadStatus.uploading) ...[
                                   LinearProgressIndicator(
@@ -1013,9 +1024,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                                 ? Colors.white
                                                 : MemoryColors.charcoal)
                                             .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(
+                                      MemoryRadius.sm,
+                                    ),
                                   ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: MemorySpacing.lg),
                                   Text(
                                     '${(uploadState.progress * 100).toInt()}%',
                                     style: MemoryTypography.bodySmall.copyWith(
@@ -1033,7 +1046,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                                 ? Colors.white
                                                 : MemoryColors.charcoal)
                                             .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(
+                                      MemoryRadius.sm,
+                                    ),
                                   ),
                                 ],
                               ],

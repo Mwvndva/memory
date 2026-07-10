@@ -206,7 +206,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               color: dark ? MemoryColors.ink : MemoryColors.accent,
-              borderRadius: BorderRadius.circular(26),
+              borderRadius: BorderRadius.circular(MemoryRadius.sheet),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -219,7 +219,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: MemorySpacing.sheet),
                 Row(
                   children: [
                     Expanded(
@@ -235,7 +235,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                         },
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: MemorySpacing.md),
                     Expanded(
                       child: MemoryShareButton(
                         brand: MemoryShareBrand.whatsApp,
@@ -251,7 +251,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: MemorySpacing.xl),
                 GestureDetector(
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: inviteLink));
@@ -264,7 +264,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(MemoryRadius.pill),
                     ),
                     child: Text(
                       'Copy invite link',
@@ -340,7 +340,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                       size: 76,
                       color: dark ? MemoryColors.ink : MemoryColors.charcoal,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: MemorySpacing.gutter),
                     Text(
                       isOffline
                           ? 'No internet connection.\nPlease check your network settings.'
@@ -412,7 +412,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: MemorySpacing.gutter),
                   Text(
                     'invite friends to share memories',
                     style: MemoryTypography.bodyStrong.copyWith(
@@ -465,7 +465,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                         ? MemoryColors.cream.withValues(alpha: 0.8)
                         : MemoryColors.charcoal.withValues(alpha: 0.8),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: MemorySpacing.gutter),
                   Text(
                     isOffline
                         ? 'no internet connection\nshowing cached state if available'
@@ -579,7 +579,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                               ),
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: MemorySpacing.sheet),
                           _reactionCarousel(item),
                         ],
                       ),
@@ -667,7 +667,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                       initial: m.initial,
                       background: m.avatar,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: MemorySpacing.xs),
                     Text(
                       m.person,
                       style: MemoryTypography.body.copyWith(
@@ -847,7 +847,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 }, dark),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: MemorySpacing.gutter),
             Expanded(
               child: GridView.builder(
                 controller: _gridScrollController,
@@ -920,7 +920,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
             ),
             if (ref.watch(feedProvider).status == FeedLoadStatus.error)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: MemorySpacing.md),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -957,12 +957,15 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
       onTap: () => context.push('/chat/${m.username}'),
       child: Container(
         height: 50,
-        padding: const EdgeInsets.only(left: 16, right: 6),
+        padding: const EdgeInsets.only(
+          left: MemorySpacing.gutter,
+          right: MemorySpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: (dark ? MemoryColors.ink : Colors.white).withValues(
             alpha: 0.92,
           ),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(MemoryRadius.pill),
         ),
         child: Row(
           children: [
@@ -982,7 +985,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: MemoryColors.accent,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(MemoryRadius.pill),
               ),
               child: const Icon(
                 Icons.send_rounded,
@@ -1022,12 +1025,15 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
         child: GestureDetector(
           onTap: () => setState(() => _composerOpen = true),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: MemorySpacing.gutter,
+              vertical: MemorySpacing.md,
+            ),
             decoration: BoxDecoration(
               color: (dark ? MemoryColors.ink : Colors.white).withValues(
                 alpha: 0.85,
               ),
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(MemoryRadius.pill),
               border: Border.all(
                 color: MemoryColors.accent.withValues(alpha: 0.3),
                 width: 1.5,
@@ -1037,7 +1043,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(selectedEmoji, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 4),
+                const SizedBox(width: MemorySpacing.xs),
                 Text(
                   '${m.reactions[selectedEmoji]}',
                   style: MemoryTypography.bodySmall.copyWith(
@@ -1056,12 +1062,12 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
       child: Container(
         height: 52,
         constraints: const BoxConstraints(maxWidth: 320),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: MemorySpacing.md),
         decoration: BoxDecoration(
           color: (dark ? MemoryColors.ink : Colors.white).withValues(
             alpha: 0.82,
           ),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(MemoryRadius.pill),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
@@ -1166,7 +1172,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 right: -4,
                 top: -4,
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(MemorySpacing.xs),
                   decoration: const BoxDecoration(
                     color: Colors.red,
                     shape: BoxShape.circle,

@@ -83,11 +83,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
 
     return Container(
       height: MediaQuery.sizeOf(context).height * 0.84,
-      margin: const EdgeInsets.all(14),
+      margin: const EdgeInsets.all(MemorySpacing.xxl),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
         color: dark ? MemoryColors.ink : Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
         border: Border.all(
           color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
             alpha: 0.06,
@@ -106,12 +106,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           Container(
             width: 36,
             height: 5,
-            margin: const EdgeInsets.only(bottom: 10),
+            margin: const EdgeInsets.only(bottom: MemorySpacing.lg),
             decoration: BoxDecoration(
               color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
                 alpha: 0.12,
               ),
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(MemoryRadius.pill),
             ),
           ),
           Row(
@@ -121,13 +121,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 onTap: () => Navigator.pop(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: MemorySpacing.xl,
+                    vertical: MemorySpacing.md,
                   ),
                   decoration: BoxDecoration(
                     color: (dark ? Colors.white : MemoryColors.charcoal)
                         .withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(MemoryRadius.pill),
                   ),
                   child: Text(
                     'Close',
@@ -139,18 +139,18 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+                  horizontal: MemorySpacing.lg,
+                  vertical: MemorySpacing.sm,
                 ),
                 decoration: BoxDecoration(
                   color: (dark ? Colors.white : MemoryColors.charcoal)
                       .withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
                 child: Row(
                   children: [
                     Text(flag, style: MemoryTypography.button),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: MemorySpacing.sm),
                     Text(
                       '#${user.countryRank}',
                       style: MemoryTypography.buttonCompact.copyWith(
@@ -161,7 +161,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ),
                     if (user.globalRank != null) ...[
-                      const SizedBox(width: 10),
+                      const SizedBox(width: MemorySpacing.lg),
                       Icon(
                         Icons.public_rounded,
                         color: dark
@@ -185,7 +185,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: MemorySpacing.xl),
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -193,10 +193,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(MemorySpacing.sheet),
                     decoration: BoxDecoration(
                       color: dark ? MemoryColors.ink : Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(MemoryRadius.xl),
                       border: Border.all(
                         color: (dark ? Colors.white : MemoryColors.charcoal)
                             .withValues(alpha: 0.08),
@@ -219,7 +219,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                           child: Stack(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(4),
+                                padding: const EdgeInsets.all(MemorySpacing.xs),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: dark
@@ -246,7 +246,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                 right: 0,
                                 bottom: 0,
                                 child: Container(
-                                  padding: const EdgeInsets.all(6),
+                                  padding: const EdgeInsets.all(
+                                    MemorySpacing.sm,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: MemoryColors.ink,
                                     shape: BoxShape.circle,
@@ -269,7 +271,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: MemorySpacing.xl),
                         Text(
                           '$displayFirstName $displayLastName',
                           style: MemoryTypography.title.copyWith(
@@ -278,7 +280,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                                 : MemoryColors.charcoal,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: MemorySpacing.xs),
                         Text(
                           '@$displayUsername',
                           style: MemoryTypography.bodySmall.copyWith(
@@ -290,16 +292,18 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: MemorySpacing.lg),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
+                            horizontal: MemorySpacing.lg,
+                            vertical: MemorySpacing.sm,
                           ),
                           decoration: BoxDecoration(
                             color: (dark ? Colors.white : MemoryColors.charcoal)
                                 .withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(999),
+                            borderRadius: BorderRadius.circular(
+                              MemoryRadius.pill,
+                            ),
                           ),
                           child: Text(
                             'Tap your photo to update it',
@@ -316,9 +320,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: MemorySpacing.xxl),
                   ProfileStatCards(dark: dark),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   MemorySection(
                     title: 'CONTACT',
                     dark: dark,
@@ -337,13 +341,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   ProfileAddPersonCard(
                     circleCount: circleMembers.length,
                     dark: dark,
                     onAddPerson: () => showInviteOptions(context, dark),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   MemorySection(
                     title: 'ACCOUNT & PREFERENCES',
                     dark: dark,
@@ -368,7 +372,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   MemorySection(
                     title: 'DATA MANAGEMENT',
                     dark: dark,
@@ -387,7 +391,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   MemorySection(
                     title: 'LEGAL & SUPPORT',
                     dark: dark,
@@ -411,7 +415,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: MemorySpacing.section),
                   GestureDetector(
                     onTap: () {
                       Navigator.pop(context);
@@ -425,7 +429,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: Colors.red,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(MemoryRadius.md),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -435,7 +439,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             color: Colors.white,
                             size: 18,
                           ),
-                          SizedBox(width: 8),
+                          SizedBox(width: MemorySpacing.md),
                           Text(
                             'Log Out',
                             style: MemoryTypography.body.copyWith(

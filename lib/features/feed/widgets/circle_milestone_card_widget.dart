@@ -154,7 +154,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
       width: 310,
       height: 420,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -164,7 +164,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
         child: Stack(
           children: [
             // Procedurally painted background pattern
@@ -175,7 +175,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 22.0,
-                vertical: 14.0,
+                vertical: MemorySpacing.xxl,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -183,12 +183,12 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                   // Top Milestone Banner
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
+                      horizontal: MemorySpacing.gutter,
+                      vertical: MemorySpacing.sm,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(MemoryRadius.pill),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.2),
                         width: 1,
@@ -209,13 +209,13 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                   // Bottom Translucent Congratulatory bubble
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: MemorySpacing.gutter,
+                      vertical: MemorySpacing.xl,
                     ),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(MemoryRadius.lg),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.25),
                         width: 1.5,
@@ -230,7 +230,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: MemorySpacing.xs),
                         Text(
                           message,
                           textAlign: TextAlign.center,

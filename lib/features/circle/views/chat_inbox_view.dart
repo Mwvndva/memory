@@ -143,10 +143,13 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
               bottom: false,
               child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: MemorySpacing.md,
+                  vertical: MemorySpacing.md,
+                ),
                 decoration: BoxDecoration(
                   color: MemoryColors.ink,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(MemoryRadius.xl),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.15),
@@ -164,7 +167,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       iconSize: 18,
                       onPressed: () => context.pop(),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: MemorySpacing.xs),
                     MemoryAvatar(
                       radius: 18,
                       dark: dark,
@@ -178,7 +181,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                           : contactMember.username,
                       background: MemoryColors.accent,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: MemorySpacing.xl),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +194,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                               fontWeight: FontWeight.w900,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: MemorySpacing.xxs),
                           Text(
                             isAccepted
                                 ? 'Circle Member'
@@ -238,7 +241,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                                 color: MemoryColors.charcoal,
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: MemorySpacing.sm),
                             Text(
                               'Say hello to start the conversation!',
                               textAlign: TextAlign.center,
@@ -260,14 +263,18 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                           return ListView.builder(
                             controller: _scrollController,
                             itemCount: messages.length + (isTyping ? 1 : 0),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: MemorySpacing.gutter,
+                            ),
                             physics: const BouncingScrollPhysics(),
                             itemBuilder: (context, i) {
                               if (i == messages.length) {
                                 return Align(
                                   alignment: Alignment.centerLeft,
                                   child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.only(
+                                      bottom: MemorySpacing.xl,
+                                    ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -329,10 +336,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   ) {
     if (isPendingRequest) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(MemorySpacing.gutter),
         decoration: BoxDecoration(
           color: MemoryColors.ink,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(MemoryRadius.lg),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.2),
@@ -353,7 +360,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 fontWeight: FontWeight.w900,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: MemorySpacing.xs),
             Text(
               'Accept to start messaging and sharing memories.',
               textAlign: TextAlign.center,
@@ -362,7 +369,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: MemorySpacing.xxl),
             Row(
               children: [
                 Expanded(
@@ -392,7 +399,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(MemoryRadius.pill),
                       ),
                       child: Text(
                         'Ignore',
@@ -403,7 +410,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: MemorySpacing.xl),
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
@@ -438,7 +445,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: MemoryColors.accent,
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(MemoryRadius.pill),
                       ),
                       child: Text(
                         'Accept',
@@ -456,10 +463,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
       );
     } else if (!isAccepted) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(MemorySpacing.gutter),
         decoration: BoxDecoration(
           color: MemoryColors.ink,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(MemoryRadius.lg),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.2),
@@ -480,7 +487,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 fontWeight: FontWeight.w900,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: MemorySpacing.xs),
             Text(
               'You can only message after a circle request is accepted.',
               textAlign: TextAlign.center,
@@ -489,7 +496,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: MemorySpacing.xxl),
             GestureDetector(
               onTap: () {
                 if (mounted) context.pop();
@@ -499,7 +506,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
                 child: Text(
                   'Back',
@@ -513,10 +520,13 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     } else {
       return Container(
         height: 52,
-        padding: const EdgeInsets.only(left: 18, right: 6),
+        padding: const EdgeInsets.only(
+          left: MemorySpacing.sheet,
+          right: MemorySpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: MemoryColors.ink,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(MemoryRadius.pill),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
@@ -544,17 +554,17 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: MemorySpacing.md),
             GestureDetector(
               onTap: _sendMessage,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
+                  horizontal: MemorySpacing.sheet,
+                  vertical: MemorySpacing.lg,
                 ),
                 decoration: BoxDecoration(
                   color: MemoryColors.accent,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
                 child: Text(
                   'Send',

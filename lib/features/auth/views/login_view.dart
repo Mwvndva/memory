@@ -142,7 +142,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 18),
+                    const SizedBox(height: MemorySpacing.sheet),
                     // Breathing & Blinking Animated Mascot
                     ScaleTransition(
                       scale: _breathingAnimation,
@@ -180,7 +180,9 @@ class _LoginViewState extends ConsumerState<LoginView>
                       'Memory',
                       style: headlineStyle(fg).copyWith(fontSize: 36),
                     ),
-                    const SizedBox(height: 10), // Increased spacing
+                    const SizedBox(
+                      height: MemorySpacing.lg,
+                    ), // Increased spacing
                     Text(
                       'Share memories with your circle', // Canonical tagline
                       style: TextStyle(
@@ -198,12 +200,12 @@ class _LoginViewState extends ConsumerState<LoginView>
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
+                        horizontal: MemorySpacing.section,
                         vertical: 24,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(MemoryRadius.xl),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.08),
@@ -217,7 +219,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _field('Email or username', _loginId, '', dark),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: MemorySpacing.xxl),
                           _field(
                             'Password',
                             _loginPassword,
@@ -228,7 +230,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                                 setState(() => _loginObscure = !_loginObscure),
                           ),
                           if (_errorMessage.isNotEmpty) ...[
-                            const SizedBox(height: 12),
+                            const SizedBox(height: MemorySpacing.xl),
                             Text(
                               _errorMessage,
                               style: MemoryTypography.caption.copyWith(
@@ -237,7 +239,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                               ),
                             ),
                           ],
-                          const SizedBox(height: 20),
+                          const SizedBox(height: MemorySpacing.section),
                           MemoryButton(
                             label: 'Continue',
                             onPressed: _onLogin,
@@ -246,7 +248,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                             foreground: Colors.white,
                             isLoading: _loginLoading,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: MemorySpacing.xl),
                           MemoryButton(
                             label: 'Create account',
                             onPressed: () => context.push('/create'),

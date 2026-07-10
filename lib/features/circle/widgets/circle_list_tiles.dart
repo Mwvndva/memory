@@ -18,11 +18,11 @@ class RequestRow extends ConsumerWidget {
     final name = req.firstName.isNotEmpty ? req.firstName : req.username;
     final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: MemorySpacing.lg),
+      padding: const EdgeInsets.all(MemorySpacing.xxl),
       decoration: BoxDecoration(
         color: dark ? MemoryColors.ink : Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(MemoryRadius.card),
         border: Border.all(
           color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
             alpha: 0.07,
@@ -47,7 +47,7 @@ class RequestRow extends ConsumerWidget {
                 : formatImageUrl(req.avatarUrl!),
             initial: name,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: MemorySpacing.xl),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +56,7 @@ class RequestRow extends ConsumerWidget {
                   name,
                   style: MemoryTypography.bodyStrong.copyWith(color: fg),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: MemorySpacing.xxs),
                 Text(
                   '@${req.username}',
                   style: MemoryTypography.caption.copyWith(
@@ -68,7 +68,7 @@ class RequestRow extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: MemorySpacing.lg),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -86,12 +86,12 @@ class RequestRow extends ConsumerWidget {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: MemorySpacing.xl,
+                    vertical: MemorySpacing.md,
                   ),
                   decoration: BoxDecoration(
                     color: dark ? MemoryColors.accent : MemoryColors.ink,
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(MemoryRadius.pill),
                   ),
                   child: Text(
                     'Accept',
@@ -102,7 +102,7 @@ class RequestRow extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: MemorySpacing.md),
               BouncyTap(
                 onTap: () async {
                   try {
@@ -117,12 +117,12 @@ class RequestRow extends ConsumerWidget {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: MemorySpacing.xl,
+                    vertical: MemorySpacing.md,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(MemoryRadius.pill),
                     border: Border.all(
                       color: (dark ? Colors.white : MemoryColors.charcoal)
                           .withValues(alpha: 0.12),
@@ -161,11 +161,11 @@ class ChatRow extends ConsumerWidget {
     // Use username (not display name) as the key so WebSocket routing works
     final chatKey = member.username;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: MemorySpacing.lg),
+      padding: const EdgeInsets.all(MemorySpacing.xxl),
       decoration: BoxDecoration(
         color: dark ? MemoryColors.ink : Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(MemoryRadius.card),
         border: Border.all(
           color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
             alpha: 0.07,
@@ -218,7 +218,7 @@ class ChatRow extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: MemorySpacing.xl),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +233,7 @@ class ChatRow extends ConsumerWidget {
                                     : MemoryColors.charcoal,
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: MemorySpacing.sm),
                             Builder(
                               builder: (context) {
                                 final myRole = CircleRole
@@ -274,8 +274,8 @@ class ChatRow extends ConsumerWidget {
                                         }).toList(),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
+                                        horizontal: MemorySpacing.sm,
+                                        vertical: MemorySpacing.xxs,
                                       ),
                                       decoration: BoxDecoration(
                                         color:
@@ -283,7 +283,9 @@ class ChatRow extends ConsumerWidget {
                                                     ? MemoryColors.accent
                                                     : MemoryColors.ink)
                                                 .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
+                                        borderRadius: BorderRadius.circular(
+                                          MemoryRadius.xs,
+                                        ),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -298,7 +300,9 @@ class ChatRow extends ConsumerWidget {
                                                   fontWeight: FontWeight.w900,
                                                 ),
                                           ),
-                                          const SizedBox(width: 2),
+                                          const SizedBox(
+                                            width: MemorySpacing.xxs,
+                                          ),
                                           Icon(
                                             Icons.arrow_drop_down,
                                             size: 10,
@@ -313,8 +317,8 @@ class ChatRow extends ConsumerWidget {
                                 } else {
                                   return Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
+                                      horizontal: MemorySpacing.sm,
+                                      vertical: MemorySpacing.xxs,
                                     ),
                                     decoration: BoxDecoration(
                                       color:
@@ -322,7 +326,9 @@ class ChatRow extends ConsumerWidget {
                                                   ? MemoryColors.accent
                                                   : MemoryColors.ink)
                                               .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(
+                                        MemoryRadius.xs,
+                                      ),
                                     ),
                                     child: Text(
                                       member.role.name.toUpperCase(),
@@ -339,7 +345,7 @@ class ChatRow extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: MemorySpacing.xxs),
                         Builder(
                           builder: (context) {
                             final chatState = ref.watch(chatProvider);
@@ -393,7 +399,7 @@ class ChatRow extends ConsumerWidget {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(width: 10),
+                  const SizedBox(width: MemorySpacing.lg),
                   GestureDetector(
                     onTap: () async {
                       final confirm = await MemoryDialog.show<bool>(
@@ -430,12 +436,12 @@ class ChatRow extends ConsumerWidget {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: MemorySpacing.xl,
+                        vertical: MemorySpacing.md,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(MemoryRadius.pill),
                         border: Border.all(
                           color: (dark ? Colors.white : MemoryColors.charcoal)
                               .withValues(alpha: 0.12),

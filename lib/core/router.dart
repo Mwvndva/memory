@@ -182,12 +182,12 @@ void showGlobalNotification({
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: MemorySpacing.gutter,
+                  vertical: MemorySpacing.xl,
                 ),
                 decoration: BoxDecoration(
                   color: dark ? MemoryColors.ink : MemoryColors.accent,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(MemoryRadius.lg),
                   boxShadow: [
                     BoxShadow(
                       color: MemoryColors.ink.withValues(alpha: 0.12),
@@ -215,7 +215,7 @@ void showGlobalNotification({
                         size: 20,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: MemorySpacing.xl),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +229,7 @@ void showGlobalNotification({
                                   : MemoryColors.ink,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: MemorySpacing.xxs),
                           Text(
                             body,
                             style: MemoryTypography.bodySmall.copyWith(

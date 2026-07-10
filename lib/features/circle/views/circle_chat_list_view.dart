@@ -56,7 +56,7 @@ class CircleChatListView extends ConsumerWidget {
                     const SizedBox(width: 40),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: MemorySpacing.gutter),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
@@ -65,9 +65,9 @@ class CircleChatListView extends ConsumerWidget {
                       if (pendingRequests.isNotEmpty) ...[
                         Padding(
                           padding: const EdgeInsets.only(
-                            left: 4,
-                            bottom: 8,
-                            top: 4,
+                            left: MemorySpacing.xs,
+                            bottom: MemorySpacing.md,
+                            top: MemorySpacing.xs,
                           ),
                           child: Text(
                             'SHARE REQUESTS',
@@ -90,7 +90,7 @@ class CircleChatListView extends ConsumerWidget {
                             child: RequestRow(req: req, dark: dark),
                           ),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: MemorySpacing.sheet),
                       ],
                       if (circleMembers.isEmpty && pendingRequests.isEmpty)
                         Padding(

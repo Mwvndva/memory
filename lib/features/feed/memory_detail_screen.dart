@@ -103,13 +103,13 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 color: Colors.redAccent,
                 size: 64,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: MemorySpacing.gutter),
               Text(
                 detailState.errorMessage ?? 'An error occurred',
                 style: const TextStyle(color: Colors.white70, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: MemorySpacing.gutter),
               MemoryButton(
                 label: 'Retry',
                 dark: true,
@@ -192,7 +192,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
           children: [
             // Memory Card View Frame
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MemorySpacing.gutter,
+              ),
               child: AspectRatio(
                 aspectRatio: 3 / 2.2,
                 child: MemoryGradientSurface(
@@ -205,7 +207,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                         Positioned.fill(
                           child: Container(
                             color: Colors.black.withValues(alpha: 0.7),
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(MemorySpacing.gutter),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -308,11 +310,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                 },
                                 child: Container(
                                   margin: const EdgeInsets.symmetric(
-                                    horizontal: 4,
+                                    horizontal: MemorySpacing.xs,
                                   ),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: MemorySpacing.md,
+                                    vertical: MemorySpacing.xs,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.black.withValues(alpha: 0.4),
@@ -336,10 +338,12 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: MemorySpacing.gutter),
             // Comments Section Title
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MemorySpacing.section,
+              ),
               child: Row(
                 children: [
                   Text(
@@ -356,7 +360,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: MemorySpacing.md),
             // List of Comments
             Expanded(
               child: detailState.comments.isEmpty
@@ -372,7 +376,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                     )
                   : ListView.builder(
                       controller: _commentScrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: MemorySpacing.gutter,
+                      ),
                       itemCount:
                           detailState.comments.length +
                           (detailState.hasMoreComments ? 1 : 0),
@@ -383,15 +389,19 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                         final c = detailState.comments[index];
                         final isOptimistic = c.id.startsWith('local-comment-');
                         return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.symmetric(
+                            vertical: MemorySpacing.sm,
+                          ),
+                          padding: const EdgeInsets.all(MemorySpacing.xl),
                           decoration: BoxDecoration(
                             color: isOptimistic
                                 ? Colors.white.withValues(alpha: 0.05)
                                 : (dark
                                       ? Colors.white.withValues(alpha: 0.07)
                                       : Colors.white.withValues(alpha: 0.5)),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(
+                              MemoryRadius.md,
+                            ),
                             border: isOptimistic
                                 ? Border.all(
                                     color: MemoryColors.accent.withValues(
@@ -414,7 +424,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                 initial: c.person,
                                 background: MemoryColors.accent,
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: MemorySpacing.lg),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,7 +441,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                                 fontWeight: FontWeight.bold,
                                               ),
                                         ),
-                                        const SizedBox(width: 6),
+                                        const SizedBox(width: MemorySpacing.sm),
                                         Text(
                                           '@${c.username}',
                                           style: TextStyle(
@@ -444,7 +454,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: MemorySpacing.xs),
                                     Text(
                                       c.text,
                                       style: TextStyle(
@@ -469,8 +479,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 color: Colors.redAccent,
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 16,
+                  vertical: MemorySpacing.md,
+                  horizontal: MemorySpacing.gutter,
                 ),
                 child: Text(
                   detailState.errorMessage!,
@@ -480,7 +490,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               ),
             // Comment input bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MemorySpacing.gutter,
+                vertical: MemorySpacing.md,
+              ),
               decoration: BoxDecoration(
                 color: dark ? MemoryColors.ink : Colors.white,
                 border: Border(

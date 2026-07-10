@@ -47,7 +47,7 @@ void showInviteOptions(BuildContext context, bool dark) {
                 avatarUrl: avatarUrl,
                 avatarInitial: avatarInitial,
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: MemorySpacing.xxl),
               Row(
                 children: [
                   Expanded(
@@ -62,7 +62,7 @@ void showInviteOptions(BuildContext context, bool dark) {
                       },
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: MemorySpacing.md),
                   Expanded(
                     child: MemoryShareButton(
                       brand: MemoryShareBrand.whatsApp,
@@ -77,7 +77,7 @@ void showInviteOptions(BuildContext context, bool dark) {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: MemorySpacing.md),
               MemoryButton(
                 label: 'Share via System',
                 onPressed: () async {
@@ -91,7 +91,7 @@ void showInviteOptions(BuildContext context, bool dark) {
                 background: dark ? MemoryColors.cream : MemoryColors.charcoal,
                 foreground: dark ? MemoryColors.charcoal : Colors.white,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: MemorySpacing.md),
               MemoryButton(
                 label: 'Copy invite link',
                 onPressed: () async {
@@ -174,7 +174,7 @@ void showShareCard(
                 countryRank: user.countryRank,
                 globalRank: user.globalRank,
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: MemorySpacing.xxl),
               GestureDetector(
                 onTap: () async {
                   Navigator.pop(context);
@@ -190,7 +190,7 @@ void showShareCard(
                   height: 52,
                   decoration: BoxDecoration(
                     color: MemoryColors.accent,
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(MemoryRadius.pill),
                     boxShadow: [
                       BoxShadow(
                         color: MemoryColors.accent.withValues(alpha: 0.45),
@@ -203,7 +203,7 @@ void showShareCard(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(channelIcon, color: MemoryColors.ink, size: 18),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: MemorySpacing.md),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,

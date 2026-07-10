@@ -121,7 +121,7 @@ class _DevDiagnosticsViewState extends ConsumerState<DevDiagnosticsView> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(MemorySpacing.xl),
         child: SelectableText(
           _lastRaw.isEmpty ? 'No data yet' : _prettyJson(_lastRaw),
         ),

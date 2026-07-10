@@ -30,7 +30,7 @@ class InboxBubble extends ConsumerWidget {
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.only(bottom: MemorySpacing.xl),
         child: Row(
           mainAxisAlignment: mine
               ? MainAxisAlignment.end
@@ -99,7 +99,7 @@ class InboxBubble extends ConsumerWidget {
                   );
                 },
                 child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6.0),
+                  padding: EdgeInsets.symmetric(horizontal: MemorySpacing.sm),
                   child: Icon(
                     Icons.error_outline_rounded,
                     color: Colors.redAccent,
@@ -108,7 +108,10 @@ class InboxBubble extends ConsumerWidget {
                 ),
               ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MemorySpacing.gutter,
+                vertical: 11,
+              ),
               constraints: const BoxConstraints(maxWidth: 240),
               decoration: BoxDecoration(
                 gradient: mine
@@ -163,7 +166,7 @@ class InboxBubble extends ConsumerWidget {
                       height: 1.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: MemorySpacing.xs),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -182,7 +185,7 @@ class InboxBubble extends ConsumerWidget {
                         ),
                       ),
                       if (mine) ...[
-                        const SizedBox(width: 4),
+                        const SizedBox(width: MemorySpacing.xs),
                         if (msg.isPending)
                           const MemoryLoading(size: 10)
                         else

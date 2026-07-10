@@ -92,7 +92,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
                 textAlign: TextAlign.center,
                 style: headlineStyle(fg).copyWith(fontSize: 34),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: MemorySpacing.md),
               Text(
                 'This helps your circle recognize your memories.',
                 textAlign: TextAlign.center,
@@ -101,18 +101,18 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
               const SizedBox(height: 26),
               InkWell(
                 onTap: _pickAvatar,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(MemoryRadius.xxl),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: fg.withValues(alpha: .08),
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(MemoryRadius.xxl),
                   ),
                   child: Column(
                     children: [
                       if (_uploading) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: MemorySpacing.xl),
                         const MemoryLoading(size: 20),
                       ],
                       MemoryAvatar(
@@ -122,7 +122,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
                         initial: initialText,
                         background: MemoryColors.amber,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: MemorySpacing.xl),
                       Text(
                         _uploading
                             ? 'Uploading picture...'
@@ -132,7 +132,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: MemorySpacing.xs),
                       Text(
                         'You can update it later from your profile.',
                         style: smallStyle(fg.withValues(alpha: .62)),

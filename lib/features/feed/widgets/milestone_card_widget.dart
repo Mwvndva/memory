@@ -306,7 +306,7 @@ class MilestoneCardWidget extends ConsumerWidget {
       width: 310,
       height: 420,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -316,7 +316,7 @@ class MilestoneCardWidget extends ConsumerWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
         child: Stack(
           children: [
             // Procedurally painted background pattern
@@ -335,12 +335,12 @@ class MilestoneCardWidget extends ConsumerWidget {
                   // Top Milestone Banner
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
+                      horizontal: MemorySpacing.gutter,
+                      vertical: MemorySpacing.sm,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(MemoryRadius.pill),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.2),
                         width: 1,
@@ -381,7 +381,7 @@ class MilestoneCardWidget extends ConsumerWidget {
                           initial: nameInitial,
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: MemorySpacing.xxl),
                       // Large bold username
                       Text(
                         '@${user.username.isNotEmpty ? user.username : "memory_user"}',
@@ -406,13 +406,13 @@ class MilestoneCardWidget extends ConsumerWidget {
                   // Bottom Translucent Congratulatory bubble
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: MemorySpacing.gutter,
+                      vertical: MemorySpacing.xl,
                     ),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(MemoryRadius.lg),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.25),
                         width: 1.5,

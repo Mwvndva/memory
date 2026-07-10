@@ -11,7 +11,7 @@ TextStyle smallStyle(Color color) => MemoryTypography.caption.copyWith(
 );
 
 Widget authStatusIndicator(String text, bool ok) => Padding(
-  padding: const EdgeInsets.only(top: 6),
+  padding: const EdgeInsets.only(top: MemorySpacing.sm),
   child: Text(
     text,
     style: MemoryTypography.buttonCompact.copyWith(
@@ -60,19 +60,19 @@ Widget authInputField(
         filled: true,
         fillColor: dark ? MemoryColors.accent : MemoryColors.ink,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(MemoryRadius.md),
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 13,
-          vertical: 14,
+          vertical: MemorySpacing.xxl,
         ),
         suffixIcon: onToggleObscure == null
             ? null
             : GestureDetector(
                 onTap: onToggleObscure,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
+                  padding: const EdgeInsets.only(right: MemorySpacing.md),
                   child: Icon(
                     obscure
                         ? Icons.visibility_off_outlined
@@ -99,7 +99,7 @@ Widget passwordValidationIndicator(String pass, String confirm) {
   ).hasMatch(pass);
 
   Widget row(bool ok, String text) => Padding(
-    padding: const EdgeInsets.only(top: 4),
+    padding: const EdgeInsets.only(top: MemorySpacing.xs),
     child: Row(
       children: [
         Icon(
@@ -107,7 +107,7 @@ Widget passwordValidationIndicator(String pass, String confirm) {
           size: 14,
           color: ok ? MemoryColors.success : MemoryColors.ink,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: MemorySpacing.md),
         Text(
           text,
           style: MemoryTypography.bodySmall.copyWith(
@@ -129,7 +129,7 @@ Widget passwordValidationIndicator(String pass, String confirm) {
       row(special, 'Contains a special character'),
       if (pass.isNotEmpty || confirm.isNotEmpty)
         Padding(
-          padding: const EdgeInsets.only(top: 6),
+          padding: const EdgeInsets.only(top: MemorySpacing.sm),
           child: Text(
             pass == confirm ? 'Passwords match' : 'Passwords do not match',
             style: MemoryTypography.bodySmall.copyWith(

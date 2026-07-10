@@ -154,10 +154,10 @@ class _MilestoneCongratulationsDialogState
               // Sharing Actions Box
               Container(
                 width: 310,
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(MemorySpacing.sheet),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(MemoryRadius.card),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.15),
                     width: 1.5,
@@ -172,7 +172,7 @@ class _MilestoneCongratulationsDialogState
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: MemorySpacing.xxl),
                     // Single native OS Share button
                     GestureDetector(
                       onTap: () => _shareCard('System'),
@@ -182,7 +182,9 @@ class _MilestoneCongratulationsDialogState
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(
+                            MemoryRadius.pill,
+                          ),
                         ),
                         child: _isSharing
                             ? const MemoryLoading(
@@ -197,7 +199,7 @@ class _MilestoneCongratulationsDialogState
                                     color: MemoryColors.ink,
                                     size: 16,
                                   ),
-                                  SizedBox(width: 8),
+                                  SizedBox(width: MemorySpacing.md),
                                   Text(
                                     'Share Card',
                                     style: MemoryTypography.button.copyWith(
@@ -208,7 +210,7 @@ class _MilestoneCongratulationsDialogState
                               ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: MemorySpacing.lg),
                     // Close button
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
@@ -218,7 +220,9 @@ class _MilestoneCongratulationsDialogState
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(
+                            MemoryRadius.pill,
+                          ),
                         ),
                         child: Text(
                           'Keep Going! ⚡',

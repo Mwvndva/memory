@@ -39,7 +39,7 @@ class MemoryFrame extends ConsumerWidget {
     return GestureDetector(
       onDoubleTap: () => context.push('/memory/${m.id}'),
       child: Container(
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(MemorySpacing.sm),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(radius),
@@ -110,7 +110,7 @@ class MemoryFrame extends ConsumerWidget {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(MemorySpacing.md),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.5),
                         shape: BoxShape.circle,

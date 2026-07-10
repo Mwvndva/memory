@@ -242,7 +242,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                           size: MemoryButtonSize.compact,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: MemorySpacing.xl),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,7 +255,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                 letterSpacing: 1.0,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: MemorySpacing.xxs),
                             Text(
                               _currentStep == 1
                                   ? 'Identity'
@@ -271,7 +271,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: MemorySpacing.gutter),
 
                 // Step Forms Container
                 Expanded(
@@ -289,12 +289,14 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
+                            horizontal: MemorySpacing.section,
                             vertical: 24,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(
+                              MemoryRadius.xl,
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.08),
@@ -316,7 +318,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     color: Colors.grey,
                                   ),
                                 ),
-                                const SizedBox(height: 18),
+                                const SizedBox(height: MemorySpacing.sheet),
                                 Row(
                                   children: [
                                     Expanded(
@@ -327,7 +329,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                         dark,
                                       ),
                                     ),
-                                    const SizedBox(width: 10),
+                                    const SizedBox(width: MemorySpacing.lg),
                                     Expanded(
                                       child: _field(
                                         'Last name',
@@ -338,10 +340,10 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: MemorySpacing.xl),
                                 _field('Username', _username, '', dark),
                                 _status(usernameStatus, usernameOk),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: MemorySpacing.section),
                                 MemoryButton(
                                   label: 'Continue',
                                   onPressed: _goNext,
@@ -360,9 +362,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                   dark,
                                   keyboard: TextInputType.emailAddress,
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: MemorySpacing.xl),
                                 _phoneField(dark),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: MemorySpacing.xl),
                                 Row(
                                   children: [
                                     Expanded(
@@ -378,7 +380,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 10),
+                                    const SizedBox(width: MemorySpacing.lg),
                                     Expanded(
                                       child: _field(
                                         'Confirm password',
@@ -394,15 +396,15 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 14),
+                                const SizedBox(height: MemorySpacing.xxl),
                                 // Real-time validation checklist
                                 _passwordRequirements(
                                   _password.text,
                                   _confirmPassword.text,
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: MemorySpacing.md),
                                 _status(passwordStatus, passwordOk),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: MemorySpacing.section),
                                 MemoryButton(
                                   label: 'Continue',
                                   onPressed: _goNext,
@@ -422,7 +424,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     color: Colors.grey,
                                   ),
                                 ),
-                                const SizedBox(height: 18),
+                                const SizedBox(height: MemorySpacing.sheet),
                                 GestureDetector(
                                   onTap: () => setState(
                                     () => acceptedTerms = !acceptedTerms,
@@ -456,7 +458,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                               )
                                             : null,
                                       ),
-                                      const SizedBox(width: 12),
+                                      const SizedBox(width: MemorySpacing.xl),
                                       Expanded(
                                         child: RichText(
                                           text: TextSpan(
@@ -528,7 +530,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       builder: (_) {
         return Container(
           height: MediaQuery.sizeOf(context).height * 0.8,
-          margin: const EdgeInsets.all(18),
+          margin: const EdgeInsets.all(MemorySpacing.sheet),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           decoration: BoxDecoration(
             color: dark ? MemoryColors.ink : Colors.white,
@@ -546,11 +548,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               Container(
                 width: 40,
                 height: 5,
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: MemorySpacing.gutter),
                 decoration: BoxDecoration(
                   color: (dark ? Colors.white : MemoryColors.charcoal)
                       .withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
               ),
               Row(
@@ -565,7 +567,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(MemorySpacing.sm),
                       decoration: BoxDecoration(
                         color:
                             (dark ? MemoryColors.cream : MemoryColors.charcoal)
@@ -583,7 +585,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: MemorySpacing.sheet),
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -601,7 +603,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: MemorySpacing.xxl),
                       _termsSection(
                         '1. Welcome to Memory',
                         'Memory ("we", "us", or "our") provides a private daily social sharing platform for intimate circles. By creating an account or using the Memory app, you agree to comply with and be bound by these Terms & Conditions and all applicable laws of the Republic of Kenya.',
@@ -636,7 +638,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: MemorySpacing.gutter),
               SizedBox(
                 width: double.infinity,
                 child: GestureDetector(
@@ -646,7 +648,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: dark ? MemoryColors.accent : MemoryColors.ink,
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(MemoryRadius.pill),
                     ),
                     child: Text(
                       'I Understand',
@@ -666,7 +668,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
 
   Widget _termsSection(String heading, String body, bool dark) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: MemorySpacing.sheet),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -677,7 +679,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: MemorySpacing.sm),
           Text(
             body,
             style: TextStyle(
@@ -712,7 +714,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               child: DropdownButtonFormField<CountryInfo>(
                 initialValue: selectedCountry,
                 dropdownColor: dark ? MemoryColors.ink : MemoryColors.accent,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(MemoryRadius.md),
                 icon: Icon(
                   Icons.keyboard_arrow_down_rounded,
                   color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
@@ -729,7 +731,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                         child: Row(
                           children: [
                             Text(c.flag, style: const TextStyle(fontSize: 18)),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: MemorySpacing.md),
                             Text(
                               c.code,
                               style: MemoryTypography.body.copyWith(
@@ -738,7 +740,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     : MemoryColors.charcoal,
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: MemorySpacing.sm),
                             Text(
                               c.dialCode,
                               style: TextStyle(
@@ -760,7 +762,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       (c) => Row(
                         children: [
                           Text(c.flag, style: const TextStyle(fontSize: 18)),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: MemorySpacing.sm),
                           Text(
                             c.code,
                             style: MemoryTypography.button.copyWith(
@@ -779,17 +781,17 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                   filled: true,
                   fillColor: dark ? MemoryColors.ink : MemoryColors.cream,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(MemoryRadius.md),
                     borderSide: BorderSide.none,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 14,
+                    horizontal: MemorySpacing.md,
+                    vertical: MemorySpacing.xxl,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: MemorySpacing.md),
             Expanded(
               child: TextField(
                 controller: _phone,
@@ -801,12 +803,12 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                   filled: true,
                   fillColor: Colors.black,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(MemoryRadius.md),
                     borderSide: BorderSide.none,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 13,
-                    vertical: 14,
+                    vertical: MemorySpacing.xxl,
                   ),
                 ),
               ),

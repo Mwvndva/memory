@@ -26,7 +26,7 @@ class ProfileStatCards extends ConsumerWidget {
             dark: dark,
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: MemorySpacing.lg),
         Expanded(
           child: _StatCard(
             title: 'Circle Pulse',
@@ -60,12 +60,12 @@ class _StatCard extends StatelessWidget {
     final accent = colors.first;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(MemorySpacing.xxl),
       decoration: BoxDecoration(
         color: dark
             ? MemoryColors.ink
             : Color.alphaBlend(accent.withValues(alpha: 0.08), Colors.white),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(MemoryRadius.card),
         border: Border.all(color: accent.withValues(alpha: 0.18), width: 1),
         boxShadow: [
           BoxShadow(
@@ -88,10 +88,13 @@ class _StatCard extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: MemorySpacing.md,
+                  vertical: MemorySpacing.xs,
+                ),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
                 child: Text(
                   subtitle,
@@ -102,7 +105,7 @@ class _StatCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: MemorySpacing.md),
           Text(
             value,
             style: TextStyle(
@@ -112,7 +115,7 @@ class _StatCard extends StatelessWidget {
               height: 1,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: MemorySpacing.xxs),
           Text(
             title,
             style: MemoryTypography.buttonCompact.copyWith(
@@ -122,7 +125,7 @@ class _StatCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: MemorySpacing.lg),
           Row(
             children: [
               Expanded(
@@ -138,7 +141,7 @@ class _StatCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: MemorySpacing.sm),
               Expanded(
                 child: _SharePill(
                   logo: const WhatsAppMark(color: Colors.white),
@@ -176,7 +179,7 @@ class _SharePill extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(MemoryRadius.pill),
           boxShadow: [
             BoxShadow(
               color: bg.withValues(alpha: 0.4),
@@ -205,7 +208,7 @@ class _ShareIcon extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(MemoryRadius.sm),
       ),
       child: Icon(icon, color: accent, size: 16),
     );
