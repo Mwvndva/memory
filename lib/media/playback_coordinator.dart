@@ -9,8 +9,13 @@ class PlaybackCoordinator {
 
   final Ref _ref;
   final Map<String, VideoPlayerController> _activeControllers = {};
+  final Map<String, Future<VideoPlayerController?>> _pendingControllers = {};
   String? _currentlyPlayingKey;
   bool _isMuted = false;
+
+  /// Bumped by [releaseAll] so a controller that finishes initializing after a
+  /// release can tell that nothing owns it any more.
+  int _generation = 0;
 
   bool get isMuted => _isMuted;
 
@@ -21,11 +26,26 @@ class PlaybackCoordinator {
     }
   }
 
-  Future<VideoPlayerController?> getOrCreateController(String key, String url) async {
-    if (_activeControllers.containsKey(key)) {
-      return _activeControllers[key];
-    }
+  Future<VideoPlayerController?> getOrCreateController(String key, String url) {
+    final existing = _activeControllers[key];
+    if (existing != null) return Future.value(existing);
 
+    // Two callers can ask for the same key while the first is still awaiting
+    // initialize(). Share the in-flight future so only one controller is built.
+    final inFlight = _pendingControllers[key];
+    if (inFlight != null) return inFlight;
+
+    final future = _createController(key, url);
+    _pendingControllers[key] = future;
+    future.whenComplete(() => _pendingControllers.remove(key));
+    return future;
+  }
+
+  Future<VideoPlayerController?> _createController(
+    String key,
+    String url,
+  ) async {
+    final generation = _generation;
     try {
       final cacheManager = _ref.read(mediaCacheManagerProvider);
       final cachedFile = await cacheManager.getCachedFile(url);
@@ -44,6 +64,12 @@ class PlaybackCoordinator {
       await controller.initialize();
       await controller.setLooping(true);
       await controller.setVolume(_isMuted ? 0.0 : 1.0);
+
+      if (generation != _generation) {
+        // Released while we were initializing; nothing will ever dispose this.
+        await controller.dispose();
+        return null;
+      }
 
       _activeControllers[key] = controller;
       return controller;
@@ -86,7 +112,21 @@ class PlaybackCoordinator {
     }
   }
 
+  /// Releases every cached controller whose key satisfies [test].
+  ///
+  /// Callers must only match keys whose controllers they own — releasing a
+  /// controller that a mounted widget still renders will dispose it out from
+  /// under that widget.
+  void releaseControllersWhere(bool Function(String key) test) {
+    final doomed = _activeControllers.keys.where(test).toList(growable: false);
+    for (final key in doomed) {
+      releaseController(key);
+    }
+  }
+
   void releaseAll() {
+    _generation++;
+    _pendingControllers.clear();
     for (final controller in _activeControllers.values) {
       controller.pause();
       controller.dispose();

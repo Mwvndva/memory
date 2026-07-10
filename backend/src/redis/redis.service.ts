@@ -1,6 +1,12 @@
-import { Injectable, OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+  Logger,
+} from '@nestjs/common';
 import Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service';
+import { errorMessage } from '../common/errors';
 
 /**
  * Low-level Redis client wrapper.
@@ -23,13 +29,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly prisma: PrismaService) {}
 
   // ─── Key prefixes ──────────────────────────────────────────────────────────
-  private readonly PREFIX_SOCKET   = 'ws:socket:';   // ws:socket:<userId>      → socketId
-  private readonly PREFIX_USER     = 'ws:user:';     // ws:user:<socketId>      → userId
-  private readonly PREFIX_RL       = 'rl:';          // rl:<userId|ip>          → hit count
-  private readonly PREFIX_REACT    = 'react:';       // react:<memoryId>:<emoji> → count
-  private readonly PREFIX_RT       = 'rt:';          // rt:<userId>             → SET of active JTIs
-  private readonly PREFIX_RTMETA   = 'rtmeta:';      // rtmeta:<userId>:<jti>   → JSON metadata
-  private readonly PREFIX_TICKET   = 'ws:ticket:';   // ws:ticket:<ticket>      → {userId,username} (TTL 30s)
+  private readonly PREFIX_SOCKET = 'ws:socket:'; // ws:socket:<userId>      → socketId
+  private readonly PREFIX_USER = 'ws:user:'; // ws:user:<socketId>      → userId
+  private readonly PREFIX_RL = 'rl:'; // rl:<userId|ip>          → hit count
+  private readonly PREFIX_REACT = 'react:'; // react:<memoryId>:<emoji> → count
+  private readonly PREFIX_RT = 'rt:'; // rt:<userId>             → SET of active JTIs
+  private readonly PREFIX_RTMETA = 'rtmeta:'; // rtmeta:<userId>:<jti>   → JSON metadata
+  private readonly PREFIX_TICKET = 'ws:ticket:'; // ws:ticket:<ticket>      → {userId,username} (TTL 30s)
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -40,7 +46,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.client.on('connect', () => this.logger.log('Redis connected'));
-    this.client.on('error',   (err) => this.logger.error('Redis error', err));
+    this.client.on('error', (err) => this.logger.error('Redis error', err));
 
     // NOTE: reaction flushing is now driven by the cluster-safe BullMQ
     // repeatable job 'flush-reactions' (see JobsService) so it runs once
@@ -126,7 +132,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     // results[0] = [err, count], results[1] = [err, ttl]
     const count = results?.[0]?.[1] as number;
-    const ttl   = results?.[1]?.[1] as number;
+    const ttl = results?.[1]?.[1] as number;
 
     // Set expiry only on the first hit (ttl === -1 means no expiry set yet)
     if (ttl === -1) {
@@ -160,7 +166,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async decrementReaction(memoryId: string, emoji: string): Promise<number> {
     const key = `${this.PREFIX_REACT}${memoryId}`;
     await this.ensureReactionsLoaded(memoryId);
-    const val = await this.client.eval(
+    const val = (await this.client.eval(
       `local v = redis.call('HINCRBY', KEYS[1], ARGV[1], -1)
        if v < 0 then
          redis.call('HSET', KEYS[1], ARGV[1], 0)
@@ -170,7 +176,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       1,
       key,
       emoji,
-    ) as number;
+    )) as number;
     return val;
   }
 
@@ -186,6 +192,79 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       result[emoji] = parseInt(val ?? '0', 10);
     }
     return result;
+  }
+
+  /**
+   * Bulk-fetch reaction counts for many memories.
+   *
+   * The feed renders up to `limit` memories at once; calling getReactions() per
+   * memory would issue 2 Redis round trips and up to 1 DB query each. This
+   * hydrates every missing memory with a single findMany and reads them all
+   * back in one pipeline.
+   */
+  async getReactionsMany(
+    memoryIds: string[],
+  ): Promise<Map<string, Record<string, number>>> {
+    const out = new Map<string, Record<string, number>>();
+    if (memoryIds.length === 0) return out;
+
+    await this.ensureReactionsLoadedMany(memoryIds);
+
+    const pipeline = this.client.pipeline();
+    for (const id of memoryIds) {
+      pipeline.hgetall(`${this.PREFIX_REACT}${id}`);
+    }
+    const replies = await pipeline.exec();
+
+    memoryIds.forEach((id, i) => {
+      const raw = (replies?.[i]?.[1] ?? {}) as Record<string, string>;
+      const counts: Record<string, number> = {};
+      for (const [emoji, val] of Object.entries(raw)) {
+        if (emoji === '_loaded') continue;
+        counts[emoji] = parseInt(val ?? '0', 10);
+      }
+      out.set(id, counts);
+    });
+
+    return out;
+  }
+
+  /** Hydrate any of [memoryIds] whose reaction hash is absent from Redis. */
+  private async ensureReactionsLoadedMany(memoryIds: string[]): Promise<void> {
+    const existsPipeline = this.client.pipeline();
+    for (const id of memoryIds) {
+      existsPipeline.exists(`${this.PREFIX_REACT}${id}`);
+    }
+    const existsReplies = await existsPipeline.exec();
+
+    const missing = memoryIds.filter(
+      (_, i) => (existsReplies?.[i]?.[1] as number) === 0,
+    );
+    if (missing.length === 0) return;
+
+    const dbReactions = await this.prisma.reaction.findMany({
+      where: { memoryId: { in: missing } },
+    });
+
+    const byMemory = new Map<string, typeof dbReactions>();
+    for (const r of dbReactions) {
+      const list = byMemory.get(r.memoryId) ?? [];
+      list.push(r);
+      byMemory.set(r.memoryId, list);
+    }
+
+    const pipeline = this.client.pipeline();
+    for (const id of missing) {
+      const key = `${this.PREFIX_REACT}${id}`;
+      const rows = byMemory.get(id) ?? [];
+      for (const r of rows) {
+        pipeline.hset(key, r.emoji, r.count);
+      }
+      pipeline.hset(key, '_loaded', '1');
+      // Memories with reactions stay warm for a week; empty ones for a day.
+      pipeline.expire(key, rows.length > 0 ? 60 * 60 * 24 * 7 : 60 * 60 * 24);
+    }
+    await pipeline.exec();
   }
 
   /** Remove all reaction counts for a deleted memory. */
@@ -226,7 +305,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   /** Periodically flushes reactions to DB */
   async flushReactionsToDb(): Promise<void> {
-    this.logger.log(`[Reactions Sync] Starting periodic sync from Redis to PostgreSQL...`);
+    this.logger.log(
+      `[Reactions Sync] Starting periodic sync from Redis to PostgreSQL...`,
+    );
     const startTime = Date.now();
 
     const keys = await this.getReactionKeys();
@@ -235,11 +316,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    this.logger.log(`[Reactions Sync] Found ${keys.length} reaction keys. Syncing to DB...`);
+    this.logger.log(
+      `[Reactions Sync] Found ${keys.length} reaction keys. Syncing to DB...`,
+    );
 
     for (const key of keys) {
       const memoryId = key.replace(this.PREFIX_REACT, '');
-      
+
       try {
         // Verify memory exists to avoid FK constraint error
         const memoryExists = await this.prisma.memory.findUnique({
@@ -272,7 +355,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
           });
         }
       } catch (err) {
-        this.logger.error(`[Reactions Sync] Failed to sync reactions for memoryId="${memoryId}": ${err.message}`);
+        this.logger.error(
+          `[Reactions Sync] Failed to sync reactions for memoryId="${memoryId}": ${errorMessage(err)}`,
+        );
       }
     }
 
@@ -329,13 +414,20 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     const key = `${this.PREFIX_RTMETA}${userId}:${jti}`;
     await this.client
       .pipeline()
-      .set(key, JSON.stringify({ ...metadata, userId, jti }), 'EX', REFRESH_TOKEN_TTL_SECONDS)
+      .set(
+        key,
+        JSON.stringify({ ...metadata, userId, jti }),
+        'EX',
+        REFRESH_TOKEN_TTL_SECONDS,
+      )
       .sadd(`${this.PREFIX_RT}${userId}`, jti)
       .expire(`${this.PREFIX_RT}${userId}`, REFRESH_TOKEN_TTL_SECONDS)
       .exec();
   }
 
-  async listRefreshSessions(userId: string): Promise<Array<Record<string, unknown>>> {
+  async listRefreshSessions(
+    userId: string,
+  ): Promise<Array<Record<string, unknown>>> {
     const jtis = await this.client.smembers(`${this.PREFIX_RT}${userId}`);
     if (jtis.length === 0) return [];
 
@@ -364,7 +456,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * (i.e. the refresh token is still valid and not yet revoked).
    */
   async validateRefreshToken(userId: string, jti: string): Promise<boolean> {
-    const isMember = await this.client.sismember(`${this.PREFIX_RT}${userId}`, jti);
+    const isMember = await this.client.sismember(
+      `${this.PREFIX_RT}${userId}`,
+      jti,
+    );
     return isMember === 1;
   }
 
@@ -377,6 +472,30 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       .srem(`${this.PREFIX_RT}${userId}`, jti)
       .del(`${this.PREFIX_RTMETA}${userId}:${jti}`)
       .exec();
+  }
+
+  /**
+   * Revoke every refresh session for a user except [keepJti].
+   *
+   * Backs "sign out of all other devices": the caller's own session survives,
+   * every other device is forced back to the login screen once its 5-minute
+   * access token expires. Returns how many sessions were revoked.
+   */
+  async revokeOtherRefreshTokens(
+    userId: string,
+    keepJti: string,
+  ): Promise<number> {
+    const jtis = await this.client.smembers(`${this.PREFIX_RT}${userId}`);
+    const doomed = jtis.filter((jti) => jti !== keepJti);
+    if (doomed.length === 0) return 0;
+
+    const pipeline = this.client.pipeline();
+    pipeline.srem(`${this.PREFIX_RT}${userId}`, ...doomed);
+    for (const jti of doomed) {
+      pipeline.del(`${this.PREFIX_RTMETA}${userId}:${jti}`);
+    }
+    await pipeline.exec();
+    return doomed.length;
   }
 
   /**
@@ -430,13 +549,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     // Lua script: atomic GETDEL (available natively in Redis 6.2+;
     // the script provides the same guarantee on older versions).
-    const raw = await this.client.eval(
+    const raw = (await this.client.eval(
       `local v = redis.call('GET', KEYS[1])
        if v then redis.call('DEL', KEYS[1]) end
        return v`,
       1,
       key,
-    ) as string | null;
+    )) as string | null;
 
     if (!raw) return null;
 
@@ -460,17 +579,25 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       const raw = await this.client.get(key);
       return raw ? (JSON.parse(raw) as T) : null;
     } catch (err) {
-      this.logger.error(`[Cache] read failed for key="${key}": ${err.message}`);
+      this.logger.error(
+        `[Cache] read failed for key="${key}": ${errorMessage(err)}`,
+      );
       return null;
     }
   }
 
   /** JSON-serialize and cache a value with a TTL (seconds). Best-effort. */
-  async cacheSetJson(key: string, value: unknown, ttlSeconds: number): Promise<void> {
+  async cacheSetJson(
+    key: string,
+    value: unknown,
+    ttlSeconds: number,
+  ): Promise<void> {
     try {
       await this.client.setex(key, ttlSeconds, JSON.stringify(value));
     } catch (err) {
-      this.logger.error(`[Cache] write failed for key="${key}": ${err.message}`);
+      this.logger.error(
+        `[Cache] write failed for key="${key}": ${errorMessage(err)}`,
+      );
     }
   }
 
@@ -480,7 +607,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.client.del(...keys);
     } catch (err) {
-      this.logger.error(`[Cache] delete failed for keys="${keys.join(',')}": ${err.message}`);
+      this.logger.error(
+        `[Cache] delete failed for keys="${keys.join(',')}": ${errorMessage(err)}`,
+      );
     }
   }
 

@@ -18,7 +18,7 @@ const kLavender = Color(0xFFBBA7FF);
 
 // SharedPreferences provider (overridden in main with the real instance).
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-	throw UnimplementedError();
+  throw UnimplementedError();
 });
 
 // Theme choice and dark-mode logic removed. App defaults to light theme.

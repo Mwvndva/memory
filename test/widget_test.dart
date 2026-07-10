@@ -7,7 +7,9 @@ import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/core/theme.dart';
 
 void main() {
-  testWidgets('Memory app boots and shows loading view', (WidgetTester tester) async {
+  testWidgets('Memory app boots and shows loading view', (
+    WidgetTester tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     final sharedPreferences = await SharedPreferences.getInstance();
 

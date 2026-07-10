@@ -7,7 +7,12 @@ import {
   IsBoolean,
   IsOptional,
 } from 'class-validator';
-import { normalizeEmail, normalizePhone, normalizeUsername, isProtectedUsername } from '../auth-normalization';
+import {
+  normalizeEmail,
+  normalizePhone,
+  normalizeUsername,
+  isProtectedUsername,
+} from '../auth-normalization';
 
 export class RegisterDto {
   @IsString()

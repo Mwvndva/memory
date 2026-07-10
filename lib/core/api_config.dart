@@ -24,15 +24,14 @@
 // 	defaultValue: 'ws://localhost:3000/ws',
 // );
 const String kBaseUrl = String.fromEnvironment(
-	'API_URL',
-	defaultValue: 'https://api.mymemoriestoday.site',
+  'API_URL',
+  defaultValue: 'https://api.mymemoriestoday.site',
 );
 
 const String kWebSocketUrl = String.fromEnvironment(
-	'WS_URL',
-	defaultValue: 'wss://api.mymemoriestoday.site/ws',
+  'WS_URL',
+  defaultValue: 'wss://api.mymemoriestoday.site/ws',
 );
-
 
 // ---------------------------------------------------------------------------
 // Feature flags
@@ -44,7 +43,8 @@ const String kWebSocketUrl = String.fromEnvironment(
 const bool kUseMockBackend = false;
 
 String formatImageUrl(String url) {
-  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+  if (url.startsWith('http://localhost:') ||
+      url.startsWith('http://127.0.0.1:')) {
     final uri = Uri.parse(url);
     final baseUri = Uri.parse(kBaseUrl);
     return url.replaceFirst(uri.authority, baseUri.authority);

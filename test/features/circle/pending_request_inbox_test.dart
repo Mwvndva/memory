@@ -8,34 +8,44 @@ class FakePendingRequestsNotifier extends PendingRequestsNotifier {
   FakePendingRequestsNotifier(super.ref) {
     // initialize with a pending entry and avoid network activity by
     // keeping authProvider mocked in the test.
-    state = const [CircleMember(id: 'alice-id', username: 'alice', firstName: 'Alice')];
+    state = const [
+      CircleMember(id: 'alice-id', username: 'alice', firstName: 'Alice'),
+    ];
   }
 
   @override
   Future<bool> acceptRequest(String senderId) async {
-    state = state.where((m) => m.id != senderId && m.username != senderId).toList();
+    state = state
+        .where((m) => m.id != senderId && m.username != senderId)
+        .toList();
     return true;
   }
 
   @override
   Future<bool> declineRequest(String senderId) async {
-    state = state.where((m) => m.id != senderId && m.username != senderId).toList();
+    state = state
+        .where((m) => m.id != senderId && m.username != senderId)
+        .toList();
     return true;
   }
 }
 
 void main() {
-  testWidgets('pending request locks composer and accept reveals composer', (tester) async {
-    final container = ProviderContainer(overrides: [
-      pendingRequestsProvider.overrideWith((ref) => FakePendingRequestsNotifier(ref)),
-    ]);
+  testWidgets('pending request locks composer and accept reveals composer', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [
+        pendingRequestsProvider.overrideWith(
+          (ref) => FakePendingRequestsNotifier(ref),
+        ),
+      ],
+    );
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          home: ChatInboxView(contactName: 'alice'),
-        ),
+        child: const MaterialApp(home: ChatInboxView(contactName: 'alice')),
       ),
     );
 

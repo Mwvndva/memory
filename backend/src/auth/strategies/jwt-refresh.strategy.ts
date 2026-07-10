@@ -6,9 +6,9 @@ import { Request } from 'express';
 import { RedisService } from '../../redis/redis.service';
 
 export type RefreshTokenPayload = {
-  sub: string;       // userId
+  sub: string; // userId
   username: string;
-  jti: string;       // unique token ID used for allowlist validation
+  jti: string; // unique token ID used for allowlist validation
   tokenType: 'refresh';
 };
 
@@ -24,18 +24,24 @@ export type RefreshTokenPayload = {
  *     (revocation check — ensures logout/rotation has not already invalidated it).
  */
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(
     configService: ConfigService,
     private readonly redisService: RedisService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('REFRESH_TOKEN_SECRET') || (configService.get<string>('JWT_SECRET') ? configService.get<string>('JWT_SECRET') + '-refresh' : 'fallback-refresh-secret'),
+      secretOrKey:
+        configService.get<string>('REFRESH_TOKEN_SECRET') ||
+        (configService.get<string>('JWT_SECRET')
+          ? configService.get<string>('JWT_SECRET') + '-refresh'
+          : 'fallback-refresh-secret'),
       algorithms: ['HS256'], // pin algorithm — reject alg confusion / 'none'
       passReqToCallback: false,
     });
-
   }
 
   async validate(payload: RefreshTokenPayload): Promise<RefreshTokenPayload> {
@@ -45,7 +51,10 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     }
 
     // Guard: reject tokens that have been revoked (logout / rotation)
-    const isValid = await this.redisService.validateRefreshToken(payload.sub, payload.jti);
+    const isValid = await this.redisService.validateRefreshToken(
+      payload.sub,
+      payload.jti,
+    );
     if (!isValid) {
       throw new UnauthorizedException('Refresh token has been revoked');
     }

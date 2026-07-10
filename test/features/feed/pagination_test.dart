@@ -92,12 +92,21 @@ void main() {
 
       // After init, feed should be loaded with page 1 data and a pending cursor.
       final initState = container.read(feedProvider);
-      expect(initState.status, equals(FeedLoadStatus.loaded),
-          reason: 'Expected feed to be loaded after init');
-      expect(initState.nextCursor, equals('page-2-cursor'),
-          reason: 'Expected nextCursor after page 1');
-      expect(initState.memories.length, equals(1),
-          reason: 'Expected 1 memory after page 1');
+      expect(
+        initState.status,
+        equals(FeedLoadStatus.loaded),
+        reason: 'Expected feed to be loaded after init',
+      );
+      expect(
+        initState.nextCursor,
+        equals('page-2-cursor'),
+        reason: 'Expected nextCursor after page 1',
+      );
+      expect(
+        initState.memories.length,
+        equals(1),
+        reason: 'Expected 1 memory after page 1',
+      );
 
       // Trigger loadMore three times concurrently.
       // Only the first call should proceed; the other two hit the concurrency guard.

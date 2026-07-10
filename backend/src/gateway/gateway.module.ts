@@ -4,7 +4,7 @@ import { MessagesModule } from '../messages/messages.module';
 
 @Module({
   imports: [
-    MessagesModule,  // provides MessagesService for DB persistence
+    MessagesModule, // provides MessagesService for DB persistence
     // AuthModule no longer needed — gateway authenticates via one-time Redis tickets,
     // not by verifying JWTs directly.  JwtService dependency removed from AppGateway.
   ],

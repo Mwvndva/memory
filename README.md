@@ -21,9 +21,16 @@ worker, built to scale horizontally.
 ```
 lib/                 Flutter app
   core/              theme, router, api client, playful UI toolkit
-  features/          auth, capture, feed, circle
-  repositories/      API/data access
+  features/          auth, capture, feed, circle, notification
 backend/             NestJS API (see backend/src/*)
+  auth/              register, login, refresh, sessions, WS tickets
+  users/             profile, avatar, contact sync, GDPR export/erasure
+  memories/          feed, single memory, upload, caption edit, delete
+  comments/          comments on a memory
+  circles/           requests, members, milestones
+  messages/          conversation history
+  notifications/     history + read state, FCM push, event → content mapping
+  gateway/           raw WebSocket gateway
 cloudflare-worker/   edge worker
 web/ · index.html · app.js · styles.css   web frontend
 ```
@@ -37,18 +44,32 @@ cd backend
 cp .env.example .env          # fill in secrets (see below)
 docker compose up -d          # Postgres + Redis (backend/docker-compose.yml)
 npm install
-npx prisma migrate deploy     # or: npx prisma db push
+npx prisma db push            # applies the schema; see "Schema changes" below
 npm run start:dev             # http://localhost:3000, ws://localhost:3000/ws
 ```
 
 Required env (`backend/.env`) — never ship the `.env.example` placeholders:
 
 - `DATABASE_URL` — Postgres connection string.
-- `JWT_SECRET` and `REFRESH_TOKEN_SECRET` — **distinct** 32+ byte random secrets.
+- `JWT_SECRET` and `REFRESH_TOKEN_SECRET` — **distinct** 32+ character random secrets.
 - `REDIS_URL` — Redis connection.
 - `ALLOWED_ORIGINS` — comma-separated CORS allowlist (restrict in production).
 - `R2_*` — Cloudflare R2 credentials for durable uploads (falls back to local disk).
-- `NODE_ENV=production` in prod — the app aborts on boot if the secrets above are unset.
+- `NODE_ENV=production` in prod — startup aborts unless both secrets are set, are
+  at least 32 characters, and differ from one another. `REFRESH_TOKEN_SECRET`
+  is **not** derived from `JWT_SECRET` in production.
+
+### Schema changes
+
+This project has no migration history — the schema is applied with
+`npx prisma db push`, and `npx prisma generate` runs on `postinstall`.
+After pulling schema changes (e.g. the `comments` and `notifications` tables),
+run `npx prisma db push` before starting the server.
+
+Adopting `prisma migrate` requires baselining the existing tables first; a
+`migrations/` directory containing only new migrations would fail on a fresh
+database, because `comments` carries a foreign key to a `memories` table that no
+migration creates.
 
 ### Flutter client
 

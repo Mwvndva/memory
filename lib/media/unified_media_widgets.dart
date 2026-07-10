@@ -37,7 +37,8 @@ class UnifiedImageWidget extends ConsumerWidget {
           }
           final file = snapshot.data;
           if (file == null || !file.existsSync()) {
-            if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            if (imageUrl.startsWith('http://') ||
+                imageUrl.startsWith('https://')) {
               return Image.network(
                 imageUrl,
                 fit: fit,
@@ -89,7 +90,10 @@ class _UnifiedVideoWidgetState extends ConsumerState<UnifiedVideoWidget> {
 
   Future<void> _initVideo() async {
     final coordinator = ref.read(playbackCoordinatorProvider);
-    final controller = await coordinator.getOrCreateController(widget.videoKey, widget.videoUrl);
+    final controller = await coordinator.getOrCreateController(
+      widget.videoKey,
+      widget.videoUrl,
+    );
 
     if (mounted && controller != null) {
       setState(() {

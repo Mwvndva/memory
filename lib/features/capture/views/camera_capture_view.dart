@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/core/playful.dart';
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/features/capture/capture.dart' hide UploadStatus;
+import 'package:memory_app/features/capture/capture.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/circle/circle.dart';
 
@@ -32,7 +32,8 @@ class CameraCaptureView extends ConsumerStatefulWidget {
   ConsumerState<CameraCaptureView> createState() => _CameraCaptureViewState();
 }
 
-class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with WidgetsBindingObserver {
+class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
+    with WidgetsBindingObserver {
   final _captureCaption = TextEditingController();
   bool _hasRecording = false;
   bool _captureCaptionOpen = false;
@@ -149,7 +150,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     });
     try {
       await c.dispose();
-      debugPrint('[Camera] disposed controller at ${DateTime.now().toIso8601String()}');
+      debugPrint(
+        '[Camera] disposed controller at ${DateTime.now().toIso8601String()}',
+      );
     } catch (e) {
       debugPrint('[Camera] error disposing controller: $e');
     }
@@ -178,12 +181,14 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     // Release the camera on pause/inactive to avoid holding surfaces when backgrounded
     // and re-init on resume.
     debugPrint('[Camera] lifecycle state: $state');
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       // dispose camera to free hardware quickly
       _disposeCameraController();
     } else if (state == AppLifecycleState.resumed) {
       // Re-init camera if needed
-      if ((_cameraController == null || !_isCameraInitialized) && !_isInitializing) {
+      if ((_cameraController == null || !_isCameraInitialized) &&
+          !_isInitializing) {
         // Small delay to avoid racing with system resume
         Future.delayed(const Duration(milliseconds: 200), () {
           if (mounted) _initCamera();
@@ -206,7 +211,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         String? finalPath;
         if (file != null) {
           final tempDir = await getTemporaryDirectory();
-          finalPath = '${tempDir.path}/video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+          finalPath =
+              '${tempDir.path}/video_${DateTime.now().millisecondsSinceEpoch}.mp4';
           await file.saveTo(finalPath);
         }
 
@@ -265,7 +271,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     final captionText = _captureCaption.text.trim();
     ref.read(uploadProvider.notifier).startUpload(
       captionText,
-      const [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Beautiful violet/purple gradient for dynamic captures
+      const [
+        Color(0xFF8E2DE2),
+        Color(0xFF4A00E0),
+      ], // Beautiful violet/purple gradient for dynamic captures
       videoPath: _recordedVideoPath,
     );
   }
@@ -309,7 +318,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
             final file = File(_recordedVideoPath!);
             if (file.existsSync()) {
               file.deleteSync();
-              debugPrint('Local media file deleted after confirmed upload success: $_recordedVideoPath');
+              debugPrint(
+                'Local media file deleted after confirmed upload success: $_recordedVideoPath',
+              );
             }
           } catch (e) {
             debugPrint('Failed to delete temporary video file: $e');
@@ -331,7 +342,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Memory posted successfully to your Circle!')),
+          const SnackBar(
+            content: Text('Memory posted successfully to your Circle!'),
+          ),
         );
 
         ref.read(uploadProvider.notifier).reset();
@@ -367,10 +380,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
     final unreadCount = chatState.unreadNotifications;
 
     final uploadState = ref.watch(uploadProvider);
-    final isUploading = uploadState.status == UploadStatus.preparing ||
-                        uploadState.status == UploadStatus.validating ||
-                        uploadState.status == UploadStatus.uploading ||
-                        uploadState.status == UploadStatus.waitingForResponse;
+    final isUploading =
+        uploadState.status == UploadStatus.preparing ||
+        uploadState.status == UploadStatus.validating ||
+        uploadState.status == UploadStatus.uploading ||
+        uploadState.status == UploadStatus.waitingForResponse;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -385,7 +399,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
             context: context,
             builder: (context) => AlertDialog(
               backgroundColor: dark ? kBlack : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               title: Text(
                 'Upload in Progress',
                 style: TextStyle(
@@ -396,7 +412,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
               content: Text(
                 'Your memory is still uploading. Leaving will cancel the upload. Leave anyway?',
                 style: TextStyle(
-                  color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                  color: dark
+                      ? kCream.withValues(alpha: 0.8)
+                      : kCharcoal.withValues(alpha: 0.8),
                   fontSize: 13,
                 ),
               ),
@@ -419,7 +437,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                   child: Text(
                     'Leave Anyway',
                     style: TextStyle(
-                      color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                      color: dark
+                          ? kCream.withValues(alpha: 0.6)
+                          : kCharcoal.withValues(alpha: 0.6),
                     ),
                   ),
                 ),
@@ -431,140 +451,155 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           }
         },
         child: Scaffold(
-        backgroundColor: Colors.black,
-        resizeToAvoidBottomInset: false,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            _captureReflectionBackground(),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  28,
-                  12, // Tighter top padding
-                  28,
-                  12 + bottomPad, // Tighter bottom padding
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                // Top header row: Profile settings button on the right
-                Row(
-                  children: [
-                    const Spacer(),
-                    _overlayProfileSettingsButton(
-                      onTap: () => _showProfileSheet(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8), // Move camera frame higher
-                // Camera card preview (not full screen) with taller 3:4.3 ratio
-                Center(
-                  child: AspectRatio(
-                    aspectRatio: 3 / 4.3, // Increased height slightly from 3 / 4
-                    child: _capturePreview(),
+          backgroundColor: Colors.black,
+          resizeToAvoidBottomInset: false,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              _captureReflectionBackground(),
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    28,
+                    12, // Tighter top padding
+                    28,
+                    12 + bottomPad, // Tighter bottom padding
                   ),
-                ),
-                const Spacer(flex: 2), // Spacing between camera and capture controls (pushed higher)
-                // Bottom controls row: Flip camera on left, Capture in center, Message icon on right
-                SizedBox(
-                  width: double.infinity,
-                  height: 82,
-                  child: Stack(
-                    alignment: Alignment.center,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Flip camera - bottom left
-                      if (!_hasRecording && !_isRecording && _cameras.length > 1)
-                        Positioned(
-                          left: 8,
-                          child: _overlayIconButton(
-                            icon: Icons.flip_camera_android_rounded,
-                            onTap: _switchCamera,
+                      // Top header row: Profile settings button on the right
+                      Row(
+                        children: [
+                          const Spacer(),
+                          _overlayProfileSettingsButton(
+                            onTap: () => _showProfileSheet(context),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 8), // Move camera frame higher
+                      // Camera card preview (not full screen) with taller 3:4.3 ratio
+                      Center(
+                        child: AspectRatio(
+                          aspectRatio:
+                              3 / 4.3, // Increased height slightly from 3 / 4
+                          child: _capturePreview(),
                         ),
-
-                      // Centre: capture button or send button
-                      _hasRecording
-                          ? _sendToCircleButton(dark)
-                          : BouncyTap(
-                              onTap: _toggleRecording,
-                              pressedScale: 0.9,
-                              child: Container(
-                                width: 82,
-                                height: 82,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.transparent, // Transparent gap
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.82),
-                                    width: 4, // 4px white border
-                                  ),
+                      ),
+                      const Spacer(
+                        flex: 2,
+                      ), // Spacing between camera and capture controls (pushed higher)
+                      // Bottom controls row: Flip camera on left, Capture in center, Message icon on right
+                      SizedBox(
+                        width: double.infinity,
+                        height: 82,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Flip camera - bottom left
+                            if (!_hasRecording &&
+                                !_isRecording &&
+                                _cameras.length > 1)
+                              Positioned(
+                                left: 8,
+                                child: _overlayIconButton(
+                                  icon: Icons.flip_camera_android_rounded,
+                                  onTap: _switchCamera,
                                 ),
-                                padding: const EdgeInsets.all(6), // minimal space/gap between white border and inner button
-                                child: _isRecording
-                                    ? Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius: BorderRadius.circular(8), // stop recording red square
-                                        ),
-                                      )
-                                    : Container(
-                                        alignment: Alignment.center,
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: kYellow,
-                                        ),
-                                        child: Image.asset(
-                                          'assets/images/memory-logo.png',
-                                          width: 38,
-                                          height: 38,
-                                          fit: BoxFit.contain,
+                              ),
+
+                            // Centre: capture button or send button
+                            _hasRecording
+                                ? _sendToCircleButton(dark)
+                                : BouncyTap(
+                                    onTap: _toggleRecording,
+                                    pressedScale: 0.9,
+                                    child: Container(
+                                      width: 82,
+                                      height: 82,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors
+                                            .transparent, // Transparent gap
+                                        border: Border.all(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.82,
+                                          ),
+                                          width: 4, // 4px white border
                                         ),
                                       ),
-                              ),
-                            ),
+                                      padding: const EdgeInsets.all(
+                                        6,
+                                      ), // minimal space/gap between white border and inner button
+                                      child: _isRecording
+                                          ? Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.red,
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      8,
+                                                    ), // stop recording red square
+                                              ),
+                                            )
+                                          : Container(
+                                              alignment: Alignment.center,
+                                              decoration: const BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: kYellow,
+                                              ),
+                                              child: Image.asset(
+                                                'assets/images/memory-logo.png',
+                                                width: 38,
+                                                height: 38,
+                                                fit: BoxFit.contain,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
 
-                      // Message icon button (opens Circle screen) - bottom right
+                            // Message icon button (opens Circle screen) - bottom right
+                            if (!_hasRecording && !_isRecording)
+                              Positioned(
+                                right: 8,
+                                child: _overlayCircleMessageButton(
+                                  onTap: () => context.go('/circle'),
+                                  unreadCount: unreadCount,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(
+                        flex: 3,
+                      ), // Spacing below capture button (increased to move memories pill lower)
+                      // Memories button in a pill below the capture button
                       if (!_hasRecording && !_isRecording)
-                        Positioned(
-                          right: 8,
-                          child: _overlayCircleMessageButton(
-                            onTap: () => context.go('/circle'),
-                            unreadCount: unreadCount,
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _memoriesPillButton(
+                                onTap: () => context.go('/feed'),
+                              ),
+                              const SizedBox(height: 5),
+                              Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Colors.white.withValues(alpha: 0.82),
+                                size: 18,
+                              ),
+                            ],
                           ),
                         ),
+                      const Spacer(flex: 1),
                     ],
                   ),
                 ),
-                const Spacer(flex: 3), // Spacing below capture button (increased to move memories pill lower)
-                // Memories button in a pill below the capture button
-                if (!_hasRecording && !_isRecording)
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _memoriesPillButton(
-                          onTap: () => context.go('/feed'),
-                        ),
-                        const SizedBox(height: 5),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Colors.white.withValues(alpha: 0.82),
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                const Spacer(flex: 1),
-                  ],
-                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -588,59 +623,61 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.2),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.15),
+            width: 1.2,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-              SizedBox(
-                height: 22,
-                // Provide a finite width calculated from friends Count to prevent unbounded Stack exception
-                width: (friendsCount > 3 ? 3 : friendsCount) * 14.0 + 8.0,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: List.generate(
-                    friendsCount > 3 ? 3 : friendsCount,
-                    (index) {
-                      final f = friendsList[index];
-                      return Positioned(
-                        left: index * 14.0,
-                        child: Container(
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.black, width: 1.5),
-                            color: f.avatar,
-                          ),
-                          child: Center(
-                            child: Text(
-                              f.initial,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
+            SizedBox(
+              height: 22,
+              // Provide a finite width calculated from friends Count to prevent unbounded Stack exception
+              width: (friendsCount > 3 ? 3 : friendsCount) * 14.0 + 8.0,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: List.generate(friendsCount > 3 ? 3 : friendsCount, (
+                  index,
+                ) {
+                  final f = friendsList[index];
+                  return Positioned(
+                    left: index * 14.0,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 1.5),
+                        color: f.avatar,
+                      ),
+                      child: Center(
+                        child: Text(
+                          f.initial,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (friendsCount > 3) ...[
+              Text(
+                '+${friendsCount - 3} ',
+                style: const TextStyle(
+                  color: kYellow,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(width: 8),
-              if (friendsCount > 3) ...[
-                Text(
-                  '+${friendsCount - 3} ',
-                  style: const TextStyle(
-                    color: kYellow,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(width: 4),
-              ],
+              const SizedBox(width: 4),
+            ],
             Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,7 +709,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   }
 
   // Helper for icon buttons overlaid on the camera preview
-  Widget _overlayIconButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _overlayIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Icon(icon, color: Colors.white, size: 28),
@@ -683,16 +723,15 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   Widget _overlayProfileSettingsButton({required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: const Icon(
-        Icons.person_rounded,
-        color: Colors.white,
-        size: 28,
-      ),
+      child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
     );
   }
 
   // Message icon button for bottom-right with unread badge overlay
-  Widget _overlayCircleMessageButton({required VoidCallback onTap, required int unreadCount}) {
+  Widget _overlayCircleMessageButton({
+    required VoidCallback onTap,
+    required int unreadCount,
+  }) {
     final displayCount = unreadCount > 9 ? '9+' : '$unreadCount';
     return BouncyTap(
       onTap: onTap,
@@ -715,10 +754,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.black, width: 1.2),
                 ),
-                constraints: const BoxConstraints(
-                  minWidth: 16,
-                  minHeight: 16,
-                ),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 alignment: Alignment.center,
                 child: Text(
                   displayCount,
@@ -737,13 +773,14 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
 
   Widget _sendToCircleButton(bool dark) {
     final uploadState = ref.watch(uploadProvider);
-    final isUploading = uploadState.status == UploadStatus.preparing ||
-                        uploadState.status == UploadStatus.validating ||
-                        uploadState.status == UploadStatus.compressing ||
-                        uploadState.status == UploadStatus.generatingThumbnail ||
-                        uploadState.status == UploadStatus.queued ||
-                        uploadState.status == UploadStatus.uploading ||
-                        uploadState.status == UploadStatus.waitingForResponse;
+    final isUploading =
+        uploadState.status == UploadStatus.preparing ||
+        uploadState.status == UploadStatus.validating ||
+        uploadState.status == UploadStatus.compressing ||
+        uploadState.status == UploadStatus.generatingThumbnail ||
+        uploadState.status == UploadStatus.queued ||
+        uploadState.status == UploadStatus.uploading ||
+        uploadState.status == UploadStatus.waitingForResponse;
 
     return BouncyTap(
       onTap: isUploading
@@ -769,22 +806,16 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                 alignment: Alignment.center,
                 children: [
                   CircularProgressIndicator(
-                    value: uploadState.status == UploadStatus.uploading ? uploadState.progress : null,
+                    value: uploadState.status == UploadStatus.uploading
+                        ? uploadState.progress
+                        : null,
                     color: kBlack,
                     strokeWidth: 3,
                   ),
-                  const Icon(
-                    Icons.close_rounded,
-                    color: kBlack,
-                    size: 20,
-                  ),
+                  const Icon(Icons.close_rounded, color: kBlack, size: 20),
                 ],
               )
-            : const Icon(
-                Icons.send_rounded,
-                color: kBlack,
-                size: 32,
-              ),
+            : const Icon(Icons.send_rounded, color: kBlack, size: 32),
       ),
     );
   }
@@ -841,10 +872,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
   Widget _capturePreview() {
     final dark = ref.watch(isDarkProvider);
     final uploadState = ref.watch(uploadProvider);
-    final isUploading = uploadState.status == UploadStatus.preparing ||
-                        uploadState.status == UploadStatus.validating ||
-                        uploadState.status == UploadStatus.uploading ||
-                        uploadState.status == UploadStatus.waitingForResponse;
+    final isUploading =
+        uploadState.status == UploadStatus.preparing ||
+        uploadState.status == UploadStatus.validating ||
+        uploadState.status == UploadStatus.uploading ||
+        uploadState.status == UploadStatus.waitingForResponse;
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.maxWidth;
@@ -857,7 +889,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           padding: const EdgeInsets.all(2), // 2px border outline
           decoration: BoxDecoration(
             borderRadius: borderRadius,
-            border: Border.all(color: kYellow.withValues(alpha: 0.85), width: 1.5),
+            border: Border.all(
+              color: kYellow.withValues(alpha: 0.85),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
                 color: kYellow.withValues(alpha: 0.18),
@@ -870,13 +905,16 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
           child: ClipRRect(
             borderRadius: BorderRadius.circular(radius - 2),
             child: GestureDetector(
-              onTap: _hasRecording ? () => setState(() => _captureCaptionOpen = true) : null,
+              onTap: _hasRecording
+                  ? () => setState(() => _captureCaptionOpen = true)
+                  : null,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   // 1. Live camera preview, video preview playback, or fallback
                   if (_hasRecording)
-                    _videoPlayerController != null && _videoPlayerController!.value.isInitialized
+                    _videoPlayerController != null &&
+                            _videoPlayerController!.value.isInitialized
                         ? FittedBox(
                             fit: BoxFit.cover,
                             child: SizedBox(
@@ -889,7 +927,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                             color: Colors.black,
                             child: Center(
                               child: _recordedVideoPath != null
-                                  ? CircularProgressIndicator(color: dark ? kYellow : kBlack)
+                                  ? CircularProgressIndicator(
+                                      color: dark ? kYellow : kBlack,
+                                    )
                                   : const Text(
                                       'Mock Video Preview\n(Looping Simulation)',
                                       textAlign: TextAlign.center,
@@ -905,8 +945,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                     FittedBox(
                       fit: BoxFit.cover,
                       child: SizedBox(
-                        width: _cameraController!.value.previewSize?.height ?? 1080,
-                        height: _cameraController!.value.previewSize?.width ?? 1920,
+                        width:
+                            _cameraController!.value.previewSize?.height ??
+                            1080,
+                        height:
+                            _cameraController!.value.previewSize?.width ?? 1920,
                         child: CameraPreview(_cameraController!),
                       ),
                     )
@@ -977,7 +1020,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                           const PulseRedDot(),
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.black38,
                               borderRadius: BorderRadius.circular(4),
@@ -996,7 +1042,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                     ),
 
                   // 4. Caption editor overlay
-                  if (_hasRecording && _captureCaptionOpen) _captureCaptionEditor(),
+                  if (_hasRecording && _captureCaptionOpen)
+                    _captureCaptionEditor(),
 
                   // 5. Upload progress overlay
                   if (isUploading)
@@ -1011,7 +1058,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                               color: dark ? kBlack : Colors.white,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12),
+                                color: (dark ? Colors.white : kCharcoal)
+                                    .withValues(alpha: 0.12),
                               ),
                               boxShadow: [
                                 BoxShadow(
@@ -1033,11 +1081,14 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                if (uploadState.status == UploadStatus.uploading) ...[
+                                if (uploadState.status ==
+                                    UploadStatus.uploading) ...[
                                   LinearProgressIndicator(
                                     value: uploadState.progress,
                                     color: kYellow,
-                                    backgroundColor: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
+                                    backgroundColor:
+                                        (dark ? Colors.white : kCharcoal)
+                                            .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   const SizedBox(height: 10),
@@ -1052,7 +1103,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
                                 ] else ...[
                                   LinearProgressIndicator(
                                     color: kYellow,
-                                    backgroundColor: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.1),
+                                    backgroundColor:
+                                        (dark ? Colors.white : kCharcoal)
+                                            .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ],
@@ -1078,7 +1131,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
       child: GestureDetector(
         onScaleUpdate: (details) => setState(() {
           _captureCaptionOffset += details.focalPointDelta;
-          _captureCaptionSize = (_captureCaptionSize * details.scale).clamp(16, 42);
+          _captureCaptionSize = (_captureCaptionSize * details.scale).clamp(
+            16,
+            42,
+          );
         }),
         child: SizedBox(
           width: 210,
@@ -1103,7 +1159,4 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView> with Widg
       ),
     );
   }
-
-
 }
-

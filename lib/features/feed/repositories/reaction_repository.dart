@@ -6,13 +6,21 @@ class ReactionRepository {
   final Ref _ref;
   ReactionRepository(this._ref);
 
-  Future<void> sendReaction(String memoryId, String emoji, {bool isRemoving = false}) async {
+  Future<void> sendReaction(
+    String memoryId,
+    String emoji, {
+    bool isRemoving = false,
+  }) async {
     if (kUseMockBackend) {
       await Future.delayed(const Duration(milliseconds: 150));
       return;
     }
     final chatNotifier = _ref.read(chatProvider.notifier);
-    await chatNotifier.sendReactionEvent(memoryId, emoji, isRemoving ? 'remove' : 'add');
+    await chatNotifier.sendReactionEvent(
+      memoryId,
+      emoji,
+      isRemoving ? 'remove' : 'add',
+    );
   }
 }
 

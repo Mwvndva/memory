@@ -19,7 +19,6 @@ import 'package:memory_app/media/cache_coordinator.dart';
 import 'package:memory_app/services/compression_service.dart';
 import 'package:memory_app/services/thumbnail_service.dart';
 
-
 Color parseHexColor(String hexStr) {
   var clean = hexStr.replaceAll('#', '').trim();
   if (clean.length == 6) {
@@ -86,7 +85,9 @@ class MemoryRepository {
 
   List<MemoryItem> _parseJsonFeed(List<dynamic> rawList) {
     return rawList.map((item) {
-      final List<Color> colors = (item['gradient_colors'] as List? ?? []).map((colorStr) {
+      final List<Color> colors = (item['gradient_colors'] as List? ?? []).map((
+        colorStr,
+      ) {
         return parseHexColor(colorStr as String);
       }).toList();
 
@@ -109,15 +110,15 @@ class MemoryRepository {
       }
 
       return MemoryItem(
-        id:        item['id']       as String? ?? '',
-        person:    item['person']    as String? ?? '',
-        username:  creatorObj?['username'] as String? ?? '',
-        initial:   item['initial']   as String? ?? '',
-        time:      item['time']      as String? ?? '',
-        caption:   item['caption']   as String? ?? '',
-        avatar:    avatarColor,
-        colors:    colors.isEmpty ? [avatarColor] : colors,
-        ageHours:  (item['age_hours'] as num?)?.toDouble() ?? 0.0,
+        id: item['id'] as String? ?? '',
+        person: item['person'] as String? ?? '',
+        username: creatorObj?['username'] as String? ?? '',
+        initial: item['initial'] as String? ?? '',
+        time: item['time'] as String? ?? '',
+        caption: item['caption'] as String? ?? '',
+        avatar: avatarColor,
+        colors: colors.isEmpty ? [avatarColor] : colors,
+        ageHours: (item['age_hours'] as num?)?.toDouble() ?? 0.0,
         videoPath: item['video_url'] as String?,
         avatarUrl: avatarUrl,
         reactions: reactionsMap,
@@ -173,7 +174,10 @@ class MemoryRepository {
         'limit': limit,
         if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
       };
-      final response = await dio.get('/memories/feed', queryParameters: queryParams);
+      final response = await dio.get(
+        '/memories/feed',
+        queryParameters: queryParams,
+      );
 
       final rawList = (response.data['memories'] as List? ?? []);
       final list = _parseJsonFeed(rawList);
@@ -241,11 +245,13 @@ class MemoryRepository {
 
       // Add optimistically to state manager
       _ref.read(feedProvider.notifier).addLocalMemory(newItem);
-      
+
       final currentStreak = _ref.read(authProvider).streakDays;
-      _ref.read(sessionProvider.notifier).updateProfile(
-        _ref.read(authProvider).copyWith(streakDays: currentStreak + 1),
-      );
+      _ref
+          .read(sessionProvider.notifier)
+          .updateProfile(
+            _ref.read(authProvider).copyWith(streakDays: currentStreak + 1),
+          );
     } else {
       final dio = _ref.read(apiClientProvider);
       final List<String> colorsHex = colors.map((c) {
@@ -256,7 +262,10 @@ class MemoryRepository {
         'caption': caption,
         'colors': colorsHex,
         if (videoPath != null && videoPath.isNotEmpty)
-          'video': await MultipartFile.fromFile(videoPath, filename: 'captured_memory.mp4'),
+          'video': await MultipartFile.fromFile(
+            videoPath,
+            filename: 'captured_memory.mp4',
+          ),
       });
 
       await dio.post(
@@ -287,12 +296,12 @@ enum FeedLoadStatus {
 
 enum FeedErrorCategory {
   none,
-  network,       // Retryable: connection timeout, offline socket exceptions
+  network, // Retryable: connection timeout, offline socket exceptions
   authentication, // Handled automatically by token refresh flow
-  server,        // Permanent / HTTP 500 errors
+  server, // Permanent / HTTP 500 errors
   emptyCircle,
   emptyFeed,
-  unknown
+  unknown,
 }
 
 class FeedState {
@@ -375,7 +384,10 @@ class FeedStateManager extends StateNotifier<FeedState> {
     _ref.listen<SessionState>(sessionProvider, (previous, next) {
       final wasAuth = previous?.isAuthenticated ?? false;
       final isAuth = next.isAuthenticated;
-      if (wasAuth != isAuth || (wasAuth && isAuth && previous?.user.username != next.user.username)) {
+      if (wasAuth != isAuth ||
+          (wasAuth &&
+              isAuth &&
+              previous?.user.username != next.user.username)) {
         // Reset state & empty index
         _index.clear();
         state = FeedState.idle();
@@ -386,12 +398,17 @@ class FeedStateManager extends StateNotifier<FeedState> {
     });
 
     // Listen to real-time events for new memory notifications.
-    _ref.listen<AsyncValue<RealtimeEvent>>(realtimeEventStreamProvider, (_, next) {
+    _ref.listen<AsyncValue<RealtimeEvent>>(realtimeEventStreamProvider, (
+      _,
+      next,
+    ) {
       next.whenData((event) {
         if (event is NewMemoryEvent) {
           _handleNewMemoryNotification(event);
         } else if (event is NewReactionEvent) {
           _handleNewReactionNotification(event);
+        } else if (event is ReactionUpdateEvent) {
+          applyReactionUpdate(event.memoryId, event.emoji, event.count);
         }
       });
     });
@@ -576,7 +593,9 @@ class FeedStateManager extends StateNotifier<FeedState> {
 
     if (!kUseMockBackend) {
       final dio = _ref.read(apiClientProvider);
-      final isLocalMock = dio.options.baseUrl.contains('localhost') || dio.options.baseUrl.contains('127.0.0.1');
+      final isLocalMock =
+          dio.options.baseUrl.contains('localhost') ||
+          dio.options.baseUrl.contains('127.0.0.1');
       if (!isLocalMock) {
         fetchFeed();
       }
@@ -594,7 +613,8 @@ class FeedStateManager extends StateNotifier<FeedState> {
   bool requestRefresh({required bool force}) {
     if (force) return true;
     final now = DateTime.now();
-    if (_lastRefreshRequestTime != null && now.difference(_lastRefreshRequestTime!).inSeconds < 5) {
+    if (_lastRefreshRequestTime != null &&
+        now.difference(_lastRefreshRequestTime!).inSeconds < 5) {
       return false; // Throttled / ignored
     }
     _lastRefreshRequestTime = now;
@@ -645,7 +665,7 @@ class FeedStateManager extends StateNotifier<FeedState> {
         // Discard obsolete response
         return;
       }
-      
+
       final reconciled = reconcile(result.memories, replaceAll: true);
 
       state = state.copyWith(
@@ -656,7 +676,9 @@ class FeedStateManager extends StateNotifier<FeedState> {
         currentCursor: null,
         nextCursor: result.nextCursor,
         lastSuccessfulPage: result.memories,
-        errorCategory: reconciled.isEmpty ? FeedErrorCategory.emptyFeed : FeedErrorCategory.none,
+        errorCategory: reconciled.isEmpty
+            ? FeedErrorCategory.emptyFeed
+            : FeedErrorCategory.none,
         isOffline: false,
       );
     } catch (e) {
@@ -697,7 +719,7 @@ class FeedStateManager extends StateNotifier<FeedState> {
       if (currentRequestId != _requestCounter) {
         return;
       }
-      
+
       final reconciled = reconcile(result.memories, replaceAll: true);
       state = state.copyWith(
         status: FeedLoadStatus.loaded,
@@ -707,7 +729,9 @@ class FeedStateManager extends StateNotifier<FeedState> {
         currentCursor: null,
         nextCursor: result.nextCursor,
         lastSuccessfulPage: result.memories,
-        errorCategory: reconciled.isEmpty ? FeedErrorCategory.emptyFeed : FeedErrorCategory.none,
+        errorCategory: reconciled.isEmpty
+            ? FeedErrorCategory.emptyFeed
+            : FeedErrorCategory.none,
         isOffline: false,
       );
     } catch (e) {
@@ -794,9 +818,7 @@ class FeedStateManager extends StateNotifier<FeedState> {
     // Route through reconciliation engine with prepend=true:
     // - If this id already exists in the feed (e.g. race with realtime), merge in-place.
     // - Otherwise insert at the front (newest-first ordering for optimistic uploads).
-    state = state.copyWith(
-      memories: reconcile([item], prepend: true),
-    );
+    state = state.copyWith(memories: reconcile([item], prepend: true));
   }
 
   /// Removes the Memory identified by [id] from the feed exactly once.
@@ -806,7 +828,27 @@ class FeedStateManager extends StateNotifier<FeedState> {
 
   final OptimisticTransactionManager txManager = OptimisticTransactionManager();
 
+  /// Applies the authoritative reaction count the server broadcast for
+  /// [memoryId]. This is what reconciles an optimistic tap with reality, and
+  /// what makes other people's reactions visible.
+  void applyReactionUpdate(String memoryId, String emoji, int count) {
+    final idx = _index[memoryId];
+    if (idx == null) return;
 
+    final original = state.memories[idx];
+    if ((original.reactions[emoji] ?? 0) == count) return;
+
+    final updatedReactions = Map<String, int>.from(original.reactions);
+    if (count <= 0) {
+      updatedReactions.remove(emoji);
+    } else {
+      updatedReactions[emoji] = count;
+    }
+
+    final updatedList = List<MemoryItem>.from(state.memories);
+    updatedList[idx] = original.copyWith(reactions: updatedReactions);
+    state = state.copyWith(memories: updatedList);
+  }
 
   Future<void> sendReaction(String memoryId, String emoji) async {
     final idx = _index[memoryId];
@@ -817,12 +859,12 @@ class FeedStateManager extends StateNotifier<FeedState> {
 
     final original = state.memories[idx];
     final currentCount = original.reactions[emoji] ?? 0;
-    
+
     // We increment or decrement based on current state (simple toggle for reactions)
     // Tapping reacts adds 1, tapping again removes 1
     final isRemoving = currentCount > 0;
     final targetCount = isRemoving ? currentCount - 1 : currentCount + 1;
-    
+
     final updatedReactions = Map<String, int>.from(original.reactions);
     if (targetCount <= 0) {
       updatedReactions.remove(emoji);
@@ -849,7 +891,9 @@ class FeedStateManager extends StateNotifier<FeedState> {
     updatedList[idx] = optimisticItem;
     state = state.copyWith(memories: updatedList);
     try {
-      await _ref.read(reactionRepositoryProvider).sendReaction(memoryId, emoji, isRemoving: isRemoving);
+      await _ref
+          .read(reactionRepositoryProvider)
+          .sendReaction(memoryId, emoji, isRemoving: isRemoving);
 
       txManager.resolve(memoryId, txId, TransactionStatus.committed);
     } catch (e) {
@@ -938,8 +982,8 @@ class UploadCoordinator extends StateNotifier<UploadState> {
   CancelToken? _cancelToken;
 
   void cancelUpload() {
-    if (state.status == UploadStatus.uploading || 
-        state.status == UploadStatus.preparing || 
+    if (state.status == UploadStatus.uploading ||
+        state.status == UploadStatus.preparing ||
         state.status == UploadStatus.validating) {
       _cancelToken?.cancel('User cancelled the upload');
       state = state.copyWith(status: UploadStatus.cancelled);
@@ -967,7 +1011,12 @@ class UploadCoordinator extends StateNotifier<UploadState> {
 
     _cancelToken = CancelToken();
 
-    state = state.copyWith(status: UploadStatus.preparing, progress: 0.0, errorMessage: null, isRetryable: false);
+    state = state.copyWith(
+      status: UploadStatus.preparing,
+      progress: 0.0,
+      errorMessage: null,
+      isRetryable: false,
+    );
     await Future.delayed(const Duration(milliseconds: 100));
 
     state = state.copyWith(status: UploadStatus.validating);
@@ -975,16 +1024,28 @@ class UploadCoordinator extends StateNotifier<UploadState> {
       if (videoPath != null && videoPath.isNotEmpty) {
         final file = File(videoPath);
         if (!await file.exists()) {
-          throw ValidationException('Recorded video file does not exist on disk.', null, StackTrace.current);
+          throw ValidationException(
+            'Recorded video file does not exist on disk.',
+            null,
+            StackTrace.current,
+          );
         }
         final size = await file.length();
         const maxSizeBytes = 50 * 1024 * 1024;
         if (size > maxSizeBytes) {
-          throw ValidationException('Video file size exceeds the 50MB limit.', null, StackTrace.current);
+          throw ValidationException(
+            'Video file size exceeds the 50MB limit.',
+            null,
+            StackTrace.current,
+          );
         }
       }
     } catch (e) {
-      state = state.copyWith(status: UploadStatus.failed, errorMessage: e.toString(), isRetryable: false);
+      state = state.copyWith(
+        status: UploadStatus.failed,
+        errorMessage: e.toString(),
+        isRetryable: false,
+      );
       return;
     }
 
@@ -1002,14 +1063,21 @@ class UploadCoordinator extends StateNotifier<UploadState> {
         finalPath = compressResult.compressedPath;
 
         // Thumbnailing
-        state = state.copyWith(status: UploadStatus.generatingThumbnail, progress: 0.3);
+        state = state.copyWith(
+          status: UploadStatus.generatingThumbnail,
+          progress: 0.3,
+        );
         final thumbnailService = _ref.read(thumbnailServiceProvider);
         await thumbnailService.getThumbnail(finalPath);
         state = state.copyWith(progress: 0.4);
       }
     } catch (e, stack) {
       final mapped = mapException(e, stack);
-      state = state.copyWith(status: UploadStatus.failed, errorMessage: mapped.message, isRetryable: false);
+      state = state.copyWith(
+        status: UploadStatus.failed,
+        errorMessage: mapped.message,
+        isRetryable: false,
+      );
       return;
     }
 
@@ -1042,7 +1110,10 @@ class UploadCoordinator extends StateNotifier<UploadState> {
         },
       );
 
-      state = state.copyWith(status: UploadStatus.waitingForResponse, progress: 0.95);
+      state = state.copyWith(
+        status: UploadStatus.waitingForResponse,
+        progress: 0.95,
+      );
 
       if (!kUseMockBackend) {
         await _ref.read(sessionProvider.notifier).fetchProfile();
@@ -1065,7 +1136,11 @@ class UploadCoordinator extends StateNotifier<UploadState> {
       } else {
         final statusCode = e.response?.statusCode;
         if (statusCode != null) {
-          if (statusCode == 408 || statusCode == 429 || statusCode == 502 || statusCode == 503 || statusCode == 504) {
+          if (statusCode == 408 ||
+              statusCode == 429 ||
+              statusCode == 502 ||
+              statusCode == 503 ||
+              statusCode == 504) {
             retryable = true;
           }
         }
@@ -1090,6 +1165,8 @@ class UploadCoordinator extends StateNotifier<UploadState> {
   }
 }
 
-final uploadProvider = StateNotifierProvider<UploadCoordinator, UploadState>((ref) {
+final uploadProvider = StateNotifierProvider<UploadCoordinator, UploadState>((
+  ref,
+) {
   return UploadCoordinator(ref);
 });

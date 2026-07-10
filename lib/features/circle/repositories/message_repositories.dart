@@ -51,7 +51,9 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   void deleteMessageOptimistic(String contactName, String tempId) {
-    _ref.read(chatProvider.notifier).deleteMessageOptimistic(contactName, tempId);
+    _ref
+        .read(chatProvider.notifier)
+        .deleteMessageOptimistic(contactName, tempId);
   }
 
   @override
@@ -64,7 +66,11 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<void> sendReactionEvent(String memoryId, String emoji, String action) async {
+  Future<void> sendReactionEvent(
+    String memoryId,
+    String emoji,
+    String action,
+  ) async {
     if (kUseMockBackend) return;
     _ref.read(realtimeCoordinatorProvider).emit({
       'event': 'send_reaction',
@@ -83,11 +89,13 @@ class ConversationRepositoryImpl implements ConversationRepository {
     bool shouldMarkRead = false,
     bool loadMore = false,
   }) async {
-    await _ref.read(chatProvider.notifier).loadConversation(
-      contactUsername,
-      shouldMarkRead: shouldMarkRead,
-      loadMore: loadMore,
-    );
+    await _ref
+        .read(chatProvider.notifier)
+        .loadConversation(
+          contactUsername,
+          shouldMarkRead: shouldMarkRead,
+          loadMore: loadMore,
+        );
   }
 }
 
@@ -110,7 +118,11 @@ class PresenceRepositoryImpl implements PresenceRepository {
 
   @override
   Stream<PresenceEvent> get presenceEvents {
-    return _ref.read(realtimeCoordinatorProvider).eventStream.where((event) => event is PresenceEvent).cast<PresenceEvent>();
+    return _ref
+        .read(realtimeCoordinatorProvider)
+        .eventStream
+        .where((event) => event is PresenceEvent)
+        .cast<PresenceEvent>();
   }
 }
 

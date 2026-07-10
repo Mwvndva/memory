@@ -63,7 +63,10 @@ class CompressionService {
     final tempDir = await getTemporaryDirectory();
     final fileName = p.basenameWithoutExtension(path);
     final fileExt = p.extension(path);
-    final targetPath = p.join(tempDir.path, '${fileName}_compressed_${DateTime.now().millisecondsSinceEpoch}$fileExt');
+    final targetPath = p.join(
+      tempDir.path,
+      '${fileName}_compressed_${DateTime.now().millisecondsSinceEpoch}$fileExt',
+    );
 
     StructuredLogger.log(
       'Starting video compression simulation for $path to $targetPath',

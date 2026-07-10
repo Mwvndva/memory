@@ -42,7 +42,9 @@ class MediaMetadata {
       sizeInBytes: json['sizeInBytes'] as int,
       width: json['width'] as int?,
       height: json['height'] as int?,
-      duration: json['durationMs'] != null ? Duration(milliseconds: json['durationMs'] as int) : null,
+      duration: json['durationMs'] != null
+          ? Duration(milliseconds: json['durationMs'] as int)
+          : null,
       isVideo: json['isVideo'] as bool,
     );
   }
@@ -59,7 +61,7 @@ class MediaProcessor {
 
     final int sizeInBytes = await file.length();
     final String extension = path.split('.').last.toLowerCase();
-    
+
     final String mimeType = _getMimeType(extension);
     final bool isVideo = mimeType.startsWith('video/');
 
@@ -69,22 +71,40 @@ class MediaProcessor {
 
     try {
       if (isVideo) {
+        // Disposed in a finally: initialize() throws on corrupt or unsupported
+        // media — precisely what the catch below handles — and the native
+        // decoder would otherwise be leaked on every such file.
         final controller = VideoPlayerController.file(file);
-        await controller.initialize();
-        duration = controller.value.duration;
-        width = controller.value.size.width.toInt();
-        height = controller.value.size.height.toInt();
-        await controller.dispose();
+        try {
+          await controller.initialize();
+          duration = controller.value.duration;
+          width = controller.value.size.width.toInt();
+          height = controller.value.size.height.toInt();
+        } finally {
+          await controller.dispose();
+        }
       } else if (mimeType.startsWith('image/')) {
         final bytes = await file.readAsBytes();
         final codec = await ui.instantiateImageCodec(bytes);
-        final frameInfo = await codec.getNextFrame();
-        width = frameInfo.image.width;
-        height = frameInfo.image.height;
-        frameInfo.image.dispose();
+        try {
+          final frameInfo = await codec.getNextFrame();
+          try {
+            width = frameInfo.image.width;
+            height = frameInfo.image.height;
+          } finally {
+            frameInfo.image.dispose();
+          }
+        } finally {
+          codec.dispose();
+        }
       }
     } catch (e, st) {
-      StructuredLogger.logError('Failed to parse media dimensions/duration for $path', category: 'MediaProcessor', error: e, stackTrace: st);
+      StructuredLogger.logError(
+        'Failed to parse media dimensions/duration for $path',
+        category: 'MediaProcessor',
+        error: e,
+        stackTrace: st,
+      );
     }
 
     return MediaMetadata(

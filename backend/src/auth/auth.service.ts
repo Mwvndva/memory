@@ -13,7 +13,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { normalizeEmail, normalizePhone, normalizeUsername, isProtectedUsername } from './auth-normalization';
+import {
+  normalizeEmail,
+  normalizePhone,
+  normalizeUsername,
+  isProtectedUsername,
+} from './auth-normalization';
 
 /**
  * Argon2id configuration — OWASP recommended minimums:
@@ -21,8 +26,8 @@ import { normalizeEmail, normalizePhone, normalizeUsername, isProtectedUsername 
  */
 const ARGON2_OPTIONS: argon2.Options & { raw?: false } = {
   type: argon2.argon2id,
-  memoryCost: 19456,   // 19 MiB
-  timeCost: 2,         // iterations
+  memoryCost: 19456, // 19 MiB
+  timeCost: 2, // iterations
   parallelism: 1,
 };
 
@@ -47,6 +52,12 @@ export interface TokenPair {
   expiresAt: number;
 }
 
+/** Where a session was created from — shown on the "active sessions" screen. */
+export interface SessionContext {
+  device?: string;
+  ip?: string;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -65,13 +76,15 @@ export class AuthService {
     if (!cleanUsername || isProtectedUsername(cleanUsername)) {
       return { available: false };
     }
-    const existing = await this.prisma.user.findUnique({ where: { username: cleanUsername } });
+    const existing = await this.prisma.user.findUnique({
+      where: { username: cleanUsername },
+    });
     return { available: !existing };
   }
 
   // ─── Registration ──────────────────────────────────────────────────────────
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto, context: SessionContext = {}) {
     const maskEmail = (emailStr: string) => {
       const parts = emailStr.split('@');
       if (parts.length !== 2) return '***';
@@ -83,12 +96,18 @@ export class AuthService {
     const username = normalizeUsername(dto.username);
     const email = normalizeEmail(dto.email);
     const phone = normalizePhone(dto.phone);
-    this.logger.log(`[Register] New registration request for username="${username}" email="${maskEmail(email)}"`);
+    this.logger.log(
+      `[Register] New registration request for username="${username}" email="${maskEmail(email)}"`,
+    );
     // Accept either camelCase or snake_case from the client.
     const acceptedTerms = dto.acceptedTerms ?? dto.accepted_terms ?? false;
     if (!acceptedTerms) {
-      this.logger.warn(`[Register] Registration failed: Terms and Conditions not accepted`);
-      throw new BadRequestException('You must accept the Terms and Conditions to register.');
+      this.logger.warn(
+        `[Register] Registration failed: Terms and Conditions not accepted`,
+      );
+      throw new BadRequestException(
+        'You must accept the Terms and Conditions to register.',
+      );
     }
     if (isProtectedUsername(username)) {
       throw new BadRequestException('That username cannot be used.');
@@ -106,7 +125,9 @@ export class AuthService {
       throw new ConflictException('Email is already registered');
     }
     if (existingUsername) {
-      this.logger.warn(`[Register] Registration failed: username="${dto.username}" already exists`);
+      this.logger.warn(
+        `[Register] Registration failed: username="${dto.username}" already exists`,
+      );
       throw new ConflictException('Username is already taken');
     }
 
@@ -127,7 +148,7 @@ export class AuthService {
         email,
         phone,
         phoneNormalized: phone,
-        country:      flagEmoji,
+        country: flagEmoji,
         passwordHash,
         acceptedTermsAt: new Date(),
       },
@@ -144,20 +165,26 @@ export class AuthService {
     });
 
     // 4. Issue token pair immediately (auto-login after registration)
-    this.logger.log(`[Register] Step 4: Issuing token pair for userId="${user.id}"`);
-    const tokens = await this.issueTokenPair(user.id, user.username);
-    this.logger.log(`[Register] User registered successfully: userId="${user.id}"`);
+    this.logger.log(
+      `[Register] Step 4: Issuing token pair for userId="${user.id}"`,
+    );
+    const tokens = await this.issueTokenPair(user.id, user.username, context);
+    this.logger.log(
+      `[Register] User registered successfully: userId="${user.id}"`,
+    );
     return { user, tokens };
   }
 
   // ─── Login ─────────────────────────────────────────────────────────────────
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, context: SessionContext = {}) {
     this.logger.log(`[Login] New login request`);
     // Resolve by email or username (identity or identifier)
     const identifier = dto.normalizedIdentity;
     const isEmail = identifier.includes('@');
-    this.logger.log(`[Login] Step 1: Finding user by ${isEmail ? 'email' : 'username'}`);
+    this.logger.log(
+      `[Login] Step 1: Finding user by ${isEmail ? 'email' : 'username'}`,
+    );
     const user = await this.prisma.user.findFirst({
       where: isEmail
         ? { email: normalizeEmail(identifier) }
@@ -166,7 +193,7 @@ export class AuthService {
 
     // Constant-time: always verify even if user not found (prevents timing attacks).
     // Use a pre-computed real Argon2id hash so full verification cost is always paid.
-    const hashToVerify = user?.passwordHash ?? await getDummyHash();
+    const hashToVerify = user?.passwordHash ?? (await getDummyHash());
 
     this.logger.log(`[Login] Step 2: Verifying password`);
     const passwordMatch = await argon2.verify(hashToVerify, dto.password);
@@ -176,10 +203,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    this.logger.log(`[Login] Step 3: Issuing token pair for userId="${user.id}"`);
-    const tokens = await this.issueTokenPair(user.id, user.username);
-    const { passwordHash: _, ...safeUser } = user;
-    this.logger.log(`[Login] User logged in successfully: username="${user.username}"`);
+    this.logger.log(
+      `[Login] Step 3: Issuing token pair for userId="${user.id}"`,
+    );
+    const tokens = await this.issueTokenPair(user.id, user.username, context);
+    const { passwordHash: _passwordHash, ...safeUser } = user;
+    this.logger.log(
+      `[Login] User logged in successfully: username="${user.username}"`,
+    );
     return { user: safeUser, tokens };
   }
 
@@ -201,15 +232,22 @@ export class AuthService {
    * If the same refresh token is replayed after rotation, the Redis check
    * in the strategy will reject it, preventing refresh token reuse.
    */
-  async refreshTokens(userId: string, username: string, oldJti: string): Promise<TokenPair> {
+  async refreshTokens(
+    userId: string,
+    username: string,
+    oldJti: string,
+    context: SessionContext = {},
+  ): Promise<TokenPair> {
     this.logger.log(`[Refresh] Rotating token pair for userId="${userId}"`);
 
     // Revoke the old refresh token JTI (token rotation — one-time use)
     await this.redis.revokeRefreshToken(userId, oldJti);
 
     // Issue a fresh pair
-    const tokens = await this.issueTokenPair(userId, username);
-    this.logger.log(`[Refresh] Token pair rotated successfully for userId="${userId}"`);
+    const tokens = await this.issueTokenPair(userId, username, context);
+    this.logger.log(
+      `[Refresh] Token pair rotated successfully for userId="${userId}"`,
+    );
     return tokens;
   }
 
@@ -224,7 +262,9 @@ export class AuthService {
    *  compromise scenarios or an explicit "sign out all devices" UI action.)
    */
   async logout(userId: string, jti: string): Promise<{ message: string }> {
-    this.logger.log(`[Logout] Revoking refresh token for userId="${userId}" jti="${jti}"`);
+    this.logger.log(
+      `[Logout] Revoking refresh token for userId="${userId}" jti="${jti}"`,
+    );
     await this.redis.revokeRefreshToken(userId, jti);
     this.logger.log(`[Logout] Logout successful for userId="${userId}"`);
     return { message: 'Logged out successfully' };
@@ -240,32 +280,56 @@ export class AuthService {
    *                 Carries a unique `jti` (UUID v4) stored in the Redis
    *                 allowlist so it can be individually revoked.
    */
-  private async issueTokenPair(userId: string, username: string): Promise<TokenPair> {
+  private async issueTokenPair(
+    userId: string,
+    username: string,
+    context: SessionContext = {},
+  ): Promise<TokenPair> {
     const jti = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
     // Access token: 5 minutes
     const ACCESS_TTL_SECONDS = 5 * 60;
     const expiresAt = now + ACCESS_TTL_SECONDS;
 
+    // `sid` binds the access token to the refresh session that minted it, so
+    // the server can tell which of a user's sessions is making a request —
+    // required to revoke "all other devices" without revoking the caller.
     const accessToken = this.jwt.sign(
-      { sub: userId, username },
+      { sub: userId, username, sid: jti },
       { expiresIn: '5m' },
     );
 
-    const refreshSecret = this.config.get<string>('REFRESH_TOKEN_SECRET') || (this.config.get<string>('JWT_SECRET') ? this.config.get<string>('JWT_SECRET') + '-refresh' : 'fallback-refresh-secret');
+    const refreshSecret =
+      this.config.get<string>('REFRESH_TOKEN_SECRET') ||
+      (this.config.get<string>('JWT_SECRET')
+        ? this.config.get<string>('JWT_SECRET') + '-refresh'
+        : 'fallback-refresh-secret');
     const refreshToken = this.jwt.sign(
       { sub: userId, username, jti, tokenType: 'refresh' },
       { secret: refreshSecret, expiresIn: '30d' },
     );
-
 
     // Persist JTI in Redis allowlist (enables per-device revocation)
     await this.redis.storeRefreshSession(userId, jti, {
       username,
       issuedAt: now,
       lastSeenAt: now,
+      device: context.device ?? 'Unknown device',
+      ip: context.ip ?? null,
     });
 
     return { accessToken, refreshToken, expiresAt };
+  }
+
+  /**
+   * Revoke every refresh session for [userId] except [keepJti] — the session
+   * that issued the access token making this request.
+   */
+  async revokeOtherSessions(userId: string, keepJti: string) {
+    const revoked = await this.redis.revokeOtherRefreshTokens(userId, keepJti);
+    this.logger.log(
+      `[Auth] Revoked ${revoked} other session(s) for userId="${userId}"`,
+    );
+    return { revoked };
   }
 }

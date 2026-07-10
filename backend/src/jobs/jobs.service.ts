@@ -64,7 +64,11 @@ export class JobsService implements OnApplicationBootstrap {
     );
   }
 
-  async queueNotification(userId: string, event: string, payload: any) {
+  async queueNotification(
+    userId: string,
+    event: string,
+    payload: Record<string, unknown>,
+  ) {
     await this.heavyOpsQueue.add(
       'send-notification',
       { userId, event, payload },

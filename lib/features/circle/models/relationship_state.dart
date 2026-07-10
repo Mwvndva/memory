@@ -1,14 +1,3 @@
-enum RelationshipState {
-  unknown,
-  notConnected,
-  pending,
-  member,
-  removed,
-}
+enum RelationshipState { unknown, notConnected, pending, member, removed }
 
-enum CircleRole {
-  owner,
-  admin,
-  moderator,
-  member,
-}
+enum CircleRole { owner, admin, moderator, member }

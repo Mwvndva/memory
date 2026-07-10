@@ -9,7 +9,6 @@ import * as path from 'path';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
@@ -17,21 +16,47 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
   const configService = app.get(ConfigService);
 
-  // Ensure critical secrets are set in production
-  const jwtSecret     = configService.get<string>('JWT_SECRET');
-  const refreshSecret = configService.get<string>('REFRESH_TOKEN_SECRET') || (jwtSecret ? jwtSecret + '-refresh' : undefined);
-  const nodeEnv = configService.get<string>('NODE_ENV', process.env.NODE_ENV || 'development');
+  // ── 0. Fail fast on unsafe production secrets ───────────────────────────
+  //
+  // Outside production the refresh secret may fall back to `JWT_SECRET-refresh`
+  // (see AuthService.issueTokenPair) so a bare `.env` still boots. In
+  // production that fallback is unacceptable: it makes the refresh secret
+  // derivable from the access secret, so a single leak compromises both. The
+  // previous check accepted the derived value and therefore never fired.
+  const MIN_SECRET_LENGTH = 32;
+  const jwtSecret = configService.get<string>('JWT_SECRET');
+  const refreshSecret = configService.get<string>('REFRESH_TOKEN_SECRET');
+  const nodeEnv = configService.get<string>(
+    'NODE_ENV',
+    process.env.NODE_ENV || 'development',
+  );
+
   if (nodeEnv === 'production') {
+    const fatal = (message: string): never => {
+      console.error(`FATAL: ${message} Aborting startup in production mode.`);
+      process.exit(1);
+    };
+
     if (!jwtSecret || jwtSecret.trim() === '') {
-      console.error('FATAL: JWT_SECRET is not set. Aborting startup in production mode.');
-      process.exit(1);
+      fatal('JWT_SECRET is not set.');
+    } else if (jwtSecret.length < MIN_SECRET_LENGTH) {
+      fatal(`JWT_SECRET must be at least ${MIN_SECRET_LENGTH} characters.`);
     }
+
     if (!refreshSecret || refreshSecret.trim() === '') {
-      console.error('FATAL: REFRESH_TOKEN_SECRET is not set and could not be derived from JWT_SECRET. Aborting startup in production mode.');
-      process.exit(1);
+      fatal(
+        'REFRESH_TOKEN_SECRET is not set. It must be provided explicitly, not derived from JWT_SECRET.',
+      );
+    } else if (refreshSecret.length < MIN_SECRET_LENGTH) {
+      fatal(
+        `REFRESH_TOKEN_SECRET must be at least ${MIN_SECRET_LENGTH} characters.`,
+      );
+    } else if (refreshSecret === jwtSecret) {
+      fatal(
+        'REFRESH_TOKEN_SECRET must differ from JWT_SECRET, otherwise a refresh token can be replayed as an access token.',
+      );
     }
   }
-
 
   // ── 1. Security headers (Helmet) ─────────────────────────────────────────
   app.use(
@@ -41,7 +66,8 @@ async function bootstrap() {
   );
 
   // ── 2. Trust proxy headers (needed for accurate IP in RateLimitGuard) ────
-  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  const expressApp = app.getHttpAdapter().getInstance() as express.Express;
+  expressApp.set('trust proxy', 1);
 
   // ── 3. CORS — env-driven origin whitelist ────────────────────────────────
   const rawOrigins = configService.get<string>(
@@ -53,10 +79,14 @@ async function bootstrap() {
     .map((o) => o.trim())
     .filter(Boolean);
 
+  type CorsCallback = (err: Error | null, allow?: boolean) => void;
   app.enableCors({
-    origin: (requestOrigin, callback) => {
-      if (!requestOrigin) return callback(null, true);
-      if (allowedOrigins.includes(requestOrigin)) return callback(null, true);
+    origin: (requestOrigin: string | undefined, callback: CorsCallback) => {
+      // No Origin header (same-origin, curl, mobile clients) — always allowed.
+      if (!requestOrigin || allowedOrigins.includes(requestOrigin)) {
+        callback(null, true);
+        return;
+      }
       callback(new Error(`CORS: origin '${requestOrigin}' is not allowed`));
     },
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
@@ -65,7 +95,7 @@ async function bootstrap() {
   });
 
   // ── 3b. Serve local uploads statically (fallback for local dev) ──────────
-  app.getHttpAdapter().getInstance().use(
+  expressApp.use(
     '/uploads',
     express.static(path.join(process.cwd(), 'uploads')),
   );
@@ -89,4 +119,9 @@ async function bootstrap() {
   console.log(`🔌 WebSocket server ready on ws://localhost:${port}/ws`);
   console.log(`🔐 CORS allowed origins: ${allowedOrigins.join(', ')}`);
 }
-bootstrap();
+// A rejected bootstrap must exit non-zero, not warn and leave a half-started
+// process for the orchestrator to treat as healthy.
+bootstrap().catch((err) => {
+  console.error('FATAL: backend failed to start', err);
+  process.exit(1);
+});

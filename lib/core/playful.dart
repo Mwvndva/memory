@@ -56,25 +56,35 @@ class _BouncyTapState extends State<BouncyTap>
     value: 0.0,
   );
 
-  bool get _active => widget.enabled && (widget.onTap != null || widget.onLongPress != null);
+  bool get _active =>
+      widget.enabled && (widget.onTap != null || widget.onLongPress != null);
 
   void _down(TapDownDetails _) {
     if (widget.haptic) HapticFeedback.lightImpact();
-    _c.animateTo(1.0,
-        duration: const Duration(milliseconds: 90), curve: Curves.easeOutCubic);
+    _c.animateTo(
+      1.0,
+      duration: const Duration(milliseconds: 90),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _up(TapUpDetails _) {
     // elasticOut overshoots past the target → the child pops slightly above
     // its resting size before settling. That overshoot is the "bounce".
-    _c.animateTo(0.0,
-        duration: const Duration(milliseconds: 480), curve: Curves.elasticOut);
+    _c.animateTo(
+      0.0,
+      duration: const Duration(milliseconds: 480),
+      curve: Curves.elasticOut,
+    );
     widget.onTap?.call();
   }
 
   void _cancel() {
-    _c.animateTo(0.0,
-        duration: const Duration(milliseconds: 260), curve: Curves.easeOut);
+    _c.animateTo(
+      0.0,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
@@ -132,8 +142,10 @@ class PopIn extends StatefulWidget {
 }
 
 class _PopInState extends State<PopIn> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: widget.duration);
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  );
 
   @override
   void initState() {
@@ -155,8 +167,10 @@ class _PopInState extends State<PopIn> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final scale = Tween<double>(begin: widget.beginScale, end: 1.0)
-        .animate(CurvedAnimation(parent: _c, curve: widget.curve));
+    final scale = Tween<double>(
+      begin: widget.beginScale,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _c, curve: widget.curve));
     // Fade completes in the first ~40% so the elastic settle happens fully opaque.
     final fade = CurvedAnimation(
       parent: _c,
@@ -222,8 +236,10 @@ class ConfettiBurst extends StatefulWidget {
 
 class _ConfettiBurstState extends State<ConfettiBurst>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: widget.duration);
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  );
   late final List<_Particle> _particles;
 
   static const _defaultColors = [
@@ -345,7 +361,10 @@ class _ConfettiPainter extends CustomPainter {
       if (p.square) {
         canvas.drawRect(
           Rect.fromCenter(
-              center: Offset.zero, width: p.size, height: p.size * 0.6),
+            center: Offset.zero,
+            width: p.size,
+            height: p.size * 0.6,
+          ),
           paint,
         );
       } else {

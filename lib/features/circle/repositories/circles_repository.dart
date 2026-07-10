@@ -46,7 +46,8 @@ class CircleMember {
       parsedRole = CircleRole.moderator;
     }
 
-    final stateStr = json['relationshipState'] as String? ?? json['status'] as String?;
+    final stateStr =
+        json['relationshipState'] as String? ?? json['status'] as String?;
     RelationshipState parsedState = RelationshipState.member;
     if (stateStr == 'pending') {
       parsedState = RelationshipState.pending;
@@ -59,14 +60,12 @@ class CircleMember {
     }
 
     return CircleMember(
-      id:        json['id']         as String? ?? '',
-      username:  json['username']   as String? ?? '',
-      firstName: json['first_name'] as String?
-                  ?? json['firstName'] as String? ?? '',
-      lastName:  json['last_name'] as String?
-                  ?? json['lastName'] as String?,
-      avatarUrl: json['avatar_url'] as String?
-                  ?? json['avatarUrl'] as String?,
+      id: json['id'] as String? ?? '',
+      username: json['username'] as String? ?? '',
+      firstName:
+          json['first_name'] as String? ?? json['firstName'] as String? ?? '',
+      lastName: json['last_name'] as String? ?? json['lastName'] as String?,
+      avatarUrl: json['avatar_url'] as String? ?? json['avatarUrl'] as String?,
       role: parsedRole,
       relationshipState: parsedState,
     );
@@ -117,7 +116,10 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
     });
 
     // Listen to real-time event stream for circle milestone updates
-    _ref.listen<AsyncValue<RealtimeEvent>>(realtimeEventStreamProvider, (_, next) {
+    _ref.listen<AsyncValue<RealtimeEvent>>(realtimeEventStreamProvider, (
+      _,
+      next,
+    ) {
       next.whenData((event) {
         if (event is CircleMilestoneEvent) {
           _handleCircleMilestone(event);
@@ -136,7 +138,8 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
       final prefs = _ref.read(sharedPreferencesProvider);
       final user = _ref.read(authProvider);
       final currentUsername = user.username.isNotEmpty ? user.username : 'user';
-      final key = 'user_${currentUsername}_seen_circle_${circleOwnerId}_$milestone';
+      final key =
+          'user_${currentUsername}_seen_circle_${circleOwnerId}_$milestone';
 
       if (prefs.getBool(key) ?? false) return;
       prefs.setBool(key, true);
@@ -154,7 +157,8 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
 
       showGlobalNotification(
         title: 'Circle Milestone! 👥🎉',
-        body: '@$circleOwnerUsername\'s circle reached a $milestone-user milestone! Tap to view the special card.',
+        body:
+            '@$circleOwnerUsername\'s circle reached a $milestone-user milestone! Tap to view the special card.',
         onTap: () {
           final context = rootNavigatorKey.currentContext;
           if (context != null && context.mounted) {
@@ -205,10 +209,12 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
           .map((item) => CircleMember.fromJson(item as Map<String, dynamic>))
           .toList();
       state = members;
-      
+
       // Load conversation history for all circle members in the background to populate message previews and unread badges
       for (final m in members) {
-        _ref.read(chatProvider.notifier).loadConversation(m.username, shouldMarkRead: false);
+        _ref
+            .read(chatProvider.notifier)
+            .loadConversation(m.username, shouldMarkRead: false);
       }
     } catch (e, stack) {
       final mapped = mapException(e, stack);
@@ -224,11 +230,17 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
       // Generate a mock member details based on the ID/username searched
       final newMember = CircleMember(
         id: memberId,
-        username: cleanId.contains('@') ? cleanId.replaceFirst('@', '') : cleanId,
-        firstName: memberId.length > 1 ? memberId[0].toUpperCase() + memberId.substring(1) : 'Member',
+        username: cleanId.contains('@')
+            ? cleanId.replaceFirst('@', '')
+            : cleanId,
+        firstName: memberId.length > 1
+            ? memberId[0].toUpperCase() + memberId.substring(1)
+            : 'Member',
       );
       // Avoid duplicate adding
-      if (!state.any((m) => m.username.toLowerCase() == newMember.username.toLowerCase())) {
+      if (!state.any(
+        (m) => m.username.toLowerCase() == newMember.username.toLowerCase(),
+      )) {
         state = [...state, newMember];
       }
 
@@ -240,7 +252,7 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
 
       return {'ok': true, 'message': 'Added (mock)'};
     }
-    
+
     final inviteService = _ref.read(circleInvitationServiceProvider);
     final res = await inviteService.inviteMember(memberId);
     if (res['ok'] == true && res['message'] == 'Member added') {
@@ -253,7 +265,9 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
 
   Future<bool> removeMember(String memberId) async {
     if (kUseMockBackend) {
-      state = state.where((m) => m.id != memberId && m.username != memberId).toList();
+      state = state
+          .where((m) => m.id != memberId && m.username != memberId)
+          .toList();
       return true;
     }
     final inviteService = _ref.read(circleInvitationServiceProvider);
@@ -295,19 +309,22 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
         memoryCount: rand.nextInt(15) + 5,
       ),
       // Friends
-      ...state.map((m) => CircleMemberWithMemories(
-        id: m.id,
-        username: m.username,
-        firstName: m.firstName,
-        lastName: m.lastName,
-        avatarUrl: m.avatarUrl,
-        memoryCount: rand.nextInt(15) + 1,
-      )),
+      ...state.map(
+        (m) => CircleMemberWithMemories(
+          id: m.id,
+          username: m.username,
+          firstName: m.firstName,
+          lastName: m.lastName,
+          avatarUrl: m.avatarUrl,
+          memoryCount: rand.nextInt(15) + 1,
+        ),
+      ),
     ];
 
     showGlobalNotification(
       title: 'Circle Milestone! 👥🎉',
-      body: 'Your circle reached a $milestone-user milestone! Tap to view the special card.',
+      body:
+          'Your circle reached a $milestone-user milestone! Tap to view the special card.',
       onTap: () {
         final context = rootNavigatorKey.currentContext;
         if (context != null && context.mounted) {
@@ -344,8 +361,8 @@ class CirclesNotifier extends StateNotifier<List<CircleMember>> {
 
 final circlesProvider =
     StateNotifierProvider<CirclesNotifier, List<CircleMember>>((ref) {
-  return CirclesNotifier(ref);
-});
+      return CirclesNotifier(ref);
+    });
 
 // ─── Pending Requests notifier ────────────────────────────────────────────────
 
@@ -380,15 +397,20 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
     });
 
     // Listen to real-time events for new circle requests
-    _ref.listen<AsyncValue<RealtimeEvent>>(realtimeEventStreamProvider, (_, next) {
+    _ref.listen<AsyncValue<RealtimeEvent>>(realtimeEventStreamProvider, (
+      _,
+      next,
+    ) {
       next.whenData((event) {
         if (event is CircleRequestEvent) {
-          addPending(CircleMember(
-            id: event.senderId,
-            username: event.senderUsername,
-            firstName: event.senderFirstName,
-            avatarUrl: event.senderAvatarUrl,
-          ));
+          addPending(
+            CircleMember(
+              id: event.senderId,
+              username: event.senderUsername,
+              firstName: event.senderFirstName,
+              avatarUrl: event.senderAvatarUrl,
+            ),
+          );
           Future.delayed(const Duration(seconds: 4), () {
             fetchPendingRequests();
           });
@@ -419,7 +441,9 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
   /// event arrives so the UI updates immediately. A reconciliation poll will
   /// ensure server truth shortly after.
   void addPending(CircleMember member) {
-    if (state.any((m) => m.id == member.id || m.username == member.username)) return;
+    if (state.any((m) => m.id == member.id || m.username == member.username)) {
+      return;
+    }
     state = [...state, member];
   }
 
@@ -482,5 +506,5 @@ class PendingRequestsNotifier extends StateNotifier<List<CircleMember>> {
 
 final pendingRequestsProvider =
     StateNotifierProvider<PendingRequestsNotifier, List<CircleMember>>((ref) {
-  return PendingRequestsNotifier(ref);
-});
+      return PendingRequestsNotifier(ref);
+    });

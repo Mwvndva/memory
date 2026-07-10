@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CirclesService } from './circles.service';
 import { AddMemberDto } from './dto/add-member.dto';
 import { AcceptDeclineRequestDto } from './dto/accept-decline-request.dto';
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 
 @UseGuards(JwtAuthGuard)
 @Controller('circles')
@@ -23,7 +24,7 @@ export class CirclesController {
    * Authenticated — lists all users in the caller's circle (outgoing directed friendships).
    */
   @Get('members')
-  getCircle(@Req() req: any) {
+  getCircle(@Req() req: AuthenticatedRequest) {
     return this.circlesService.getCircle(req.user.id);
   }
 
@@ -32,7 +33,7 @@ export class CirclesController {
    * Authenticated — lists all users who have added the caller to their circle.
    */
   @Get('followers')
-  getFollowers(@Req() req: any) {
+  getFollowers(@Req() req: AuthenticatedRequest) {
     return this.circlesService.getFollowers(req.user.id);
   }
 
@@ -44,7 +45,7 @@ export class CirclesController {
    * Body: { "memberId": "<uuid>" }
    */
   @Post('requests')
-  sendRequest(@Req() req: any, @Body() dto: AddMemberDto) {
+  sendRequest(@Req() req: AuthenticatedRequest, @Body() dto: AddMemberDto) {
     return this.circlesService.sendRequest(req.user.id, dto.memberId);
   }
 
@@ -54,17 +55,19 @@ export class CirclesController {
    * Body: { "memberId": "<uuid>" }
    */
   @Post('members')
-  addMember(@Req() req: any, @Body() dto: AddMemberDto) {
+  addMember(@Req() req: AuthenticatedRequest, @Body() dto: AddMemberDto) {
     return this.circlesService.addMember(req.user.id, dto.memberId);
   }
-
 
   /**
    * DELETE /circles/members/:memberId
    * Authenticated — removes a user from the caller's circle.
    */
   @Delete('members/:memberId')
-  removeMember(@Req() req: any, @Param('memberId') memberId: string) {
+  removeMember(
+    @Req() req: AuthenticatedRequest,
+    @Param('memberId') memberId: string,
+  ) {
     return this.circlesService.removeMember(req.user.id, memberId);
   }
 
@@ -73,7 +76,7 @@ export class CirclesController {
    * Authenticated — lists pending requests sent to the caller.
    */
   @Get('requests/pending')
-  getPendingRequests(@Req() req: any) {
+  getPendingRequests(@Req() req: AuthenticatedRequest) {
     return this.circlesService.getPendingRequests(req.user.id);
   }
 
@@ -82,7 +85,10 @@ export class CirclesController {
    * Authenticated — accepts a share memories request.
    */
   @Post('requests/accept')
-  acceptRequest(@Req() req: any, @Body() dto: AcceptDeclineRequestDto) {
+  acceptRequest(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: AcceptDeclineRequestDto,
+  ) {
     return this.circlesService.acceptRequest(req.user.id, dto.senderId);
   }
 
@@ -91,7 +97,10 @@ export class CirclesController {
    * Authenticated — declines a share memories request.
    */
   @Post('requests/decline')
-  declineRequest(@Req() req: any, @Body() dto: AcceptDeclineRequestDto) {
+  declineRequest(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: AcceptDeclineRequestDto,
+  ) {
     return this.circlesService.declineRequest(req.user.id, dto.senderId);
   }
 }

@@ -34,17 +34,57 @@ jobs:
         run: npx prisma generate
         working-directory: backend
 
+      # Every *.spec.ts directly under test/ — an explicit file list let suites
+      # rot unnoticed once they stopped compiling. test/e2e/ is excluded: it
+      # needs a live SQLite database and Redis.
       - name: Run Unit Tests
-        run: npx jest test/soft-delete.spec.ts test/circles.service.spec.ts test/message-archival.spec.ts test/users.service.spec.ts test/storage.service.spec.ts test/messages.controller.spec.ts --rootDir=.
+        run: npx jest --rootDir=. --testPathPatterns='test/[^/]+\.spec\.ts$'
         working-directory: backend
 
       - name: Build Application
         run: npm run build
         working-directory: backend
 
+  flutter:
+    name: Flutter Client
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      # --fatal-infos keeps the tree at zero diagnostics, not just zero errors.
+      - name: Analyze
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Verify Formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Run Tests
+        run: flutter test
+
+      - name: Build Debug APK
+        run: flutter build apk --debug
+
   cd:
     name: Continuous Deployment
-    needs: ci
+    needs: [ci, flutter]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
 

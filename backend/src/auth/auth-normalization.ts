@@ -28,7 +28,8 @@ export function isProtectedUsername(username: string): boolean {
     if (clean.startsWith(`${prefix}.`)) return true;
     if (clean.startsWith(`${prefix}_`)) return true;
     if (clean.startsWith(`${prefix}-`)) return true;
-    if (clean.startsWith(prefix) && clean.length <= prefix.length + 2) return true;
+    if (clean.startsWith(prefix) && clean.length <= prefix.length + 2)
+      return true;
     return false;
   });
 }
@@ -42,7 +43,9 @@ export function normalizePhone(phone: string): string {
 
   let parsed = parsePhoneNumberFromString(trimmed);
   if (!parsed && !trimmed.startsWith('+')) {
-    parsed = parsePhoneNumberFromString(trimmed, 'KE') ?? parsePhoneNumberFromString(trimmed, 'US');
+    parsed =
+      parsePhoneNumberFromString(trimmed, 'KE') ??
+      parsePhoneNumberFromString(trimmed, 'US');
   }
 
   if (parsed?.isValid()) {
@@ -52,4 +55,3 @@ export function normalizePhone(phone: string): string {
   const digits = trimmed.replace(/\D/g, '');
   return trimmed.startsWith('+') ? `+${digits}` : digits;
 }
-

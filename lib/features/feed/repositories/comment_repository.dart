@@ -15,7 +15,11 @@ class CommentRepository {
   final Ref _ref;
   CommentRepository(this._ref);
 
-  Future<CommentPageResult> fetchComments(String memoryId, {String? cursor, int limit = 10}) async {
+  Future<CommentPageResult> fetchComments(
+    String memoryId, {
+    String? cursor,
+    int limit = 10,
+  }) async {
     if (kUseMockBackend) {
       await Future.delayed(const Duration(milliseconds: 150));
       if (cursor == null) {
@@ -62,17 +66,25 @@ class CommentRepository {
     final Map<String, dynamic> params = {'limit': limit};
     if (cursor != null) params['cursor'] = cursor;
 
-    final response = await dio.get('/memories/$memoryId/comments', queryParameters: params);
+    final response = await dio.get(
+      '/memories/$memoryId/comments',
+      queryParameters: params,
+    );
     final rawList = response.data['comments'] as List? ?? [];
     final commentsList = rawList.map<CommentItem>((item) {
       final creator = item['creator'] as Map<String, dynamic>?;
       return CommentItem(
         id: item['id'] as String? ?? '',
         memoryId: memoryId,
-        person: item['person'] as String? ?? creator?['username'] as String? ?? 'Anonymous',
+        person:
+            item['person'] as String? ??
+            creator?['username'] as String? ??
+            'Anonymous',
         username: creator?['username'] as String? ?? 'anonymous',
         text: item['text'] as String? ?? '',
-        timestamp: DateTime.tryParse(item['created_at'] as String? ?? '') ?? DateTime.now(),
+        timestamp:
+            DateTime.tryParse(item['created_at'] as String? ?? '') ??
+            DateTime.now(),
         avatarUrl: creator?['avatar_url'] as String?,
       );
     }).toList();
@@ -99,18 +111,24 @@ class CommentRepository {
     }
 
     final dio = _ref.read(apiClientProvider);
-    final response = await dio.post('/memories/$memoryId/comments', data: {
-      'text': text,
-    });
+    final response = await dio.post(
+      '/memories/$memoryId/comments',
+      data: {'text': text},
+    );
     final item = response.data;
     final creator = item['creator'] as Map<String, dynamic>?;
     return CommentItem(
       id: item['id'] as String? ?? '',
       memoryId: memoryId,
-      person: item['person'] as String? ?? creator?['username'] as String? ?? 'Anonymous',
+      person:
+          item['person'] as String? ??
+          creator?['username'] as String? ??
+          'Anonymous',
       username: creator?['username'] as String? ?? 'anonymous',
       text: item['text'] as String? ?? '',
-      timestamp: DateTime.tryParse(item['created_at'] as String? ?? '') ?? DateTime.now(),
+      timestamp:
+          DateTime.tryParse(item['created_at'] as String? ?? '') ??
+          DateTime.now(),
       avatarUrl: creator?['avatar_url'] as String?,
     );
   }

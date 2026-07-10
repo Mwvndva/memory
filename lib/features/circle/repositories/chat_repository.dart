@@ -73,9 +73,11 @@ class ChatState {
 
 class ChatNotifier extends StateNotifier<ChatState> {
   ChatNotifier(this._ref)
-      : super(kUseMockBackend
+    : super(
+        kUseMockBackend
             ? _initialState
-            : const ChatState(messagesByContact: {}, unreadCounts: {})) {
+            : const ChatState(messagesByContact: {}, unreadCounts: {}),
+      ) {
     // Ensure the coordinator is running (it self-initialises on first read).
     _ref.read(realtimeCoordinatorProvider);
 
@@ -147,10 +149,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         ),
       ],
     },
-    unreadCounts: const {
-      'Amara': 2,
-      'Mum': 1,
-    },
+    unreadCounts: const {'Amara': 2, 'Mum': 1},
   );
 
   // ── Real-time event handling ──────────────────────────────────────────────
@@ -180,19 +179,25 @@ class ChatNotifier extends StateNotifier<ChatState> {
     final updatedList = existingList.map((m) {
       if (m.isMine && m.isPending && m.text == event.text && !replaced) {
         replaced = true;
-        return m.copyWith(id: event.id, isPending: false, timestamp: event.timestamp);
+        return m.copyWith(
+          id: event.id,
+          isPending: false,
+          timestamp: event.timestamp,
+        );
       }
       return m;
     }).toList();
 
     if (!replaced) {
-      updatedList.add(Message(
-        id: event.id,
-        sender: event.sender,
-        text: event.text,
-        timestamp: event.timestamp,
-        isMine: false,
-      ));
+      updatedList.add(
+        Message(
+          id: event.id,
+          sender: event.sender,
+          text: event.text,
+          timestamp: event.timestamp,
+          isMine: false,
+        ),
+      );
     }
 
     final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
@@ -219,12 +224,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     _typingExpirationTimers[event.sender]?.cancel();
     if (event.isTyping) {
-      _typingExpirationTimers[event.sender] = Timer(const Duration(seconds: 5), () {
-        if (_disposed) return;
-        final current = Map<String, bool>.from(state.typingIndicators);
-        current[event.sender] = false;
-        state = state.copyWith(typingIndicators: current);
-      });
+      _typingExpirationTimers[event.sender] = Timer(
+        const Duration(seconds: 5),
+        () {
+          if (_disposed) return;
+          final current = Map<String, bool>.from(state.typingIndicators);
+          current[event.sender] = false;
+          state = state.copyWith(typingIndicators: current);
+        },
+      );
     }
   }
 
@@ -274,8 +282,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     try {
       final circles = _ref.read(circlesProvider);
-      final member =
-          circles.where((m) => m.username == contactUsername).firstOrNull;
+      final member = circles
+          .where((m) => m.username == contactUsername)
+          .firstOrNull;
       if (member == null) return;
 
       final dio = _ref.read(apiClientProvider);
@@ -283,34 +292,38 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final cursor = loadMore ? state.cursors[contactUsername] : null;
       final cursorParam = cursor != null ? '&cursor=$cursor' : '';
 
-      final response = await dio
-          .get('/messages/history/${member.id}?markRead=$markReadParam$cursorParam');
+      final response = await dio.get(
+        '/messages/history/${member.id}?markRead=$markReadParam$cursorParam',
+      );
       final body = response.data as Map<String, dynamic>? ?? {};
-      final rawList =
-          body['data'] as List? ?? body['comments'] as List? ?? [];
+      final rawList = body['data'] as List? ?? body['comments'] as List? ?? [];
 
       final fetched = rawList.map((item) {
         final d = item as Map<String, dynamic>;
         final senderUsername =
-            (d['sender'] as Map<String, dynamic>?)?['username'] as String? ?? '';
+            (d['sender'] as Map<String, dynamic>?)?['username'] as String? ??
+            '';
         final isMine = senderUsername != contactUsername;
         return Message(
           id: d['id']?.toString() ?? '',
           sender: isMine ? 'You' : contactUsername,
           text: d['text'] as String? ?? '',
           timestamp:
-              DateTime.tryParse(d['timestamp']?.toString() ?? '') ?? DateTime.now(),
+              DateTime.tryParse(d['timestamp']?.toString() ?? '') ??
+              DateTime.now(),
           isMine: isMine,
           isRead: d['isRead'] as bool? ?? d['is_read'] as bool? ?? false,
         );
       }).toList();
 
-      final String? nextCursor = body['nextCursor'] as String? ??
+      final String? nextCursor =
+          body['nextCursor'] as String? ??
           (body['meta'] as Map?)?['nextCursor'] as String?;
       final bool hasMore = nextCursor != null;
 
-      final updatedMap =
-          Map<String, List<Message>>.from(state.messagesByContact);
+      final updatedMap = Map<String, List<Message>>.from(
+        state.messagesByContact,
+      );
       final existing = state.messagesByContact[contactUsername] ?? [];
       final merged = <Message>[];
 
@@ -331,11 +344,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
       merged.sort((a, b) => a.timestamp.compareTo(b.timestamp));
       updatedMap[contactUsername] = merged;
 
-      final unreadCount =
-          fetched.where((msg) => !msg.isMine && !msg.isRead).length;
+      final unreadCount = fetched
+          .where((msg) => !msg.isMine && !msg.isRead)
+          .length;
       final updatedUnread = Map<String, int>.from(state.unreadCounts);
-      updatedUnread[contactUsername] =
-          _activeContact == contactUsername ? 0 : unreadCount;
+      updatedUnread[contactUsername] = _activeContact == contactUsername
+          ? 0
+          : unreadCount;
 
       final updatedCursors = Map<String, String?>.from(state.cursors);
       updatedCursors[contactUsername] = nextCursor;
@@ -359,9 +374,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// Send a reaction event over the WebSocket.
   Future<void> sendReactionEvent(
-      String memoryId, String emoji, String action) async {
+    String memoryId,
+    String emoji,
+    String action,
+  ) async {
     try {
-      await _ref.read(messageRepositoryProvider).sendReactionEvent(memoryId, emoji, action);
+      await _ref
+          .read(messageRepositoryProvider)
+          .sendReactionEvent(memoryId, emoji, action);
     } catch (e, stack) {
       final mapped = mapException(e, stack);
       debugPrint('Failed to transmit reaction: $mapped');
@@ -372,7 +392,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
   /// Send typing indicator over the WebSocket.
   Future<void> sendTypingIndicator(String contactName, bool isTyping) async {
     try {
-      await _ref.read(typingRepositoryProvider).sendTypingIndicator(contactName, isTyping);
+      await _ref
+          .read(typingRepositoryProvider)
+          .sendTypingIndicator(contactName, isTyping);
     } catch (e) {
       debugPrint('Failed to transmit typing indicator: $e');
     }
@@ -407,6 +429,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     if (kUseMockBackend) {
       Timer(const Duration(milliseconds: 300), () {
+        // The notifier can be disposed before this fires; writing state then
+        // throws.
+        if (_disposed) return;
         _confirmDelivery(contactName, tempId);
         _simulateReply(contactName);
       });
@@ -427,7 +452,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void _confirmDelivery(String contactName, String tempId) {
     final list = state.messagesByContact[contactName] ?? [];
     final updated = list.map((msg) {
-      if (msg.id == tempId) return msg.copyWith(isPending: false, isFailed: false, status: MessageStatus.sent);
+      if (msg.id == tempId) {
+        return msg.copyWith(
+          isPending: false,
+          isFailed: false,
+          status: MessageStatus.sent,
+        );
+      }
       return msg;
     }).toList();
     final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
@@ -438,7 +469,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void _markFailed(String contactName, String tempId) {
     final list = state.messagesByContact[contactName] ?? [];
     final updated = list.map((msg) {
-      if (msg.id == tempId) return msg.copyWith(isPending: false, isFailed: true, status: MessageStatus.draft);
+      if (msg.id == tempId) {
+        return msg.copyWith(
+          isPending: false,
+          isFailed: true,
+          status: MessageStatus.draft,
+        );
+      }
       return msg;
     }).toList();
     final updatedMap = Map<String, List<Message>>.from(state.messagesByContact);
@@ -500,6 +537,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   void _simulateReply(String contactName) {
     Timer(const Duration(seconds: 1), () {
+      if (_disposed) return;
       final replyMessage = Message(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         sender: contactName,
@@ -534,7 +572,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 }
 
-final chatProvider =
-    StateNotifierProvider<ChatNotifier, ChatState>((ref) {
+final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
   return ChatNotifier(ref);
 });

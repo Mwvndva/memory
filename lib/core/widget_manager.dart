@@ -11,7 +11,7 @@ import 'package:memory_app/features/feed/feed.dart';
 Future<String> _renderMemoryCard(MemoryItem memory) async {
   final recorder = ui.PictureRecorder();
   final canvas = ui.Canvas(recorder, ui.Rect.fromLTWH(0, 0, 400, 400));
-  
+
   // Draw gradient background
   final paint = ui.Paint();
   if (memory.colors.length >= 2) {
@@ -30,7 +30,10 @@ Future<String> _renderMemoryCard(MemoryItem memory) async {
     ..shader = ui.Gradient.linear(
       const ui.Offset(0, 260),
       const ui.Offset(0, 400),
-      [Colors.black.withValues(alpha: 0.0), Colors.black.withValues(alpha: 0.85)],
+      [
+        Colors.black.withValues(alpha: 0.0),
+        Colors.black.withValues(alpha: 0.85),
+      ],
     );
   canvas.drawRect(ui.Rect.fromLTWH(0, 260, 400, 140), scrimPaint);
 
@@ -69,25 +72,29 @@ Future<String> _renderMemoryCard(MemoryItem memory) async {
 
   // Save to file
   final tempDir = await getTemporaryDirectory();
-  final file = File('${tempDir.path}/widget_memory_${DateTime.now().millisecondsSinceEpoch}.png');
+  final file = File(
+    '${tempDir.path}/widget_memory_${DateTime.now().millisecondsSinceEpoch}.png',
+  );
   await file.writeAsBytes(bytes);
   return file.path;
 }
 
 Future<String?> _downloadAvatar(String? url) async {
   if (url == null || url.isEmpty) return null;
-  
+
   // Format local/mock url
   var targetUrl = url;
-  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+  if (url.startsWith('http://localhost:') ||
+      url.startsWith('http://127.0.0.1:')) {
     final uri = Uri.parse(url);
     final baseUri = Uri.parse(kBaseUrl);
     targetUrl = url.replaceFirst(uri.authority, baseUri.authority);
   }
-  
+
   try {
     final tempDir = await getTemporaryDirectory();
-    final path = '${tempDir.path}/widget_avatar_${DateTime.now().millisecondsSinceEpoch}.png';
+    final path =
+        '${tempDir.path}/widget_avatar_${DateTime.now().millisecondsSinceEpoch}.png';
     await Dio().download(targetUrl, path);
     return path;
   } catch (e) {
@@ -121,7 +128,7 @@ class WidgetManager {
     try {
       // 1. Render memory card preview image
       final imagePath = await _renderMemoryCard(latestMemory);
-      
+
       // 2. Download avatar if available
       final avatarPath = await _downloadAvatar(latestMemory.avatarUrl);
 

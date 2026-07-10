@@ -16,7 +16,12 @@ class CacheCoordinator {
         await box.put(key, jsonEncode(value));
       }
     } catch (e, st) {
-      StructuredLogger.logError('Failed to save to disk cache', category: 'CacheCoordinator', error: e, stackTrace: st);
+      StructuredLogger.logError(
+        'Failed to save to disk cache',
+        category: 'CacheCoordinator',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -35,7 +40,12 @@ class CacheCoordinator {
         }
       }
     } catch (e, st) {
-      StructuredLogger.logError('Failed to read from disk cache', category: 'CacheCoordinator', error: e, stackTrace: st);
+      StructuredLogger.logError(
+        'Failed to read from disk cache',
+        category: 'CacheCoordinator',
+        error: e,
+        stackTrace: st,
+      );
     }
     return null;
   }
@@ -48,7 +58,12 @@ class CacheCoordinator {
         box.delete(key);
       }
     } catch (e, st) {
-      StructuredLogger.logError('Failed to invalidate disk cache key $key', category: 'CacheCoordinator', error: e, stackTrace: st);
+      StructuredLogger.logError(
+        'Failed to invalidate disk cache key $key',
+        category: 'CacheCoordinator',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -60,7 +75,12 @@ class CacheCoordinator {
         box.clear();
       }
     } catch (e, st) {
-      StructuredLogger.logError('Failed to clear disk cache', category: 'CacheCoordinator', error: e, stackTrace: st);
+      StructuredLogger.logError(
+        'Failed to clear disk cache',
+        category: 'CacheCoordinator',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 }

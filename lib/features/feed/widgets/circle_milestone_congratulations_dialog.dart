@@ -25,6 +25,7 @@ const _circle30Messages = [
   "A circle of 30! Every memory shared is woven into a beautiful community canvas. 🎨💖",
   "30 users strong! Your circle is thriving and full of moments waiting to be captured. 📸🔥",
 ];
+
 class CircleMilestoneCongratulationsDialog extends StatefulWidget {
   final String circleOwnerUsername;
   final int milestone;
@@ -38,10 +39,12 @@ class CircleMilestoneCongratulationsDialog extends StatefulWidget {
   });
 
   @override
-  State<CircleMilestoneCongratulationsDialog> createState() => _CircleMilestoneCongratulationsDialogState();
+  State<CircleMilestoneCongratulationsDialog> createState() =>
+      _CircleMilestoneCongratulationsDialogState();
 }
 
-class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCongratulationsDialog> {
+class _CircleMilestoneCongratulationsDialogState
+    extends State<CircleMilestoneCongratulationsDialog> {
   late final CardDesignData _designData;
   late final String _message;
   final GlobalKey _boundaryKey = GlobalKey();
@@ -51,7 +54,9 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
   void initState() {
     super.initState();
     _designData = CardDesignData.generate(widget.milestone);
-    final messages = widget.milestone == 30 ? _circle30Messages : _circle7Messages;
+    final messages = widget.milestone == 30
+        ? _circle30Messages
+        : _circle7Messages;
     _message = messages[Random().nextInt(messages.length)];
 
     // Celebrate! Fire a confetti burst once the dialog is on screen.
@@ -65,7 +70,9 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
     setState(() => _isSharing = true);
 
     try {
-      final boundary = _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _boundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception("RenderRepaintBoundary not found");
       }
@@ -80,7 +87,8 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
 
       // Write bytes to a temp file
       final tempDir = await getTemporaryDirectory();
-      final path = '${tempDir.path}/circle_${widget.milestone}_milestone_${DateTime.now().millisecondsSinceEpoch}.png';
+      final path =
+          '${tempDir.path}/circle_${widget.milestone}_milestone_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File(path);
       await file.writeAsBytes(bytes);
 
@@ -88,7 +96,8 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Check out @${widget.circleOwnerUsername}\'s circle milestone of ${widget.milestone} users on Memory App! 👥🎉',
+          text:
+              'Check out @${widget.circleOwnerUsername}\'s circle milestone of ${widget.milestone} users on Memory App! 👥🎉',
         ),
       );
     } catch (e) {
@@ -138,7 +147,10 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1.5,
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -175,7 +187,11 @@ class _CircleMilestoneCongratulationsDialogState extends State<CircleMilestoneCo
                             : const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.share_rounded, color: kBlack, size: 16),
+                                  Icon(
+                                    Icons.share_rounded,
+                                    color: kBlack,
+                                    size: 16,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Share Card',

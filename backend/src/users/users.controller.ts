@@ -11,8 +11,6 @@ import {
   UseGuards,
   UseInterceptors,
   ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
   Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -24,6 +22,7 @@ import { StorageService } from '../storage/storage.service';
 import { imageFileValidators } from '../storage/file-signature.validator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { SyncContactsDto } from './dto/sync-contacts.dto';
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 
 @Controller('users')
 export class UsersController {
@@ -50,7 +49,7 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getMe(@Req() req: any) {
+  getMe(@Req() req: AuthenticatedRequest) {
     return this.usersService.getProfile(req.user.id);
   }
 
@@ -63,7 +62,7 @@ export class UsersController {
   @Post('me/avatar')
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @UploadedFile(
       new ParseFilePipe({
         validators: imageFileValidators(5 * 1024 * 1024), // 5 MB, magic-byte checked
@@ -82,7 +81,7 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  getUser(@Req() req: any, @Param('id') id: string) {
+  getUser(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     // The caller can always see their own full profile.
     if (id === req.user.id) return this.usersService.getProfile(id);
     return this.usersService.getPublicProfile(id);
@@ -94,7 +93,10 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
-  updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto) {
+  updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: UpdateProfileDto,
+  ) {
     return this.usersService.updateProfile(req.user.id, dto);
   }
 
@@ -104,7 +106,10 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Post('me/fcm')
-  updateFcmToken(@Req() req: any, @Body() body: { fcmToken?: string; fcm_token?: string }) {
+  updateFcmToken(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { fcmToken?: string; fcm_token?: string },
+  ) {
     const fcmToken = body.fcmToken ?? body.fcm_token;
     return this.usersService.updateProfile(req.user.id, { fcmToken });
   }
@@ -126,7 +131,7 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Delete('me')
-  deleteMe(@Req() req: any) {
+  deleteMe(@Req() req: AuthenticatedRequest) {
     return this.usersService.deleteAccount(req.user.id);
   }
 
@@ -136,7 +141,7 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('me/export')
-  exportMe(@Req() req: any) {
+  exportMe(@Req() req: AuthenticatedRequest) {
     return this.usersService.exportUserData(req.user.id);
   }
 }

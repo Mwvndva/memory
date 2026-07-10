@@ -5,8 +5,10 @@ import { HeavyOpsProcessor } from './heavy-ops.processor';
 import { UsersModule } from '../users/users.module';
 import { CirclesModule } from '../circles/circles.module';
 import { GatewayModule } from '../gateway/gateway.module';
-import { PushNotificationService } from '../notifications/push-notification.service';
 
+// PushNotificationService and NotificationsService come from the @Global
+// NotificationsModule; providing PushNotificationService here as well would
+// create a second, independent Firebase instance.
 @Global()
 @Module({
   imports: [
@@ -17,8 +19,7 @@ import { PushNotificationService } from '../notifications/push-notification.serv
     forwardRef(() => CirclesModule),
     GatewayModule,
   ],
-  providers: [JobsService, HeavyOpsProcessor, PushNotificationService],
-  exports: [JobsService, PushNotificationService],
+  providers: [JobsService, HeavyOpsProcessor],
+  exports: [JobsService],
 })
 export class JobsModule {}
-

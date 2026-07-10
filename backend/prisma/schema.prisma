@@ -36,6 +36,8 @@ model User {
   receivedMessages    Message[]          @relation("ReceivedMessages")
   userMemberships     CircleMembership[] @relation("UserMemberships")
   memberMemberships   CircleMembership[] @relation("MemberMemberships")
+  notifications       Notification[]
+  comments            Comment[]
 
   // @unique already creates an index for username and email.
   // Extra index on phone for contact-sync lookups.
@@ -76,10 +78,54 @@ model Memory {
   // Relations
   creator   User       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   reactions Reaction[]
+  comments  Comment[]
 
   // Fast lookup: "all memories by creator X, newest first"
   @@index([creatorId, createdAt(sort: Desc)], name: "idx_memories_creator_created")
   @@map("memories")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  memoryId  String   @map("memory_id")
+  authorId  String   @map("author_id")
+  text      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  memory Memory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Fast lookup: "comments on memory X, newest first" (cursor pagination)
+  @@index([memoryId, createdAt(sort: Desc)], name: "idx_comments_memory_created")
+  @@index([authorId], name: "idx_comments_author")
+  @@map("comments")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  /// One of the client's NotificationType names:
+  /// message | reaction | memory | circleRequest | circleMilestone
+  type      String   @db.VarChar(32)
+  title     String   @db.VarChar(200)
+  body      String   @db.Text
+  /// JSON-encoded Record<string, string>. Stored as text rather than Json so
+  /// the shape is identical on every datasource the test harness may use.
+  data      String   @default("{}") @db.Text
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Fast lookup: "my notifications, newest first" (cursor pagination)
+  @@index([userId, createdAt(sort: Desc)], name: "idx_notifications_user_created")
+  // Fast unread badge count
+  @@index([userId, isRead], name: "idx_notifications_unread")
+  @@map("notifications")
 }
 
 model Message {

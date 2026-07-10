@@ -7,7 +7,7 @@ import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/capture/capture.dart';
 import 'package:memory_app/features/circle/circle.dart';
-import '../features/dev/dev_diagnostics.dart';
+import '../features/dev/views/dev_diagnostics.dart';
 import 'package:memory_app/features/notification/notification.dart';
 import 'package:memory_app/shared/widgets/main_app_scaffold.dart';
 import 'theme.dart';
@@ -56,14 +56,21 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // If not authenticated, force them to onboarding/login
       if (!isAuth) {
-        if (path == '/login' || path == '/create' || path == '/avatar' || path == '/contacts') {
+        if (path == '/login' ||
+            path == '/create' ||
+            path == '/avatar' ||
+            path == '/contacts') {
           return null;
         }
         return '/login';
       }
 
       // If authenticated and on onboarding/auth views, redirect to main capture
-      if (path == '/login' || path == '/create' || path == '/avatar' || path == '/contacts' || path == '/') {
+      if (path == '/login' ||
+          path == '/create' ||
+          path == '/avatar' ||
+          path == '/contacts' ||
+          path == '/') {
         return '/capture';
       }
 
@@ -74,10 +81,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/loading',
         builder: (context, state) => const LoadingView(),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginView(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginView()),
       GoRoute(
         path: '/create',
         builder: (context, state) => const CreateAccountView(),
@@ -103,21 +107,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/feed',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: MemoryFeedView(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: MemoryFeedView()),
           ),
           GoRoute(
             path: '/capture',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: CameraCaptureView(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: CameraCaptureView()),
           ),
           GoRoute(
             path: '/circle',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: CircleChatListView(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: CircleChatListView()),
           ),
         ],
       ),
@@ -171,10 +172,7 @@ void showGlobalNotification({
             builder: (context, value, child) {
               return Transform.translate(
                 offset: Offset(0, -60 * (1 - value)),
-                child: Opacity(
-                  opacity: value.clamp(0.0, 1.0),
-                  child: child,
-                ),
+                child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
               );
             },
             child: GestureDetector(
@@ -183,7 +181,10 @@ void showGlobalNotification({
                 onTap();
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: dark ? kBlack : kYellow,
                   borderRadius: BorderRadius.circular(20),
@@ -232,7 +233,9 @@ void showGlobalNotification({
                           Text(
                             body,
                             style: TextStyle(
-                              color: (dark ? kYellow : kBlack).withValues(alpha: 0.7),
+                              color: (dark ? kYellow : kBlack).withValues(
+                                alpha: 0.7,
+                              ),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),

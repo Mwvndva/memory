@@ -31,7 +31,7 @@ class CircleState {
 
 class CircleStateManager extends StateNotifier<CircleState> {
   CircleStateManager(this._ref)
-      : super(const CircleState(circles: [], pendingRequests: [])) {
+    : super(const CircleState(circles: [], pendingRequests: [])) {
     _ref.listen(circlesProvider, (previous, next) {
       state = state.copyWith(circles: next);
     });
@@ -55,18 +55,24 @@ class CircleStateManager extends StateNotifier<CircleState> {
 
   Future<Map<String, dynamic>> inviteMember(String memberId) async {
     final cleanId = memberId.trim().toLowerCase();
-    final username = cleanId.contains('@') ? cleanId.replaceFirst('@', '') : cleanId;
+    final username = cleanId.contains('@')
+        ? cleanId.replaceFirst('@', '')
+        : cleanId;
     final placeholder = CircleMember(
       id: memberId,
       username: username,
-      firstName: username.isNotEmpty ? username[0].toUpperCase() + username.substring(1) : 'Member',
+      firstName: username.isNotEmpty
+          ? username[0].toUpperCase() + username.substring(1)
+          : 'Member',
       relationshipState: RelationshipState.pending,
     );
 
     // Optimistically update the UI to Pending
     state = state.copyWith(
       pendingRequests: [
-        ...state.pendingRequests.where((m) => m.id != memberId && m.username != username),
+        ...state.pendingRequests.where(
+          (m) => m.id != memberId && m.username != username,
+        ),
         placeholder,
       ],
     );
@@ -76,35 +82,45 @@ class CircleStateManager extends StateNotifier<CircleState> {
       if (res['ok'] != true) {
         // Rollback
         state = state.copyWith(
-          pendingRequests: state.pendingRequests.where((m) => m.id != memberId && m.username != username).toList(),
+          pendingRequests: state.pendingRequests
+              .where((m) => m.id != memberId && m.username != username)
+              .toList(),
         );
       }
       return res;
     } catch (e) {
       state = state.copyWith(
-        pendingRequests: state.pendingRequests.where((m) => m.id != memberId && m.username != username).toList(),
+        pendingRequests: state.pendingRequests
+            .where((m) => m.id != memberId && m.username != username)
+            .toList(),
       );
       rethrow;
     }
   }
 
   Future<bool> removeMember(String memberId) async {
-    final res = await _ref.read(circlesProvider.notifier).removeMember(memberId);
+    final res = await _ref
+        .read(circlesProvider.notifier)
+        .removeMember(memberId);
     return res;
   }
 
   Future<bool> acceptRequest(String senderId) async {
-    final res = await _ref.read(pendingRequestsProvider.notifier).acceptRequest(senderId);
+    final res = await _ref
+        .read(pendingRequestsProvider.notifier)
+        .acceptRequest(senderId);
     return res;
   }
 
   Future<bool> declineRequest(String senderId) async {
-    final res = await _ref.read(pendingRequestsProvider.notifier).declineRequest(senderId);
+    final res = await _ref
+        .read(pendingRequestsProvider.notifier)
+        .declineRequest(senderId);
     return res;
   }
 }
 
 final circleStateManagerProvider =
     StateNotifierProvider<CircleStateManager, CircleState>((ref) {
-  return CircleStateManager(ref);
-});
+      return CircleStateManager(ref);
+    });

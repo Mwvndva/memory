@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { errorMessage } from '../common/errors';
 
 // Cache key builders + TTLs for profile reads (see getProfile/getPublicProfile).
 const profileCacheKey = (userId: string) => `profile:${userId}`;
@@ -34,9 +40,11 @@ export function normalizePhone(phone: string): string {
     const digits = phone.replace(/\D/g, '');
     result = phone.startsWith('+') ? `+${digits}` : digits;
   }
-  
+
   if (result.length > 20) {
-    console.warn(`[normalizePhone] Phone number "${phone}" normalized to "${result}" which exceeds 20 characters. Truncating to 20 characters.`);
+    console.warn(
+      `[normalizePhone] Phone number "${phone}" normalized to "${result}" which exceeds 20 characters. Truncating to 20 characters.`,
+    );
     return result.slice(0, 20);
   }
   return result;
@@ -75,6 +83,17 @@ const PUBLIC_USER_SELECT = {
   createdAt: true,
 } as const;
 
+/** Columns `updateProfile` may write. */
+interface ProfileUpdateData {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  phoneNormalized?: string;
+  avatarUrl?: string;
+  fcmToken?: string;
+  country?: string;
+}
+
 @Injectable()
 export class UsersService implements OnModuleInit {
   private readonly logger = new Logger(UsersService.name);
@@ -91,23 +110,31 @@ export class UsersService implements OnModuleInit {
 
     // Backfill normalized phones for legacy users (idempotent, cheap)
     this.backfillNormalizedPhones().catch((err) => {
-      this.logger.error(`[Startup Job] Failed to backfill normalized phone numbers: ${err.message}`);
+      this.logger.error(
+        `[Startup Job] Failed to backfill normalized phone numbers: ${errorMessage(err)}`,
+      );
     });
   }
 
   async backfillNormalizedPhones() {
-    this.logger.log(`[Backfill Job] Checking for users missing normalized phone numbers...`);
+    this.logger.log(
+      `[Backfill Job] Checking for users missing normalized phone numbers...`,
+    );
     const missing = await this.prisma.user.findMany({
-      where: { phoneNormalized: "" },
-      select: { id: true, phone: true }
+      where: { phoneNormalized: '' },
+      select: { id: true, phone: true },
     });
 
     if (missing.length === 0) {
-      this.logger.log(`[Backfill Job] No users require phone normalization backfill.`);
+      this.logger.log(
+        `[Backfill Job] No users require phone normalization backfill.`,
+      );
       return;
     }
 
-    this.logger.log(`[Backfill Job] Found ${missing.length} users needing phone normalization.`);
+    this.logger.log(
+      `[Backfill Job] Found ${missing.length} users needing phone normalization.`,
+    );
 
     const batchSize = 250;
     for (let i = 0; i < missing.length; i += batchSize) {
@@ -116,9 +143,9 @@ export class UsersService implements OnModuleInit {
         batch.map((u) => {
           return this.prisma.user.update({
             where: { id: u.id },
-            data: { phoneNormalized: normalizePhone(u.phone) }
+            data: { phoneNormalized: normalizePhone(u.phone) },
           });
-        })
+        }),
       );
     }
     this.logger.log(`[Backfill Job] Completed phone normalization backfill.`);
@@ -137,7 +164,8 @@ export class UsersService implements OnModuleInit {
   // updateProfile / deleteAccount.
   async getProfile(userId: string) {
     const cacheKey = profileCacheKey(userId);
-    const cached = await this.redis.cacheGetJson<Record<string, unknown>>(cacheKey);
+    const cached =
+      await this.redis.cacheGetJson<Record<string, unknown>>(cacheKey);
     if (cached) return cached;
 
     const user = await this.prisma.user.findUnique({
@@ -158,10 +186,10 @@ export class UsersService implements OnModuleInit {
     const result = {
       ...user,
       stats: {
-        streakDays:     user.streakDays,
+        streakDays: user.streakDays,
         circlePulseDays,
-        countryRank:    user.countryRank,
-        globalRank:     user.globalRank ?? null,
+        countryRank: user.countryRank,
+        globalRank: user.globalRank ?? null,
         flagEmoji,
       },
     };
@@ -174,7 +202,8 @@ export class UsersService implements OnModuleInit {
   // Cached in Redis (120s) — public data changes rarely. Busted on writes.
   async getPublicProfile(userId: string) {
     const cacheKey = publicProfileCacheKey(userId);
-    const cached = await this.redis.cacheGetJson<Record<string, unknown>>(cacheKey);
+    const cached =
+      await this.redis.cacheGetJson<Record<string, unknown>>(cacheKey);
     if (cached) return cached;
 
     const user = await this.prisma.user.findUnique({
@@ -188,9 +217,9 @@ export class UsersService implements OnModuleInit {
     const result = {
       ...user,
       stats: {
-        streakDays:  user.streakDays,
+        streakDays: user.streakDays,
         countryRank: user.countryRank,
-        globalRank:  user.globalRank ?? null,
+        globalRank: user.globalRank ?? null,
         flagEmoji,
       },
     };
@@ -204,7 +233,9 @@ export class UsersService implements OnModuleInit {
    * every user on every profile fetch.
    */
   async recalculateUserStats(userId: string) {
-    this.logger.log(`[Recalculate Stats] Updating streak for userId="${userId}"`);
+    this.logger.log(
+      `[Recalculate Stats] Updating streak for userId="${userId}"`,
+    );
     // 1. Fetch this user's memories for streak calculation
     const memories = await this.prisma.memory.findMany({
       where: { creatorId: userId },
@@ -230,12 +261,16 @@ export class UsersService implements OnModuleInit {
       },
     });
 
-    this.logger.log(`[Recalculate Stats] User streak updated: userId="${userId}" streak=${streak} country=${country}`);
+    this.logger.log(
+      `[Recalculate Stats] User streak updated: userId="${userId}" streak=${streak} country=${country}`,
+    );
   }
 
   // ─── Profile update ────────────────────────────────────────────────────────
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const data: any = {};
+    // The DTO accepts both camelCase and snake_case; this narrows it to the
+    // columns Prisma actually writes.
+    const data: ProfileUpdateData = {};
     if (dto.firstName !== undefined) data.firstName = dto.firstName;
     if (dto.first_name !== undefined) data.firstName = dto.first_name;
     if (dto.lastName !== undefined) data.lastName = dto.lastName;
@@ -250,6 +285,7 @@ export class UsersService implements OnModuleInit {
     if (dto.fcm_token !== undefined) data.fcmToken = dto.fcm_token;
 
     if (data.phone) {
+      // Phone numbers arrive prefixed with a flag emoji, e.g. "🇰🇪 0712…".
       data.country = data.phone.split(' ')[0] || '🇰🇪';
     }
 
@@ -260,7 +296,10 @@ export class UsersService implements OnModuleInit {
     });
 
     // Write-through invalidation so edits are reflected immediately.
-    await this.redis.cacheDel(profileCacheKey(userId), publicProfileCacheKey(userId));
+    await this.redis.cacheDel(
+      profileCacheKey(userId),
+      publicProfileCacheKey(userId),
+    );
 
     const flagEmoji = user.country || user.phone?.split(' ')[0] || '🇰🇪';
     const circlePulseDays = await this._getCirclePulseDays(userId);
@@ -268,17 +307,26 @@ export class UsersService implements OnModuleInit {
     return {
       ...user,
       stats: {
-        streakDays:     user.streakDays,
+        streakDays: user.streakDays,
         circlePulseDays,
-        countryRank:    user.countryRank,
-        globalRank:     user.globalRank ?? null,
+        countryRank: user.countryRank,
+        globalRank: user.globalRank ?? null,
         flagEmoji,
       },
     };
   }
 
   // ─── Search by phone numbers (contact sync) ────────────────────────────────
-  async findByPhones(phones: string[]): Promise<{ id: string; username: string; firstName: string; lastName: string; phone: string; avatarUrl: string | null }[]> {
+  async findByPhones(phones: string[]): Promise<
+    {
+      id: string;
+      username: string;
+      firstName: string;
+      lastName: string;
+      phone: string;
+      avatarUrl: string | null;
+    }[]
+  > {
     // 1. Sanitize input phone numbers (digits only) and normalize them
     const cleanInputs = phones
       .map((p) => normalizePhone(p))
@@ -288,7 +336,14 @@ export class UsersService implements OnModuleInit {
 
     // 2. Fetch users in chunks of 500 to keep the IN query size bounded
     const chunkSize = 500;
-    const matched: { id: string; username: string; firstName: string; lastName: string; phone: string; avatarUrl: string | null }[] = [];
+    const matched: {
+      id: string;
+      username: string;
+      firstName: string;
+      lastName: string;
+      phone: string;
+      avatarUrl: string | null;
+    }[] = [];
 
     for (let i = 0; i < cleanInputs.length; i += chunkSize) {
       const chunk = cleanInputs.slice(i, i + chunkSize);
@@ -440,12 +495,14 @@ export class UsersService implements OnModuleInit {
               globalRank: gRank <= 300000 ? gRank : null,
             },
           });
-        })
+        }),
       );
     }
 
     const duration = Date.now() - startTime;
-    this.logger.log(`[Rankings Job] Global rankings recalculation complete (processed ${allUsers.length} users in ${duration}ms).`);
+    this.logger.log(
+      `[Rankings Job] Global rankings recalculation complete (processed ${allUsers.length} users in ${duration}ms).`,
+    );
   }
 
   // ─── Circle Pulse (private helper) ───────────────────────────────────
@@ -472,8 +529,8 @@ export class UsersService implements OnModuleInit {
         memories.map((m) => {
           const d = new Date(m.createdAt);
           return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-        })
-      )
+        }),
+      ),
     ).sort((a, b) => b.localeCompare(a)); // Descending order (newest first)
 
     if (uniqueDates.length === 0) return 0;
@@ -525,8 +582,8 @@ export class UsersService implements OnModuleInit {
         memories.map((m) => {
           const d = new Date(m.createdAt);
           return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-        })
-      )
+        }),
+      ),
     ).sort((a, b) => b.localeCompare(a));
 
     if (uniqueDates.length === 0) return 0;
@@ -563,8 +620,10 @@ export class UsersService implements OnModuleInit {
   }
 
   async deleteAccount(userId: string) {
-    this.logger.log(`[GDPR Delete] Request to delete account for userId="${userId}"`);
-    
+    this.logger.log(
+      `[GDPR Delete] Request to delete account for userId="${userId}"`,
+    );
+
     // 1. Verify user exists
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -576,7 +635,7 @@ export class UsersService implements OnModuleInit {
     // 2. Anonymize/wipe sensitive fields + Soft-delete associated user data
     const anonymizedEmail = `deleted-${userId}@erasure.example.com`;
     const anonymizedPhone = `del-${userId.slice(0, 12)}`;
-    
+
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: userId },
@@ -618,15 +677,20 @@ export class UsersService implements OnModuleInit {
     });
 
     // Invalidate any cached profile views for this user.
-    await this.redis.cacheDel(profileCacheKey(userId), publicProfileCacheKey(userId));
+    await this.redis.cacheDel(
+      profileCacheKey(userId),
+      publicProfileCacheKey(userId),
+    );
 
-    this.logger.log(`[GDPR Delete] User userId="${userId}" successfully anonymized and soft-deleted.`);
+    this.logger.log(
+      `[GDPR Delete] User userId="${userId}" successfully anonymized and soft-deleted.`,
+    );
     return { success: true, message: 'Account deleted and PII anonymized.' };
   }
 
   async exportUserData(userId: string) {
     this.logger.log(`[GDPR Export] Data export request for userId="${userId}"`);
-    
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -660,26 +724,26 @@ export class UsersService implements OnModuleInit {
         phone: user.phone,
         createdAt: user.createdAt,
       },
-      memories: user.memories.map(m => ({
+      memories: user.memories.map((m) => ({
         id: m.id,
         caption: m.caption,
         videoUrl: m.videoUrl,
         gradientColors: m.gradientColors,
         createdAt: m.createdAt,
       })),
-      sentMessages: user.sentMessages.map(msg => ({
+      sentMessages: user.sentMessages.map((msg) => ({
         id: msg.id,
         receiverId: msg.receiverId,
         text: msg.text,
         timestamp: msg.timestamp,
       })),
-      receivedMessages: user.receivedMessages.map(msg => ({
+      receivedMessages: user.receivedMessages.map((msg) => ({
         id: msg.id,
         senderId: msg.senderId,
         text: msg.text,
         timestamp: msg.timestamp,
       })),
-      circleMemberships: user.userMemberships.map(cm => ({
+      circleMemberships: user.userMemberships.map((cm) => ({
         id: cm.id,
         memberId: cm.memberId,
         accepted: cm.accepted,
@@ -688,4 +752,3 @@ export class UsersService implements OnModuleInit {
     };
   }
 }
-

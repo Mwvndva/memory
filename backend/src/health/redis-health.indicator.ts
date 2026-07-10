@@ -8,7 +8,9 @@ export class RedisHealthIndicator {
 
   async isHealthy(key: string): Promise<HealthIndicatorResult> {
     try {
-      const pong = await this.redisService.getClient().ping();
+      // Typed as string, not the 'PONG' literal: inside the guard below the
+      // literal type narrows to `never` and cannot be interpolated.
+      const pong: string = await this.redisService.getClient().ping();
       if (pong !== 'PONG') {
         throw new Error(`Unexpected Redis ping response: ${pong}`);
       }
@@ -18,4 +20,3 @@ export class RedisHealthIndicator {
     }
   }
 }
-

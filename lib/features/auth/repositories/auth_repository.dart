@@ -24,10 +24,8 @@ class SessionState {
     this.isRestoring = false,
   });
 
-  factory SessionState.empty() => SessionState(
-        isAuthenticated: false,
-        user: UserProfile.empty(),
-      );
+  factory SessionState.empty() =>
+      SessionState(isAuthenticated: false, user: UserProfile.empty());
 
   SessionState copyWith({
     bool? isAuthenticated,
@@ -63,10 +61,12 @@ class SessionManager extends StateNotifier<SessionState> {
 
       if (!mounted) return;
 
-      if (accessToken != null && accessToken.isNotEmpty &&
-          refreshToken != null && refreshToken.isNotEmpty) {
-        
-        final cachedUser = await sessionRepo.getCachedUserProfile() ?? UserProfile.empty();
+      if (accessToken != null &&
+          accessToken.isNotEmpty &&
+          refreshToken != null &&
+          refreshToken.isNotEmpty) {
+        final cachedUser =
+            await sessionRepo.getCachedUserProfile() ?? UserProfile.empty();
 
         if (!mounted) return;
 
@@ -102,7 +102,10 @@ class SessionManager extends StateNotifier<SessionState> {
 
             if (!mounted) return;
 
-            await sessionRepo.saveTokens(tokenDto.accessToken, tokenDto.refreshToken);
+            await sessionRepo.saveTokens(
+              tokenDto.accessToken,
+              tokenDto.refreshToken,
+            );
             updateTokens(tokenDto.accessToken, tokenDto.refreshToken);
 
             final validatedUser = await authService.fetchProfile();
@@ -164,13 +167,22 @@ class SessionManager extends StateNotifier<SessionState> {
       return {'message': 'Use at least 8 characters.', 'ok': false};
     }
     if (!RegExp(r'[A-Z]').hasMatch(pass)) {
-      return {'message': 'Must contain at least one uppercase letter.', 'ok': false};
+      return {
+        'message': 'Must contain at least one uppercase letter.',
+        'ok': false,
+      };
     }
     if (!RegExp(r'[a-z]').hasMatch(pass)) {
-      return {'message': 'Must contain at least one lowercase letter.', 'ok': false};
+      return {
+        'message': 'Must contain at least one lowercase letter.',
+        'ok': false,
+      };
     }
     if (!RegExp(r'[0-9!@#\$%^&*(),.?":{}|<>]').hasMatch(pass)) {
-      return {'message': 'Must contain at least one digit or special character.', 'ok': false};
+      return {
+        'message': 'Must contain at least one digit or special character.',
+        'ok': false,
+      };
     }
     if (pass != confirm) {
       return {'message': 'Passwords do not match.', 'ok': false};
@@ -224,13 +236,15 @@ class SessionManager extends StateNotifier<SessionState> {
           refreshToken: responseDto.tokens!.refreshToken,
         );
       } else {
-        state = SessionState(
-          isAuthenticated: false,
-          user: user,
-        );
+        state = SessionState(isAuthenticated: false, user: user);
       }
 
-      return {'ok': true, 'message': responseDto.message.isNotEmpty ? responseDto.message : 'Registered'};
+      return {
+        'ok': true,
+        'message': responseDto.message.isNotEmpty
+            ? responseDto.message
+            : 'Registered',
+      };
     } catch (e, stack) {
       final mapped = mapException(e, stack);
       return {
@@ -297,7 +311,9 @@ class SessionManager extends StateNotifier<SessionState> {
     if (kUseMockBackend) return;
     try {
       final authService = _ref.read(authServiceProvider);
-      final validatedUser = await authService.fetchProfile(avatarBytes: state.user.avatarBytes);
+      final validatedUser = await authService.fetchProfile(
+        avatarBytes: state.user.avatarBytes,
+      );
       state = state.copyWith(user: validatedUser);
     } catch (e, stack) {
       debugPrint('Failed to fetch profile: $e\n$stack');
@@ -346,7 +362,9 @@ class SessionManager extends StateNotifier<SessionState> {
 }
 
 /// Centralized session state provider
-final sessionProvider = StateNotifierProvider<SessionManager, SessionState>((ref) {
+final sessionProvider = StateNotifierProvider<SessionManager, SessionState>((
+  ref,
+) {
   return SessionManager(ref);
 });
 

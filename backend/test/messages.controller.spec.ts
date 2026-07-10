@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesController } from '../src/messages/messages.controller';
 import { MessagesService } from '../src/messages/messages.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import type { AuthenticatedRequest } from '../src/auth/authenticated-request';
 
 describe('MessagesController', () => {
   let controller: MessagesController;
@@ -9,7 +10,9 @@ describe('MessagesController', () => {
 
   beforeEach(async () => {
     messagesService = {
-      getConversation: jest.fn().mockResolvedValue({ data: [{ id: 'm1', text: 'hi' }], meta: {} }),
+      getConversation: jest
+        .fn()
+        .mockResolvedValue({ data: [{ id: 'm1', text: 'hi' }], meta: {} }),
       markRead: jest.fn().mockResolvedValue(undefined),
     };
 
@@ -31,9 +34,11 @@ describe('MessagesController', () => {
   });
 
   it('should return conversation when either-direction membership exists', async () => {
-    const req: any = { user: { id: 'user-a' } };
+    const req = { user: { id: 'user-a' } } as AuthenticatedRequest;
     const result = await controller.getHistory(req, 'user-b', '1', '50');
-    expect((messagesService.getConversation as jest.Mock).mock.calls.length).toBe(1);
+    expect(
+      (messagesService.getConversation as jest.Mock).mock.calls.length,
+    ).toBe(1);
     expect(result).toHaveProperty('data');
   });
 });

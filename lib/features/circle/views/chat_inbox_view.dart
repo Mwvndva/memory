@@ -4,13 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/core/api_config.dart';
+import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/core/theme.dart';
-
-String _formatTime(DateTime dt) {
-  final hour = dt.hour.toString().padLeft(2, '0');
-  final minute = dt.minute.toString().padLeft(2, '0');
-  return '$hour:$minute';
-}
 
 class ChatInboxView extends ConsumerStatefulWidget {
   const ChatInboxView({super.key, required this.contactName});
@@ -61,13 +56,17 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
       await ref
           .read(chatProvider.notifier)
           .loadConversation(widget.contactName, shouldMarkRead: true);
-    } catch (_) {}
-    if (mounted) setState(() => _loadingHistory = false);
+    } catch (e) {
+      // Surfacing this matters: swallowing it leaves the user staring at an
+      // empty conversation with no indication that loading failed.
+      if (mounted) showAppError(context, 'Could not load messages: $e');
+    }
+    if (!mounted) return;
+    setState(() => _loadingHistory = false);
     // scroll to bottom after loading
     Future.delayed(const Duration(milliseconds: 150), () {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      }
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
   }
 
@@ -77,7 +76,11 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     _scrollController.dispose();
     try {
       ref.read(chatProvider.notifier).exitConversation();
-    } catch (_) {}
+    } catch (e) {
+      // The container can already be torn down during dispose; nothing to
+      // surface to the user at this point, but don't lose the reason.
+      debugPrint('[ChatInbox] exitConversation during dispose failed: $e');
+    }
     super.dispose();
   }
 
@@ -602,202 +605,13 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     }
   }
 
-  Widget _inboxBubble(Message msg, CircleMember member, bool dark) {
-    final mine = msg.isMine;
-    return Align(
-      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Row(
-          mainAxisAlignment: mine
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!mine) ...[
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: dark ? kYellow : kBlack,
-                backgroundImage:
-                    (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(formatImageUrl(member.avatarUrl!))
-                          as ImageProvider
-                    : null,
-                child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
-                    ? Text(
-                        member.firstName.isNotEmpty
-                            ? member.firstName[0].toUpperCase()
-                            : member.username[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 10,
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 8),
-            ],
-            if (mine && msg.isFailed)
-              GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    backgroundColor: kCharcoal,
-                    builder: (ctx) => SafeArea(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ListTile(
-                            leading: const Icon(
-                              Icons.refresh_rounded,
-                              color: Colors.white,
-                            ),
-                            title: const Text(
-                              'Retry sending',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            onTap: () {
-                              Navigator.pop(ctx);
-                              ref
-                                  .read(chatProvider.notifier)
-                                  .retryMessage(widget.contactName, msg.id);
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(
-                              Icons.delete_outline_rounded,
-                              color: Colors.redAccent,
-                            ),
-                            title: const Text(
-                              'Delete message',
-                              style: TextStyle(color: Colors.redAccent),
-                            ),
-                            onTap: () {
-                              Navigator.pop(ctx);
-                              ref
-                                  .read(chatProvider.notifier)
-                                  .deleteMessageOptimistic(
-                                    widget.contactName,
-                                    msg.id,
-                                  );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6.0),
-                  child: Icon(
-                    Icons.error_outline_rounded,
-                    color: Colors.redAccent,
-                    size: 20,
-                  ),
-                ),
-              ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-              constraints: const BoxConstraints(maxWidth: 240),
-              decoration: BoxDecoration(
-                gradient: mine
-                    ? LinearGradient(
-                        colors: dark
-                            ? const [kYellow, Color(0xFFFFD54F)]
-                            : const [kBlack, Color(0xFF2C2C2C)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : LinearGradient(
-                        colors: dark
-                            ? const [kBlack, Color(0xFF1E1E1E)]
-                            : const [Colors.white, kCream],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(20),
-                  topRight: const Radius.circular(20),
-                  bottomLeft: mine
-                      ? const Radius.circular(20)
-                      : const Radius.circular(4),
-                  bottomRight: mine
-                      ? const Radius.circular(4)
-                      : const Radius.circular(20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    msg.text,
-                    style: TextStyle(
-                      color: mine
-                          ? (dark ? kBlack : Colors.white)
-                          : (dark ? kCream : kCharcoal),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _formatTime(msg.timestamp),
-                        style: TextStyle(
-                          color:
-                              (mine
-                                      ? (dark ? kBlack : Colors.white)
-                                      : (dark ? kCream : kCharcoal))
-                                  .withValues(alpha: 0.5),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (mine) ...[
-                        const SizedBox(width: 4),
-                        if (msg.isPending)
-                          const SizedBox(
-                            width: 10,
-                            height: 10,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 1.2,
-                              color: kYellow,
-                            ),
-                          )
-                        else
-                          Icon(
-                            msg.isRead
-                                ? Icons.done_all_rounded
-                                : Icons.done_rounded,
-                            size: 11,
-                            color: dark
-                                ? kBlack.withValues(alpha: 0.5)
-                                : Colors.white.withValues(alpha: 0.5),
-                          ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _inboxBubble(Message msg, CircleMember member, bool dark) =>
+      InboxBubble(
+        msg: msg,
+        member: member,
+        dark: dark,
+        contactName: widget.contactName,
+      );
 
   BoxDecoration _softBackground(bool dark) => BoxDecoration(
     color: dark ? kDarkCream : kCream,
@@ -809,51 +623,4 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   );
 }
 
-class ChatPatternPainter extends CustomPainter {
-  final Color patternColor;
-  ChatPatternPainter({required this.patternColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = patternColor
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
-
-    const double spacing = 40.0;
-
-    // Diagonal lines top-left to bottom-right
-    for (double i = -size.height; i < size.width; i += spacing) {
-      canvas.drawLine(
-        Offset(i, 0),
-        Offset(i + size.height, size.height),
-        paint,
-      );
-    }
-
-    // Diagonal lines top-right to bottom-left
-    for (double i = 0; i < size.width + size.height; i += spacing) {
-      canvas.drawLine(
-        Offset(i, 0),
-        Offset(i - size.height, size.height),
-        paint,
-      );
-    }
-
-    // Small intersection dots
-    final dotPaint = Paint()
-      ..color = patternColor.withValues(alpha: patternColor.a * 1.5)
-      ..style = PaintingStyle.fill;
-
-    for (double x = 0; x < size.width; x += spacing) {
-      for (double y = 0; y < size.height; y += spacing) {
-        canvas.drawCircle(Offset(x, y), 2.0, dotPaint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant ChatPatternPainter oldDelegate) {
-    return oldDelegate.patternColor != patternColor;
-  }
-}
+// Painter moved to widgets/chat_widgets.dart

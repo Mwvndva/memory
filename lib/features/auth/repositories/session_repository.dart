@@ -96,7 +96,7 @@ class SessionRepository {
       await prefs.setString(_usernameKey, profile.username);
       await prefs.setString(_emailKey, profile.email);
       await prefs.setString(_phoneKey, profile.phone);
-      
+
       if (profile.avatarUrl != null) {
         await prefs.setString(_avatarUrlKey, profile.avatarUrl!);
       } else {

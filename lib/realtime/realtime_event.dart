@@ -57,10 +57,7 @@ class TypingEvent extends RealtimeEvent {
 // ─── Read receipts ───────────────────────────────────────────────────────────
 
 class ReadReceiptEvent extends RealtimeEvent {
-  const ReadReceiptEvent({
-    required super.eventId,
-    required this.sender,
-  });
+  const ReadReceiptEvent({required super.eventId, required this.sender});
 
   final String sender;
 }
@@ -95,6 +92,24 @@ class NewReactionEvent extends RealtimeEvent {
   final String emoji;
   final String memoryCaption;
   final String? memoryId;
+}
+
+/// An authoritative reaction count pushed by the server to a memory's audience.
+///
+/// Distinct from [NewReactionEvent]: this is a state update delivered to every
+/// viewer (including the reactor, and on removals), not a notification. Treating
+/// it as one would toast every viewer for their own taps.
+class ReactionUpdateEvent extends RealtimeEvent {
+  const ReactionUpdateEvent({
+    required super.eventId,
+    required this.memoryId,
+    required this.emoji,
+    required this.count,
+  });
+
+  final String memoryId;
+  final String emoji;
+  final int count;
 }
 
 // ─── Circle requests ─────────────────────────────────────────────────────────

@@ -1,6 +1,14 @@
 export 'views/circle_chat_list_view.dart';
 export 'views/chat_inbox_view.dart';
 export 'views/profile_panel.dart';
+export 'views/profile_account_actions.dart';
+export 'views/profile_legal_sheets.dart';
+export 'views/profile_settings_sheets.dart';
+export 'views/profile_share_card.dart';
+export 'widgets/chat_widgets.dart';
+export 'widgets/circle_list_tiles.dart';
+export 'widgets/profile_stat_cards.dart';
+export 'widgets/profile_widgets.dart';
 export 'repositories/circles_repository.dart';
 export 'repositories/chat_repository.dart';
 export 'repositories/message_repositories.dart';

@@ -1,16 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../src/users/users.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { RedisService } from '../src/redis/redis.service';
+import { normalizePhone } from '../src/users/users.service';
+import { MockDelegate } from './prisma-mock';
+
+interface PrismaMock {
+  user: MockDelegate;
+}
+
+interface FindManyArgs {
+  where?: { phoneNormalized?: { in?: string[] } };
+}
 
 describe('UsersService.findByPhones (Optimized Contact Sync)', () => {
   let service: UsersService;
-  let prismaMock: any;
+  let prismaMock: PrismaMock;
 
   beforeEach(async () => {
     prismaMock = {
       user: {
-        findMany: jest.fn().mockImplementation((args) => {
-          const inArray = args?.where?.phoneNormalized?.in || [];
+        findMany: jest.fn().mockImplementation((args: FindManyArgs) => {
+          const inArray: string[] = args?.where?.phoneNormalized?.in ?? [];
           const allUsers = [
             {
               id: 'user-1',
@@ -32,21 +43,30 @@ describe('UsersService.findByPhones (Optimized Contact Sync)', () => {
             },
           ];
           return Promise.resolve(
-            allUsers.filter((u) => inArray.includes(u.phoneNormalized))
+            allUsers.filter((u) => inArray.includes(u.phoneNormalized)),
           );
         }),
       },
+    };
+
+    // UsersService caches profile reads through Redis; a null-returning cache
+    // keeps every lookup falling through to the Prisma mock above.
+    const redisMock = {
+      cacheGetJson: jest.fn().mockResolvedValue(null),
+      cacheSetJson: jest.fn().mockResolvedValue(undefined),
+      cacheDel: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: PrismaService, useValue: prismaMock },
+        { provide: RedisService, useValue: redisMock },
       ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    (service as any).prisma = prismaMock; // inject mock explicitly
+    (service as unknown as { prisma: PrismaMock }).prisma = prismaMock; // inject mock explicitly
   });
 
   it('should query the database using indexed phoneNormalized lookups', async () => {
@@ -61,7 +81,7 @@ describe('UsersService.findByPhones (Optimized Contact Sync)', () => {
             in: ['+254712345678'],
           },
         },
-      })
+      }),
     );
 
     // 2. Assert finding matches Alice (by last 9 digits suffix match)
@@ -74,8 +94,6 @@ describe('UsersService.findByPhones (Optimized Contact Sync)', () => {
   });
 
   describe('normalizePhone helper', () => {
-    const { normalizePhone } = require('../src/users/users.service');
-
     it('should format clean E.164 format correctly', () => {
       expect(normalizePhone('+254712345678')).toBe('+254712345678');
       expect(normalizePhone('+15551234567')).toBe('+15551234567');

@@ -26,12 +26,13 @@ class DownloadRepository {
         await dir.create(recursive: true);
       }
 
-      final fileName = 'memory_video_${memory.id}_${DateTime.now().millisecondsSinceEpoch}.mp4';
+      final fileName =
+          'memory_video_${memory.id}_${DateTime.now().millisecondsSinceEpoch}.mp4';
       final savePath = '${dir.path}/$fileName';
 
       final dio = Dio();
       await dio.download(videoUrl, savePath);
-      
+
       return savePath;
     } catch (e) {
       throw Exception("Failed to download video: $e");

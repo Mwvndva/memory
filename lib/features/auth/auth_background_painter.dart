@@ -12,17 +12,14 @@ class AuthBackgroundPainter extends CustomPainter {
     final rect = Offset.zero & size;
     final radialPaint = Paint()
       ..shader = RadialGradient(
-        colors: [
-          Colors.white.withValues(alpha: 0.35),
-          Colors.transparent,
-        ],
+        colors: [Colors.white.withValues(alpha: 0.35), Colors.transparent],
         center: Alignment.center,
         radius: 1.1,
       ).createShader(rect);
     canvas.drawRect(rect, radialPaint);
 
     // 3. Draw extremely subtle irregular branded texture (ghost shapes and M monograms)
-    final rand = Random(42); 
+    final rand = Random(42);
     final shapesCount = 14;
 
     for (int i = 0; i < shapesCount; i++) {
@@ -51,12 +48,15 @@ class AuthBackgroundPainter extends CustomPainter {
         );
         textPainter.layout();
         // Center alignment translation
-        textPainter.paint(canvas, Offset(-textPainter.width / 2, -textPainter.height / 2));
+        textPainter.paint(
+          canvas,
+          Offset(-textPainter.width / 2, -textPainter.height / 2),
+        );
       } else {
         // Draw simple ghost shape proxy via custom path
         final path = Path();
         final r = scale / 2;
-        
+
         // Draw simple dome top and wavy bottom mascot proxy shape
         path.moveTo(-r, r);
         path.quadraticBezierTo(-r, -r, 0, -r);

@@ -44,10 +44,7 @@ class MockMemoryRepositoryWithErrors extends MemoryRepository {
         );
       }
     }
-    return const FeedPageResult(
-      memories: [_stubItem],
-      nextCursor: null,
-    );
+    return const FeedPageResult(memories: [_stubItem], nextCursor: null);
   }
 }
 
@@ -55,48 +52,58 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() {
-    const secureStorageChannel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(secureStorageChannel, (methodCall) async {
-      return null;
-    });
+    const secureStorageChannel = MethodChannel(
+      'plugins.it_nomads.com/flutter_secure_storage',
+    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorageChannel, (methodCall) async {
+          return null;
+        });
     SharedPreferences.setMockInitialValues({});
   });
 
   group('Feed Recovery Framework Tests', () {
-    test('Initial load network failures map correctly to network recovery category', () async {
-      final sharedPreferences = await SharedPreferences.getInstance();
-      late MockMemoryRepositoryWithErrors mockRepo;
-      
-      final container = ProviderContainer(
-        overrides: [
-          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-          memoryRepositoryProvider.overrideWith((ref) {
-            mockRepo = MockMemoryRepositoryWithErrors(ref);
-            mockRepo.failNext = true; // Set early to fail during init fetch
-            return mockRepo;
-          }),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'Initial load network failures map correctly to network recovery category',
+      () async {
+        final sharedPreferences = await SharedPreferences.getInstance();
+        late MockMemoryRepositoryWithErrors mockRepo;
 
-      // Listen to feedProvider to catch any async uncaught exceptions during read
-      container.listen(feedProvider, (previous, next) {}, onError: (err, stack) {});
+        final container = ProviderContainer(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+            memoryRepositoryProvider.overrideWith((ref) {
+              mockRepo = MockMemoryRepositoryWithErrors(ref);
+              mockRepo.failNext = true; // Set early to fail during init fetch
+              return mockRepo;
+            }),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      try {
-        container.read(feedProvider.notifier);
-      } catch (_) {}
-      await pumpEventQueue();
+        // Listen to feedProvider to catch any async uncaught exceptions during read
+        container.listen(
+          feedProvider,
+          (previous, next) {},
+          onError: (err, stack) {},
+        );
 
-      final state = container.read(feedProvider);
-      expect(state.status, equals(FeedLoadStatus.error));
-      expect(state.errorCategory, equals(FeedErrorCategory.network));
-      expect(state.isOffline, isTrue);
-    });
+        try {
+          container.read(feedProvider.notifier);
+        } catch (_) {}
+        await pumpEventQueue();
+
+        final state = container.read(feedProvider);
+        expect(state.status, equals(FeedLoadStatus.error));
+        expect(state.errorCategory, equals(FeedErrorCategory.network));
+        expect(state.isOffline, isTrue);
+      },
+    );
 
     test('Refresh failure preserves the existing loaded memory list', () async {
       final sharedPreferences = await SharedPreferences.getInstance();
       late MockMemoryRepositoryWithErrors mockRepo;
-      
+
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
@@ -128,7 +135,11 @@ void main() {
 
       // State status error but memories are retained
       final state = container.read(feedProvider);
-      expect(state.memories.length, 1, reason: 'Feed list must not be cleared on refresh failures');
+      expect(
+        state.memories.length,
+        1,
+        reason: 'Feed list must not be cleared on refresh failures',
+      );
       expect(state.errorCategory, equals(FeedErrorCategory.network));
     });
   });

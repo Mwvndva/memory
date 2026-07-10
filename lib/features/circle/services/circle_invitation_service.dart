@@ -14,22 +14,32 @@ class CircleInvitationService {
     }
     final dio = _ref.read(apiClientProvider);
     try {
-      final resp = await dio.post('/circles/requests', data: {'memberId': memberId});
+      final resp = await dio.post(
+        '/circles/requests',
+        data: {'memberId': memberId},
+      );
       final data = resp.data;
       return {
         'ok': true,
-        'message': data is Map && data['message'] != null ? data['message'] : 'Request sent',
+        'message': data is Map && data['message'] != null
+            ? data['message']
+            : 'Request sent',
         'status': resp.statusCode,
       };
     } catch (e, stack) {
       if (e is DioException && e.response?.statusCode == 404) {
         // Fallback to older circles/members endpoint
         try {
-          final response = await dio.post('/circles/members', data: {'memberId': memberId});
+          final response = await dio.post(
+            '/circles/members',
+            data: {'memberId': memberId},
+          );
           final data = response.data;
           return {
             'ok': true,
-            'message': data is Map && data['message'] != null ? data['message'] : 'Member added',
+            'message': data is Map && data['message'] != null
+                ? data['message']
+                : 'Member added',
             'status': response.statusCode,
           };
         } catch (e2, stack2) {
@@ -84,6 +94,8 @@ class CircleInvitationService {
   }
 }
 
-final circleInvitationServiceProvider = Provider<CircleInvitationService>((ref) {
+final circleInvitationServiceProvider = Provider<CircleInvitationService>((
+  ref,
+) {
   return CircleInvitationService(ref);
 });

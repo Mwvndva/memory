@@ -15,8 +15,6 @@ import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/media/playback_coordinator.dart';
 
-
-
 class MemoryFeedView extends ConsumerStatefulWidget {
   const MemoryFeedView({super.key});
 
@@ -24,7 +22,12 @@ class MemoryFeedView extends ConsumerStatefulWidget {
   ConsumerState<MemoryFeedView> createState() => _MemoryFeedViewState();
 }
 
-class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBindingObserver {
+/// Namespace for this view's [PlaybackCoordinator] keys, so the feed can
+/// release its own controllers without touching anyone else's.
+const String _feedVideoKeyPrefix = 'feed_video_';
+
+class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
+    with WidgetsBindingObserver {
   int _activeMemoryIndex = 0;
   bool _composerOpen = false;
   bool _gridOpen = false;
@@ -33,9 +36,21 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
   VideoPlayerController? _feedVideoController;
   int? _enqueuedIndex;
   bool _isMuted = false;
-  bool _feedReady = false; // gates gradient: prevents purple flash before first video init
+  bool _feedReady =
+      false; // gates gradient: prevents purple flash before first video init
 
   final ScrollController _gridScrollController = ScrollController();
+  final PageController _pageController = PageController();
+
+  /// Moves the feed PageView to [index] after the current frame, once the
+  /// PageView has rebuilt with the item count for the list it is showing.
+  /// Jumping synchronously can target an index the old list does not contain.
+  void _syncPageTo(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_pageController.hasClients) return;
+      _pageController.jumpToPage(index);
+    });
+  }
 
   @override
   void initState() {
@@ -45,7 +60,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     Future.microtask(() {
       if (mounted) {
         ref.read(sessionProvider.notifier).fetchProfile();
-        ref.read(feedProvider.notifier).fetchFeed(force: true).catchError((err) {
+        ref.read(feedProvider.notifier).fetchFeed(force: true).catchError((
+          err,
+        ) {
           if (mounted && context.mounted) {
             showAppError(context, err.toString());
           }
@@ -59,13 +76,16 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     if (state == AppLifecycleState.resumed) {
       final feedState = ref.read(feedProvider);
       final lastRefresh = feedState.lastRefreshTime;
-      
+
       // Automatic Refresh: staleness limit is set to 5 minutes (300 seconds)
-      final bool isStale = lastRefresh == null || 
+      final bool isStale =
+          lastRefresh == null ||
           DateTime.now().difference(lastRefresh).inSeconds > 300;
 
       if (isStale) {
-        ref.read(feedProvider.notifier).fetchFeed(force: true).catchError((err) {
+        ref.read(feedProvider.notifier).fetchFeed(force: true).catchError((
+          err,
+        ) {
           debugPrint('Silent lifecycle refresh failed: $err');
         });
       }
@@ -87,17 +107,16 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     WidgetsBinding.instance.removeObserver(this);
     _gridScrollController.removeListener(_onGridScroll);
     _gridScrollController.dispose();
+    _pageController.dispose();
     // Do not call _feedVideoController?.dispose() directly here since
     // PlaybackCoordinator owns the controller and manages its caching and disposal.
     // Pause the active key to stop audio/video resource consumption cleanly on exit.
     if (_enqueuedIndex != null) {
-      final key = 'feed_video_$_enqueuedIndex';
+      final key = '$_feedVideoKeyPrefix$_enqueuedIndex';
       ref.read(playbackCoordinatorProvider).pause(key);
     }
     super.dispose();
   }
-
-
 
   void _setGridOpen(bool open) {
     setState(() {
@@ -116,7 +135,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
 
     if (m.videoPath == null || m.videoPath!.isEmpty) {
       // No video — mark ready immediately so the gradient/caption shows
-      if (mounted) setState(() { _feedReady = true; });
+      if (mounted) {
+        setState(() {
+          _feedReady = true;
+        });
+      }
       return;
     }
 
@@ -124,11 +147,15 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     final coordinator = ref.read(playbackCoordinatorProvider);
 
     try {
-      final key = 'feed_video_$index';
+      final key = '$_feedVideoKeyPrefix$index';
       final controller = await coordinator.getOrCreateController(key, path);
 
       if (controller == null) {
-        if (mounted) setState(() { _feedReady = true; });
+        if (mounted) {
+          setState(() {
+            _feedReady = true;
+          });
+        }
         return;
       }
 
@@ -139,10 +166,23 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
           _feedReady = true;
         });
         coordinator.play(key);
+
+        // Only the active memory's controller is ever rendered, so every other
+        // feed controller is a decoder held open for nothing. Release them once
+        // the new one is live.
+        coordinator.releaseControllersWhere(
+          (k) => k.startsWith(_feedVideoKeyPrefix) && k != key,
+        );
       }
     } catch (e) {
-      debugPrint('Error initializing feed video at index $index via PlaybackCoordinator: $e');
-      if (mounted) setState(() { _feedReady = true; });
+      debugPrint(
+        'Error initializing feed video at index $index via PlaybackCoordinator: $e',
+      );
+      if (mounted) {
+        setState(() {
+          _feedReady = true;
+        });
+      }
     }
   }
 
@@ -158,7 +198,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.paddingOf(context).bottom,
+          ),
           child: Container(
             margin: const EdgeInsets.fromLTRB(18, 18, 18, 18),
             padding: const EdgeInsets.all(22),
@@ -196,12 +238,18 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFFF058A0), Color(0xFFBD3EFF), Color(0xFFFF6B00)],
+                              colors: [
+                                Color(0xFFF058A0),
+                                Color(0xFFBD3EFF),
+                                Color(0xFFFF6B00),
+                              ],
                             ),
                             borderRadius: BorderRadius.circular(999),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFF058A0).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFFF058A0,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -210,7 +258,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+                              Icon(
+                                Icons.camera_alt_rounded,
+                                color: Colors.white,
+                                size: 15,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'Instagram',
@@ -246,7 +298,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                             borderRadius: BorderRadius.circular(999),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF25D366).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFF25D366,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -255,7 +309,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 15),
+                              Icon(
+                                Icons.chat_bubble_rounded,
+                                color: Colors.white,
+                                size: 15,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'WhatsApp',
@@ -358,7 +416,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
+                      isOffline
+                          ? Icons.wifi_off_rounded
+                          : Icons.error_outline_rounded,
                       size: 76,
                       color: dark ? kBlack : kCharcoal,
                     ),
@@ -383,7 +443,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 12,
+                        ),
                       ),
                       onPressed: () {
                         ref.read(feedProvider.notifier).retryCurrentFailure();
@@ -429,7 +492,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: (dark ? kYellow : kBlack).withValues(alpha: 0.4),
+                            color: (dark ? kYellow : kBlack).withValues(
+                              alpha: 0.4,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -446,7 +511,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                   Text(
                     'invite friends to share memories',
                     style: TextStyle(
-                      color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                      color: dark
+                          ? kCream.withValues(alpha: 0.8)
+                          : kCharcoal.withValues(alpha: 0.8),
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -486,9 +553,13 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    isOffline ? Icons.wifi_off_rounded : Icons.history_toggle_off_rounded,
+                    isOffline
+                        ? Icons.wifi_off_rounded
+                        : Icons.history_toggle_off_rounded,
                     size: 76,
-                    color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                    color: dark
+                        ? kCream.withValues(alpha: 0.8)
+                        : kCharcoal.withValues(alpha: 0.8),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -497,7 +568,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                         : 'no memories posted in last 24hrs',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                      color: dark
+                          ? kCream.withValues(alpha: 0.8)
+                          : kCharcoal.withValues(alpha: 0.8),
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       height: 1.4,
@@ -517,7 +590,6 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     final activeIndex = isEmptyFeed ? 0 : _activeMemoryIndex % listToUse.length;
     final m = isEmptyFeed ? null : listToUse[activeIndex];
 
-
     // Trigger video initialization if active index changed
     if (!isEmptyFeed && m != null && activeIndex != _enqueuedIndex) {
       _enqueuedIndex = activeIndex;
@@ -525,9 +597,6 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
         _initFeedVideo(m, activeIndex);
       });
     }
-
-    // Phase 5: Structured vertical PageView swipe pagination snapping cleanly between memories
-    final PageController pageController = PageController(initialPage: activeIndex);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -544,12 +613,12 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
             Positioned.fill(
               child: PageView.builder(
                 scrollDirection: Axis.vertical,
-                controller: pageController,
+                controller: _pageController,
                 itemCount: listToUse.length,
                 onPageChanged: (idx) {
                   // Pause old video controller before switching pages
                   if (_enqueuedIndex != null && _enqueuedIndex != idx) {
-                    final oldKey = 'feed_video_$_enqueuedIndex';
+                    final oldKey = '$_feedVideoKeyPrefix$_enqueuedIndex';
                     ref.read(playbackCoordinatorProvider).pause(oldKey);
                   }
                   setState(() {
@@ -559,9 +628,14 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                 },
                 itemBuilder: (context, index) {
                   final item = listToUse[index];
-                  final showCap = item.caption.isNotEmpty &&
-                      !(item.caption.startsWith('http://') || item.caption.startsWith('https://')) &&
-                      !(item.videoPath != null && item.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized));
+                  final showCap =
+                      item.caption.isNotEmpty &&
+                      !(item.caption.startsWith('http://') ||
+                          item.caption.startsWith('https://')) &&
+                      !(item.videoPath != null &&
+                          item.videoPath!.isNotEmpty &&
+                          (_feedVideoController == null ||
+                              !_feedVideoController!.value.isInitialized));
                   return Center(
                     child: Padding(
                       padding: EdgeInsets.only(
@@ -581,7 +655,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                                   borderRadius: BorderRadius.circular(74.0),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFFFADA5E).withValues(alpha: 0.14),
+                                      color: const Color(
+                                        0xFFFADA5E,
+                                      ).withValues(alpha: 0.14),
                                       blurRadius: 28,
                                       spreadRadius: 2,
                                     ),
@@ -615,129 +691,130 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                 'No active memories in the last 24h.\nTap the grid icon to view history.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: dark ? kCream.withValues(alpha: 0.8) : kCharcoal.withValues(alpha: 0.8),
+                  color: dark
+                      ? kCream.withValues(alpha: 0.8)
+                      : kCharcoal.withValues(alpha: 0.8),
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   height: 1.4,
                 ),
               ),
             ),
+          Positioned(
+            top: top + 16,
+            left: 22,
+            child: _roundIcon(Icons.arrow_back_ios_new_rounded, () {
+              if (_fromGrid && !_gridOpen) {
+                _feedVideoController?.pause();
+                _setGridOpen(true);
+              } else {
+                _feedVideoController?.pause();
+                context.go('/capture');
+              }
+            }),
+          ),
+          if (!_gridOpen) ...[
             Positioned(
               top: top + 16,
-              left: 22,
+              right: 22,
               child: _roundIcon(
-                Icons.arrow_back_ios_new_rounded,
-                () {
-                  if (_fromGrid && !_gridOpen) {
-                    _feedVideoController?.pause();
-                    _setGridOpen(true);
-                  } else {
-                    _feedVideoController?.pause();
-                    context.go('/capture');
-                  }
-                },
+                Icons.grid_view_rounded,
+                () => _setGridOpen(true),
               ),
             ),
-             if (!_gridOpen) ...[
-               Positioned(
-                 top: top + 16,
-                 right: 22,
-                 child: _roundIcon(
-                   Icons.grid_view_rounded,
-                   () => _setGridOpen(true),
-                 ),
-               ),
-               if (!isEmptyFeed)
-                 Positioned(
-                   top: top + 16,
-                   right: 78,
-                   child: _roundIcon(
-                     _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                     () {
-                       setState(() {
-                         _isMuted = !_isMuted;
-                         _feedVideoController?.setVolume(_isMuted ? 0.0 : 1.0);
-                       });
-                     },
-                   ),
-                 ),
-             ],
-            if (!isEmptyFeed && m != null)
+            if (!isEmptyFeed)
               Positioned(
-                top: top + 24,
-                left: 0,
-                right: 0,
-                child: TweenAnimationBuilder<double>(
-                  key: ValueKey('header_${m.person}_${m.caption}'),
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 450),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) => Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, -15 * (1 - value)),
-                      child: child,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: m.avatar,
-                        backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty
-                            ? NetworkImage(formatImageUrl(m.avatarUrl!)) as ImageProvider
-                            : null,
-                        child: m.avatarUrl == null || m.avatarUrl!.isEmpty
-                            ? Text(
-                                m.initial,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        m.person,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-                        ),
-                      ),
-                      Text(
-                        m.time,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            if (_gridOpen)
-              Positioned.fill(
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) => Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, 50 * (1 - value)),
-                      child: child,
-                    ),
-                  ),
-                  child: _memoryGrid(archivedMemories, dark),
+                top: top + 16,
+                right: 78,
+                child: _roundIcon(
+                  _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                  () {
+                    setState(() {
+                      _isMuted = !_isMuted;
+                      _feedVideoController?.setVolume(_isMuted ? 0.0 : 1.0);
+                    });
+                  },
                 ),
               ),
           ],
-        ),
+          if (!isEmptyFeed && m != null)
+            Positioned(
+              top: top + 24,
+              left: 0,
+              right: 0,
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey('header_${m.person}_${m.caption}'),
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 450),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) => Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, -15 * (1 - value)),
+                    child: child,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: m.avatar,
+                      backgroundImage:
+                          m.avatarUrl != null && m.avatarUrl!.isNotEmpty
+                          ? NetworkImage(formatImageUrl(m.avatarUrl!))
+                                as ImageProvider
+                          : null,
+                      child: m.avatarUrl == null || m.avatarUrl!.isEmpty
+                          ? Text(
+                              m.initial,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      m.person,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                      ),
+                    ),
+                    Text(
+                      m.time,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (_gridOpen)
+            Positioned.fill(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) => Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, 50 * (1 - value)),
+                    child: child,
+                  ),
+                ),
+                child: _memoryGrid(archivedMemories, dark),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -760,17 +837,12 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
           child: const SizedBox.expand(),
         ),
         // Adaptive brightness overlay
-        Container(
-          color: Colors.black.withValues(alpha: 0.68),
-        ),
+        Container(color: Colors.black.withValues(alpha: 0.68)),
         // Vignette overlay
         Container(
           decoration: const BoxDecoration(
             gradient: RadialGradient(
-              colors: [
-                Colors.transparent,
-                Colors.black87,
-              ],
+              colors: [Colors.transparent, Colors.black87],
               center: Alignment.center,
               radius: 1.1,
             ),
@@ -784,7 +856,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
     if (!_feedReady) {
       return Container(color: Colors.black);
     }
-    if (m.videoPath != null && m.videoPath!.isNotEmpty && (_feedVideoController == null || !_feedVideoController!.value.isInitialized)) {
+    if (m.videoPath != null &&
+        m.videoPath!.isNotEmpty &&
+        (_feedVideoController == null ||
+            !_feedVideoController!.value.isInitialized)) {
       return Container(
         color: Colors.black,
         child: Center(
@@ -792,7 +867,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
         ),
       );
     }
-    if (_feedVideoController != null && _feedVideoController!.value.isInitialized) {
+    if (_feedVideoController != null &&
+        _feedVideoController!.value.isInitialized) {
       return FittedBox(
         fit: BoxFit.cover,
         child: SizedBox(
@@ -840,7 +916,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                 child: Text(
                   'No archived memories yet.\nMemories older than 24h will appear here.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ),
@@ -854,7 +934,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
-        if ((details.primaryVelocity ?? 0) < 0) setState(() => _gridOpen = false);
+        if ((details.primaryVelocity ?? 0) < 0) {
+          setState(() => _gridOpen = false);
+        }
       },
       child: Container(
         color: dark ? kBlack : kYellow,
@@ -881,6 +963,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                       _fromGrid = false;
                       _activeMemoryIndex = 0;
                     });
+                    _syncPageTo(0);
                   }
                 }, dark),
               ],
@@ -900,7 +983,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                   final m = gridItems[i];
                   return TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 200 + (i * 30)), // Staggered scale-in!
+                    duration: Duration(
+                      milliseconds: 200 + (i * 30),
+                    ), // Staggered scale-in!
                     curve: Curves.easeOutBack,
                     builder: (context, value, child) => Transform.scale(
                       scale: value,
@@ -915,6 +1000,7 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                           _fromGrid = true;
                           _activeMemoryIndex = i;
                         });
+                        _syncPageTo(i);
                         _setGridOpen(false);
                       },
                       child: ClipRRect(
@@ -945,10 +1031,14 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                               child: CircleAvatar(
                                 radius: 11,
                                 backgroundColor: m.avatar,
-                                backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty
-                                    ? NetworkImage(formatImageUrl(m.avatarUrl!)) as ImageProvider
+                                backgroundImage:
+                                    m.avatarUrl != null &&
+                                        m.avatarUrl!.isNotEmpty
+                                    ? NetworkImage(formatImageUrl(m.avatarUrl!))
+                                          as ImageProvider
                                     : null,
-                                child: m.avatarUrl == null || m.avatarUrl!.isEmpty
+                                child:
+                                    m.avatarUrl == null || m.avatarUrl!.isEmpty
                                     ? Text(
                                         m.initial,
                                         style: const TextStyle(
@@ -975,11 +1065,14 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      ref.watch(feedProvider).errorCategory == FeedErrorCategory.network
+                      ref.watch(feedProvider).errorCategory ==
+                              FeedErrorCategory.network
                           ? 'Connection lost. '
                           : 'Load failed. ',
                       style: TextStyle(
-                        color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                        color: dark
+                            ? kCream.withValues(alpha: 0.6)
+                            : kCharcoal.withValues(alpha: 0.6),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1028,7 +1121,9 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
               child: Text(
                 'Send ${m.person} a message',
                 style: TextStyle(
-                  color: dark ? kCream.withValues(alpha: 0.6) : kCharcoal.withValues(alpha: 0.6),
+                  color: dark
+                      ? kCream.withValues(alpha: 0.6)
+                      : kCharcoal.withValues(alpha: 0.6),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1066,7 +1161,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
 
     // Phase 3: Existing reaction style check
     // If the user has already reacted (any of the reaction counts are > 0), display only the selected one.
-    final userReactions = m.reactions.entries.where((e) => e.value > 0).map((e) => e.key).toList();
+    final userReactions = m.reactions.entries
+        .where((e) => e.value > 0)
+        .map((e) => e.key)
+        .toList();
     if (userReactions.isNotEmpty) {
       final selectedEmoji = userReactions.first;
       return Center(
@@ -1077,7 +1175,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
             decoration: BoxDecoration(
               color: (dark ? kBlack : Colors.white).withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: kYellow.withValues(alpha: 0.3), width: 1.5),
+              border: Border.all(
+                color: kYellow.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1131,23 +1232,34 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                   context: context,
                   builder: (ctx) => AlertDialog(
                     backgroundColor: dark ? kBlack : Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     title: Text(
                       'React to ${m.person}',
-                      style: TextStyle(color: dark ? Colors.white : kCharcoal, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: dark ? Colors.white : kCharcoal,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     content: Wrap(
                       spacing: 12,
                       runSpacing: 12,
-                      children: ['👍', '🎉', '💡', '😍', '👏', '🤔', '👀', '🥳'].map((emoji) {
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.pop(ctx);
-                            sendQuickReaction(emoji);
-                          },
-                          child: Text(emoji, style: const TextStyle(fontSize: 32)),
-                        );
-                      }).toList(),
+                      children: ['👍', '🎉', '💡', '😍', '👏', '🤔', '👀', '🥳']
+                          .map((emoji) {
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                sendQuickReaction(emoji);
+                              },
+                              child: Text(
+                                emoji,
+                                style: const TextStyle(fontSize: 32),
+                              ),
+                            );
+                          })
+                          .toList(),
                     ),
                   ),
                 );
@@ -1159,7 +1271,11 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
                   color: dark ? Colors.white10 : Colors.black12,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.add, color: dark ? kCream : kCharcoal, size: 16),
+                child: Icon(
+                  Icons.add,
+                  color: dark ? kCream : kCharcoal,
+                  size: 16,
+                ),
               ),
             ),
           ],
@@ -1169,23 +1285,24 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
   }
 
   Widget _emojiButton(String emoji, Function(String) onTap) => BouncyTap(
-        // Punchier pop for the signature reaction tap; keep the medium haptic.
-        haptic: false,
-        pressedScale: 0.78,
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          onTap(emoji);
-        },
-        child: SizedBox(
-          width: 44,
-          height: 36,
-          child: Center(
-            child: Text(emoji, style: const TextStyle(fontSize: 28, height: 1)),
-          ),
-        ),
-      );
+    // Punchier pop for the signature reaction tap; keep the medium haptic.
+    haptic: false,
+    pressedScale: 0.78,
+    onTap: () {
+      HapticFeedback.mediumImpact();
+      onTap(emoji);
+    },
+    child: SizedBox(
+      width: 44,
+      height: 36,
+      child: Center(
+        child: Text(emoji, style: const TextStyle(fontSize: 28, height: 1)),
+      ),
+    ),
+  );
 
-  Widget _roundIcon(IconData icon, VoidCallback onTap, {int badgeCount = 0}) => BouncyTap(
+  Widget _roundIcon(IconData icon, VoidCallback onTap, {int badgeCount = 0}) =>
+      BouncyTap(
         onTap: onTap,
         child: Stack(
           clipBehavior: Clip.none,
@@ -1230,20 +1347,19 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView> with WidgetsBin
       );
 
   Widget _smallClose(VoidCallback onTap, bool dark) => BouncyTap(
-        onTap: onTap,
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: dark ? kDarkCream : kCream,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.close_rounded,
-            color: dark ? kCream : kCharcoal,
-            size: 18,
-          ),
-        ),
-      );
+    onTap: onTap,
+    child: Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: dark ? kDarkCream : kCream,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.close_rounded,
+        color: dark ? kCream : kCharcoal,
+        size: 18,
+      ),
+    ),
+  );
 }
-

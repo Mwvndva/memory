@@ -26,4 +26,3 @@ describe('auth normalization', () => {
     expect(normalizePhone('0712 345 678')).toBe('+254712345678');
   });
 });
-
