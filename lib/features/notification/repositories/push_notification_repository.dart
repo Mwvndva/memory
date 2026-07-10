@@ -24,7 +24,8 @@ class PushNotificationRepository {
       if (next.isAuthenticated && !(previous?.isAuthenticated ?? false)) {
         registerDeviceToken();
         _subscribeToMessages();
-      } else if (!next.isAuthenticated && (previous?.isAuthenticated ?? false)) {
+      } else if (!next.isAuthenticated &&
+          (previous?.isAuthenticated ?? false)) {
         _unsubscribe();
       }
     });
@@ -38,7 +39,10 @@ class PushNotificationRepository {
   }
 
   Future<void> registerDeviceToken() async {
-    if (kIsWeb) return; // Push notifications are mobile-only for this app config
+    // Push notifications are mobile-only for this app config
+    if (kIsWeb) {
+      return;
+    }
 
     try {
       final messaging = FirebaseMessaging.instance;
@@ -59,7 +63,9 @@ class PushNotificationRepository {
 
         // 3. Listen to token refreshes
         _tokenRefreshSubscription?.cancel();
-        _tokenRefreshSubscription = messaging.onTokenRefresh.listen((newToken) async {
+        _tokenRefreshSubscription = messaging.onTokenRefresh.listen((
+          newToken,
+        ) async {
           await _uploadToken(newToken);
         });
       }
@@ -71,9 +77,7 @@ class PushNotificationRepository {
   Future<void> _uploadToken(String token) async {
     try {
       final dio = _ref.read(apiClientProvider);
-      await dio.post('/users/me/fcm', data: {
-        'fcmToken': token,
-      });
+      await dio.post('/users/me/fcm', data: {'fcmToken': token});
       debugPrint('Firebase FCM device token registered successfully.');
     } catch (e) {
       debugPrint('Failed to upload FCM device token to backend: $e');
@@ -85,18 +89,18 @@ class PushNotificationRepository {
 
     try {
       _foregroundMessageSubscription?.cancel();
-      _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen((
+        RemoteMessage message,
+      ) {
         final notification = message.notification;
         if (notification != null) {
           final title = notification.title ?? 'Memory Alert';
           final body = notification.body ?? '';
 
           // Route to the Notification State Manager
-          _ref.read(notificationProvider.notifier).handlePushNotification(
-            title,
-            body,
-            message.data,
-          );
+          _ref
+              .read(notificationProvider.notifier)
+              .handlePushNotification(title, body, message.data);
 
           showGlobalNotification(
             title: title,
@@ -135,8 +139,10 @@ class PushNotificationRepository {
   }
 }
 
-final pushNotificationRepositoryProvider = Provider<PushNotificationRepository>((ref) {
-  final repo = PushNotificationRepository(ref);
-  ref.onDispose(() => repo.dispose());
-  return repo;
-});
+final pushNotificationRepositoryProvider = Provider<PushNotificationRepository>(
+  (ref) {
+    final repo = PushNotificationRepository(ref);
+    ref.onDispose(() => repo.dispose());
+    return repo;
+  },
+);

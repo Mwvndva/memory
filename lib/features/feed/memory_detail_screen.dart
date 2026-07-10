@@ -8,10 +8,7 @@ import 'package:memory_app/features/auth/auth.dart';
 class MemoryDetailScreen extends ConsumerStatefulWidget {
   final String memoryId;
 
-  const MemoryDetailScreen({
-    super.key,
-    required this.memoryId,
-  });
+  const MemoryDetailScreen({super.key, required this.memoryId});
 
   @override
   ConsumerState<MemoryDetailScreen> createState() => _MemoryDetailScreenState();
@@ -51,23 +48,39 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: kCharcoal,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Memory', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text('Are you sure you want to permanently delete this memory? This cannot be undone.',
-            style: TextStyle(color: Colors.white70)),
+        title: const Text(
+          'Delete Memory',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Are you sure you want to permanently delete this memory? This cannot be undone.',
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white38),
+            ),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final success = await ref.read(memoryDetailProvider(widget.memoryId).notifier).deleteMemory();
+              final success = await ref
+                  .read(memoryDetailProvider(widget.memoryId).notifier)
+                  .deleteMemory();
               if (success && mounted) {
                 context.pop();
               }
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -79,21 +92,27 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     final detailState = ref.watch(memoryDetailProvider(widget.memoryId));
     final dark = ref.watch(isDarkProvider);
 
-    if (detailState.status == MemoryDetailLoadStatus.loading && detailState.memory == null) {
+    if (detailState.status == MemoryDetailLoadStatus.loading &&
+        detailState.memory == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(child: CircularProgressIndicator(color: kYellow)),
       );
     }
 
-    if (detailState.status == MemoryDetailLoadStatus.error && detailState.memory == null) {
+    if (detailState.status == MemoryDetailLoadStatus.error &&
+        detailState.memory == null) {
       return Scaffold(
         backgroundColor: Colors.black,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 64),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: Colors.redAccent,
+                size: 64,
+              ),
               const SizedBox(height: 16),
               Text(
                 detailState.errorMessage ?? 'An error occurred',
@@ -103,10 +122,15 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  ref.read(memoryDetailProvider(widget.memoryId).notifier).loadMemory();
+                  ref
+                      .read(memoryDetailProvider(widget.memoryId).notifier)
+                      .loadMemory();
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: kYellow),
-                child: const Text('Retry', style: TextStyle(color: Colors.black)),
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(color: Colors.black),
+                ),
               ),
             ],
           ),
@@ -122,42 +146,64 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: dark ? Colors.white : kCharcoal),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: dark ? Colors.white : kCharcoal,
+          ),
           onPressed: () => context.pop(),
         ),
         actions: [
           if (m.username == ref.watch(sessionProvider).user.username)
             IconButton(
-              icon: Icon(Icons.download_rounded, color: dark ? Colors.white : kCharcoal),
+              icon: Icon(
+                Icons.download_rounded,
+                color: dark ? Colors.white : kCharcoal,
+              ),
               onPressed: () async {
                 try {
-                  final path = await ref.read(downloadRepositoryProvider).downloadMemoryVideo(m);
+                  final path = await ref
+                      .read(downloadRepositoryProvider)
+                      .downloadMemoryVideo(m);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Video downloaded successfully to: $path')),
+                      SnackBar(
+                        content: Text(
+                          'Video downloaded successfully to: $path',
+                        ),
+                      ),
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString())),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(e.toString())));
                   }
                 }
               },
             ),
           // Deletion and Editing permissions: only owner can edit/delete
           IconButton(
-            icon: Icon(Icons.edit_rounded, color: dark ? Colors.white : kCharcoal),
+            icon: Icon(
+              Icons.edit_rounded,
+              color: dark ? Colors.white : kCharcoal,
+            ),
             onPressed: () {
-              ref.read(memoryDetailProvider(widget.memoryId).notifier).setDraftCaption(m.caption);
+              ref
+                  .read(memoryDetailProvider(widget.memoryId).notifier)
+                  .setDraftCaption(m.caption);
               _editCaptionController.text = m.caption;
               // Toggle edit mode via public notifier method
-              ref.read(memoryDetailProvider(widget.memoryId).notifier).setEditing(!detailState.isEditing);
+              ref
+                  .read(memoryDetailProvider(widget.memoryId).notifier)
+                  .setEditing(!detailState.isEditing);
             },
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.redAccent,
+            ),
             onPressed: _confirmDelete,
           ),
         ],
@@ -198,7 +244,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                               children: [
                                 TextField(
                                   controller: _editCaptionController,
-                                  style: const TextStyle(color: Colors.white, fontSize: 18),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                  ),
                                   decoration: const InputDecoration(
                                     hintText: 'Edit caption...',
                                     hintStyle: TextStyle(color: Colors.white38),
@@ -206,7 +255,13 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                   ),
                                   maxLines: 2,
                                   onChanged: (val) {
-                                    ref.read(memoryDetailProvider(widget.memoryId).notifier).setDraftCaption(val);
+                                    ref
+                                        .read(
+                                          memoryDetailProvider(
+                                            widget.memoryId,
+                                          ).notifier,
+                                        )
+                                        .setDraftCaption(val);
                                   },
                                 ),
                                 Row(
@@ -214,26 +269,51 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                   children: [
                                     TextButton(
                                       onPressed: () {
-                                        ref.read(memoryDetailProvider(widget.memoryId).notifier).setEditing(false);
+                                        ref
+                                            .read(
+                                              memoryDetailProvider(
+                                                widget.memoryId,
+                                              ).notifier,
+                                            )
+                                            .setEditing(false);
                                       },
-                                      child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+                                      child: const Text(
+                                        'Cancel',
+                                        style: TextStyle(color: Colors.white38),
+                                      ),
                                     ),
                                     const SizedBox(width: 8),
                                     ElevatedButton(
                                       onPressed: () {
-                                        ref.read(memoryDetailProvider(widget.memoryId).notifier).saveCaptionEdit();
+                                        ref
+                                            .read(
+                                              memoryDetailProvider(
+                                                widget.memoryId,
+                                              ).notifier,
+                                            )
+                                            .saveCaptionEdit();
                                       },
-                                      style: ElevatedButton.styleFrom(backgroundColor: kYellow),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: kYellow,
+                                      ),
                                       child: detailState.isSavingEdit
                                           ? const SizedBox(
                                               width: 16,
                                               height: 16,
-                                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.black,
+                                              ),
                                             )
-                                          : const Text('Save', style: TextStyle(color: Colors.black)),
+                                          : const Text(
+                                              'Save',
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                              ),
+                                            ),
                                     ),
                                   ],
-                                )
+                                ),
                               ],
                             ),
                           ),
@@ -241,7 +321,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                       else ...[
                         Center(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
+                            ),
                             child: Text(
                               m.caption,
                               textAlign: TextAlign.center,
@@ -262,18 +344,32 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                               final count = m.reactions[emoji] ?? 0;
                               return GestureDetector(
                                 onTap: () {
-                                  ref.read(memoryDetailProvider(widget.memoryId).notifier).sendReaction(emoji);
+                                  ref
+                                      .read(
+                                        memoryDetailProvider(
+                                          widget.memoryId,
+                                        ).notifier,
+                                      )
+                                      .sendReaction(emoji);
                                 },
                                 child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.black.withValues(alpha: 0.4),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
                                     count > 0 ? '$emoji $count' : emoji,
-                                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ),
                               );
@@ -305,7 +401,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                     const SizedBox(
                       width: 14,
                       height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: kYellow),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: kYellow,
+                      ),
                     ),
                 ],
               ),
@@ -317,13 +416,19 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                   ? Center(
                       child: Text(
                         'No comments yet. Be the first!',
-                        style: TextStyle(color: dark ? Colors.white38 : kCharcoal.withValues(alpha: 0.4)),
+                        style: TextStyle(
+                          color: dark
+                              ? Colors.white38
+                              : kCharcoal.withValues(alpha: 0.4),
+                        ),
                       ),
                     )
                   : ListView.builder(
                       controller: _commentScrollController,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: detailState.comments.length + (detailState.hasMoreComments ? 1 : 0),
+                      itemCount:
+                          detailState.comments.length +
+                          (detailState.hasMoreComments ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == detailState.comments.length) {
                           return const Center(
@@ -341,10 +446,15 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                           decoration: BoxDecoration(
                             color: isOptimistic
                                 ? Colors.white.withValues(alpha: 0.05)
-                                : (dark ? Colors.white.withValues(alpha: 0.07) : Colors.white.withValues(alpha: 0.5)),
+                                : (dark
+                                      ? Colors.white.withValues(alpha: 0.07)
+                                      : Colors.white.withValues(alpha: 0.5)),
                             borderRadius: BorderRadius.circular(16),
                             border: isOptimistic
-                                ? Border.all(color: kYellow.withValues(alpha: 0.3), width: 1)
+                                ? Border.all(
+                                    color: kYellow.withValues(alpha: 0.3),
+                                    width: 1,
+                                  )
                                 : null,
                           ),
                           child: Row(
@@ -353,13 +463,23 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                               CircleAvatar(
                                 radius: 16,
                                 backgroundColor: kYellow,
-                                backgroundImage: c.avatarUrl != null && c.avatarUrl!.isNotEmpty
-                                    ? NetworkImage(c.avatarUrl!) as ImageProvider
+                                backgroundImage:
+                                    c.avatarUrl != null &&
+                                        c.avatarUrl!.isNotEmpty
+                                    ? NetworkImage(c.avatarUrl!)
+                                          as ImageProvider
                                     : null,
-                                child: c.avatarUrl == null || c.avatarUrl!.isEmpty
+                                child:
+                                    c.avatarUrl == null || c.avatarUrl!.isEmpty
                                     ? Text(
-                                        c.person.isNotEmpty ? c.person[0].toUpperCase() : '?',
-                                        style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.bold),
+                                        c.person.isNotEmpty
+                                            ? c.person[0].toUpperCase()
+                                            : '?',
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       )
                                     : null,
                               ),
@@ -373,7 +493,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                         Text(
                                           c.person,
                                           style: TextStyle(
-                                            color: dark ? Colors.white : kCharcoal,
+                                            color: dark
+                                                ? Colors.white
+                                                : kCharcoal,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 12,
                                           ),
@@ -382,7 +504,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                         Text(
                                           '@${c.username}',
                                           style: TextStyle(
-                                            color: dark ? Colors.white38 : kCharcoal.withValues(alpha: 0.5),
+                                            color: dark
+                                                ? Colors.white38
+                                                : kCharcoal.withValues(
+                                                    alpha: 0.5,
+                                                  ),
                                             fontSize: 10,
                                           ),
                                         ),
@@ -392,7 +518,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                     Text(
                                       c.text,
                                       style: TextStyle(
-                                        color: dark ? Colors.white70 : kCharcoal,
+                                        color: dark
+                                            ? Colors.white70
+                                            : kCharcoal,
                                         fontSize: 13,
                                       ),
                                     ),
@@ -410,7 +538,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               Container(
                 color: Colors.redAccent,
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 16,
+                ),
                 child: Text(
                   detailState.errorMessage!,
                   style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -422,7 +553,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: dark ? kBlack : Colors.white,
-                border: Border(top: BorderSide(color: dark ? Colors.white12 : Colors.black12)),
+                border: Border(
+                  top: BorderSide(
+                    color: dark ? Colors.white12 : Colors.black12,
+                  ),
+                ),
               ),
               child: Row(
                 children: [
@@ -442,7 +577,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                     onPressed: () {
                       final text = _commentController.text.trim();
                       if (text.isNotEmpty) {
-                        ref.read(memoryDetailProvider(widget.memoryId).notifier).postComment(text);
+                        ref
+                            .read(
+                              memoryDetailProvider(widget.memoryId).notifier,
+                            )
+                            .postComment(text);
                         _commentController.clear();
                       }
                     },

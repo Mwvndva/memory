@@ -27,6 +27,8 @@ export class LoginDto {
   get normalizedIdentity(): string {
     const raw = this.identity ?? this.identifier ?? '';
     const trimmed = raw.trim();
-    return trimmed.includes('@') ? trimmed.toLowerCase() : normalizeUsername(trimmed);
+    return trimmed.includes('@')
+      ? trimmed.toLowerCase()
+      : normalizeUsername(trimmed);
   }
 }

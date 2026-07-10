@@ -11,6 +11,7 @@ import {
   RATE_LIMIT_KEY,
   RateLimitOptions,
 } from '../decorators/rate-limit.decorator';
+import type { Request } from 'express';
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
@@ -29,7 +30,7 @@ export class RateLimitGuard implements CanActivate {
     // If no @RateLimit() decorator, allow through
     if (!options) return true;
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
 
     // Use Express's resolved client IP. With `trust proxy` configured in
     // main.ts, request.ip already reflects the correct X-Forwarded-For hop.

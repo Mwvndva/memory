@@ -43,13 +43,17 @@ class _DevDiagnosticsViewState extends ConsumerState<DevDiagnosticsView> {
     try {
       await circlesNotifier.fetchCircle();
       final cached = ref.read(circlesProvider);
-      results['repo_circle_cached'] = cached.map((m) => {
-        'id': m.id,
-        'username': m.username,
-        'firstName': m.firstName,
-        'lastName': m.lastName,
-        'avatarUrl': m.avatarUrl,
-      }).toList();
+      results['repo_circle_cached'] = cached
+          .map(
+            (m) => {
+              'id': m.id,
+              'username': m.username,
+              'firstName': m.firstName,
+              'lastName': m.lastName,
+              'avatarUrl': m.avatarUrl,
+            },
+          )
+          .toList();
     } catch (e) {
       results['repo_circle_error'] = e.toString();
     }
@@ -57,13 +61,22 @@ class _DevDiagnosticsViewState extends ConsumerState<DevDiagnosticsView> {
     final chatState = ref.read(chatProvider);
     results['chat_state'] = {
       'unreadNotifications': chatState.unreadNotifications,
-      'messagesByContact': chatState.messagesByContact.map((k, v) => MapEntry(k, v.map((m) => {
-            'id': m.id,
-            'sender': m.sender,
-            'text': m.text,
-            'timestamp': m.timestamp.toIso8601String(),
-            'isMine': m.isMine,
-          }).toList())),
+      'messagesByContact': chatState.messagesByContact.map(
+        (k, v) => MapEntry(
+          k,
+          v
+              .map(
+                (m) => {
+                  'id': m.id,
+                  'sender': m.sender,
+                  'text': m.text,
+                  'timestamp': m.timestamp.toIso8601String(),
+                  'isMine': m.isMine,
+                },
+              )
+              .toList(),
+        ),
+      ),
     };
 
     final coordinator = ref.read(realtimeCoordinatorProvider);
@@ -94,14 +107,18 @@ class _DevDiagnosticsViewState extends ConsumerState<DevDiagnosticsView> {
         title: const Text('Dev Diagnostics'),
         actions: [
           IconButton(
-            icon: _loading ? const CircularProgressIndicator.adaptive() : const Icon(Icons.refresh),
+            icon: _loading
+                ? const CircularProgressIndicator.adaptive()
+                : const Icon(Icons.refresh),
             onPressed: _loading ? null : _refreshAll,
           ),
         ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
-        child: SelectableText(_lastRaw.isEmpty ? 'No data yet' : _prettyJson(_lastRaw)),
+        child: SelectableText(
+          _lastRaw.isEmpty ? 'No data yet' : _prettyJson(_lastRaw),
+        ),
       ),
     );
   }

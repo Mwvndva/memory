@@ -9,22 +9,34 @@ class ExternalInviteService {
     return 'Join my Circle on Memory! Use my referral code: $referralCode. Link: $inviteBaseUrl?ref=$referralCode&user=$username';
   }
 
-  Future<void> shareToWhatsApp({required String referralCode, required String username}) async {
+  Future<void> shareToWhatsApp({
+    required String referralCode,
+    required String username,
+  }) async {
     final text = _buildInviteMessage(referralCode, username);
     await SharePlus.instance.share(ShareParams(text: text));
   }
 
-  Future<void> shareToInstagram({required String referralCode, required String username}) async {
+  Future<void> shareToInstagram({
+    required String referralCode,
+    required String username,
+  }) async {
     final text = _buildInviteMessage(referralCode, username);
     await SharePlus.instance.share(ShareParams(text: text));
   }
 
-  Future<void> shareToSystem({required String referralCode, required String username}) async {
+  Future<void> shareToSystem({
+    required String referralCode,
+    required String username,
+  }) async {
     final text = _buildInviteMessage(referralCode, username);
     await SharePlus.instance.share(ShareParams(text: text));
   }
 
-  Future<bool> copyInviteLink({required String referralCode, required String username}) async {
+  Future<bool> copyInviteLink({
+    required String referralCode,
+    required String username,
+  }) async {
     final link = '$inviteBaseUrl?ref=$referralCode&user=$username';
     try {
       await Clipboard.setData(ClipboardData(text: link));

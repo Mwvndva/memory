@@ -1,5 +1,10 @@
-
-enum NotificationType { message, reaction, memory, circleRequest, circleMilestone }
+enum NotificationType {
+  message,
+  reaction,
+  memory,
+  circleRequest,
+  circleMilestone,
+}
 
 class NotificationItem {
   const NotificationItem({

@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { AppGateway } from '../gateway/app.gateway';
 import { JobsService } from '../jobs/jobs.service';
+import { errorMessage, hasPrismaErrorCode } from '../common/errors';
 
 @Injectable()
 export class CirclesService {
@@ -27,14 +28,20 @@ export class CirclesService {
    * the target user via WebSocket so their inbox updates in real time.
    */
   async sendRequest(userId: string, memberId: string) {
-    this.logger.log(`[Circle Request] New request from userId="${userId}" to memberId="${memberId}"`);
+    this.logger.log(
+      `[Circle Request] New request from userId="${userId}" to memberId="${memberId}"`,
+    );
     if (userId === memberId) {
       throw new BadRequestException('You cannot send a request to yourself');
     }
 
     // Ensure the target user exists
-    this.logger.log(`[Circle Request] Step 1: Checking target user exists and current membership status`);
-    const target = await this.prisma.user.findUnique({ where: { id: memberId } });
+    this.logger.log(
+      `[Circle Request] Step 1: Checking target user exists and current membership status`,
+    );
+    const target = await this.prisma.user.findUnique({
+      where: { id: memberId },
+    });
     if (!target) throw new NotFoundException('User not found');
 
     // Check if a membership (pending or accepted) already exists
@@ -45,7 +52,9 @@ export class CirclesService {
       if (existing.accepted) {
         throw new ConflictException('This user is already in your circle');
       }
-      throw new ConflictException('A pending request to this user already exists');
+      throw new ConflictException(
+        'A pending request to this user already exists',
+      );
     }
 
     const sender = await this.prisma.user.findUnique({
@@ -53,16 +62,27 @@ export class CirclesService {
       select: { id: true, username: true, firstName: true, avatarUrl: true },
     });
 
-    this.logger.log(`[Circle Request] Step 2: Creating pending circle membership in DB`);
+    this.logger.log(
+      `[Circle Request] Step 2: Creating pending circle membership in DB`,
+    );
     const membership = await this.prisma.circleMembership.create({
       data: { userId, memberId, accepted: false },
       include: {
-        member: { select: { id: true, username: true, firstName: true, avatarUrl: true } },
+        member: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            avatarUrl: true,
+          },
+        },
       },
     });
 
     // Notify the receiver in real time (so their pending-requests badge updates) via background queue
-    this.logger.log(`[Circle Request] Step 3: Queueing real-time WebSocket notification 'new_circle_request' for memberId="${memberId}"`);
+    this.logger.log(
+      `[Circle Request] Step 3: Queueing real-time WebSocket notification 'new_circle_request' for memberId="${memberId}"`,
+    );
     await this.jobsService.queueNotification(memberId, 'new_circle_request', {
       senderId: userId,
       senderUsername: sender?.username ?? '',
@@ -70,7 +90,9 @@ export class CirclesService {
       senderAvatarUrl: sender?.avatarUrl ?? null,
     });
 
-    this.logger.log(`[Circle Request] Circle request sent successfully from userId="${userId}" to memberId="${memberId}"`);
+    this.logger.log(
+      `[Circle Request] Circle request sent successfully from userId="${userId}" to memberId="${memberId}"`,
+    );
     return { message: 'Circle request sent', membership };
   }
 
@@ -82,7 +104,9 @@ export class CirclesService {
     }
 
     // Ensure the target user exists
-    const target = await this.prisma.user.findUnique({ where: { id: memberId } });
+    const target = await this.prisma.user.findUnique({
+      where: { id: memberId },
+    });
     if (!target) throw new NotFoundException('User to add was not found');
 
     // Upsert — idempotent if called twice
@@ -91,13 +115,18 @@ export class CirclesService {
         data: { userId, memberId },
         include: {
           member: {
-            select: { id: true, username: true, firstName: true, avatarUrl: true },
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              avatarUrl: true,
+            },
           },
         },
       });
-    } catch (err: any) {
+    } catch (err) {
       // P2002 = unique constraint violation (already in circle)
-      if (err?.code === 'P2002') {
+      if (hasPrismaErrorCode(err, 'P2002')) {
         throw new ConflictException('This user is already in your circle');
       }
       throw err;
@@ -125,7 +154,11 @@ export class CirclesService {
       include: {
         member: {
           select: {
-            id: true, username: true, firstName: true, lastName: true, avatarUrl: true,
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
           },
         },
       },
@@ -142,7 +175,11 @@ export class CirclesService {
       include: {
         user: {
           select: {
-            id: true, username: true, firstName: true, lastName: true, avatarUrl: true,
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
           },
         },
       },
@@ -159,7 +196,11 @@ export class CirclesService {
       include: {
         user: {
           select: {
-            id: true, username: true, firstName: true, lastName: true, avatarUrl: true,
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
           },
         },
       },
@@ -169,7 +210,9 @@ export class CirclesService {
   // ─── Accept a share memories request ───────────────────────────────────────
 
   async acceptRequest(memberId: string, senderId: string) {
-    this.logger.log(`[Accept Circle Request] Request by memberId="${memberId}" to accept from senderId="${senderId}"`);
+    this.logger.log(
+      `[Accept Circle Request] Request by memberId="${memberId}" to accept from senderId="${senderId}"`,
+    );
     this.logger.log(`[Accept Circle Request] Step 1: Finding pending request`);
     const membership = await this.prisma.circleMembership.findFirst({
       where: { userId: senderId, memberId, accepted: false },
@@ -188,9 +231,9 @@ export class CirclesService {
         await tx.circleMembership.create({
           data: { userId: memberId, memberId: senderId, accepted: true },
         });
-      } catch (err: any) {
+      } catch (err) {
         // P2002 unique constraint -> already exists; attempt to update to accepted if needed
-        if (err?.code === 'P2002') {
+        if (hasPrismaErrorCode(err, 'P2002')) {
           const existingReciprocal = await tx.circleMembership.findFirst({
             where: { userId: memberId, memberId: senderId },
           });
@@ -208,10 +251,14 @@ export class CirclesService {
     });
 
     // Check and trigger milestone broadcast for the circle owner (senderId) via queue
-    this.logger.log(`[Accept Circle Request] Step 2: Queueing circle milestones evaluation for senderId="${senderId}"`);
+    this.logger.log(
+      `[Accept Circle Request] Step 2: Queueing circle milestones evaluation for senderId="${senderId}"`,
+    );
     await this.jobsService.queueCircleMilestone(senderId);
 
-    this.logger.log(`[Accept Circle Request] Request accepted successfully: userId="${senderId}" <=> memberId="${memberId}"`);
+    this.logger.log(
+      `[Accept Circle Request] Request accepted successfully: userId="${senderId}" <=> memberId="${memberId}"`,
+    );
     return updated;
   }
 
@@ -228,19 +275,25 @@ export class CirclesService {
   }
 
   // ─── Check and broadcast circle milestones ────────────────────────────────
-  
+
   async checkAndBroadcastCircleMilestone(userId: string) {
     try {
       // Count accepted circle members for userId
       const count = await this.prisma.circleMembership.count({
-        where: { userId, accepted: true }
+        where: { userId, accepted: true },
       });
 
       if (count === 7 || count === 30) {
         // Find the circle owner details
         const owner = await this.prisma.user.findUnique({
           where: { id: userId },
-          select: { id: true, username: true, firstName: true, lastName: true, avatarUrl: true }
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
         });
         if (!owner) return;
 
@@ -248,8 +301,8 @@ export class CirclesService {
         const members = await this.prisma.user.findMany({
           where: {
             memberMemberships: {
-              some: { userId, accepted: true }
-            }
+              some: { userId, accepted: true },
+            },
           },
           select: {
             id: true,
@@ -258,13 +311,15 @@ export class CirclesService {
             lastName: true,
             avatarUrl: true,
             memories: {
-              select: { id: true }
-            }
-          }
+              select: { id: true },
+            },
+          },
         });
 
         // Query owner memories count
-        const ownerMemoriesCount = await this.prisma.memory.count({ where: { creatorId: userId } });
+        const ownerMemoriesCount = await this.prisma.memory.count({
+          where: { creatorId: userId },
+        });
 
         // Format members data (including memory counts)
         const membersData = [
@@ -275,33 +330,37 @@ export class CirclesService {
             firstName: owner.firstName,
             lastName: owner.lastName,
             avatarUrl: owner.avatarUrl,
-            memoryCount: ownerMemoriesCount
+            memoryCount: ownerMemoriesCount,
           },
           // Include other circle members
-          ...members.map(m => ({
+          ...members.map((m) => ({
             id: m.id,
             username: m.username,
             firstName: m.firstName,
             lastName: m.lastName,
             avatarUrl: m.avatarUrl,
-            memoryCount: m.memories.length
-          }))
+            memoryCount: m.memories.length,
+          })),
         ];
 
         // Broadcast to all members of the circle (including the owner userId) via background queue
-        const allUserIds = [userId, ...members.map(m => m.id)];
+        const allUserIds = [userId, ...members.map((m) => m.id)];
 
         for (const id of allUserIds) {
           await this.jobsService.queueNotification(id, 'new_circle_milestone', {
             circleOwnerId: userId,
             circleOwnerUsername: owner.username,
             milestone: count,
-            members: membersData
+            members: membersData,
           });
         }
       }
     } catch (err) {
-      // Fail silently to prevent crashing friendship accept flow
+      // Milestone notifications are best-effort: never fail the accept flow
+      // because a celebration could not be delivered. Logged, not swallowed.
+      this.logger.error(
+        `[Circle Milestone] Failed to queue milestone notifications: ${errorMessage(err)}`,
+      );
     }
   }
 }

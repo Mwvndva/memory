@@ -13,23 +13,40 @@ class AuthenticationService {
   AuthenticationService(this._dio);
 
   static const _unavailableUsernames = {
-    'admin', 'administrator', 'root', 'support', 'help',
-    'memory', 'circle', 'feed', 'chat', 'dev', 'system',
+    'admin',
+    'administrator',
+    'root',
+    'support',
+    'help',
+    'memory',
+    'circle',
+    'feed',
+    'chat',
+    'dev',
+    'system',
   };
 
   /// Validates availability of a username on the backend.
   Future<Map<String, dynamic>> checkUsername(String username) async {
     final value = username.trim().replaceFirst('@', '').toLowerCase();
-    
+
     if (kUseMockBackend) {
       if (value.length < 3) {
         return {'message': 'Use at least 3 characters.', 'ok': false};
       } else if (value.length > 30) {
         return {'message': 'Use 30 characters or fewer.', 'ok': false};
       } else if (!RegExp(r'^[a-z0-9._]+$').hasMatch(value)) {
-        return {'message': 'Only letters, numbers, periods, and underscores.', 'ok': false};
-      } else if (value.startsWith('.') || value.endsWith('.') || value.contains('..')) {
-        return {'message': 'Periods cannot start, end, or repeat.', 'ok': false};
+        return {
+          'message': 'Only letters, numbers, periods, and underscores.',
+          'ok': false,
+        };
+      } else if (value.startsWith('.') ||
+          value.endsWith('.') ||
+          value.contains('..')) {
+        return {
+          'message': 'Periods cannot start, end, or repeat.',
+          'ok': false,
+        };
       } else if (_unavailableUsernames.contains(value)) {
         return {'message': '@$value is taken.', 'ok': false};
       } else {
@@ -142,10 +159,7 @@ class AuthenticationService {
 
     try {
       final formData = FormData.fromMap({
-        'file': MultipartFile.fromBytes(
-          bytes,
-          filename: 'avatar.jpg',
-        ),
+        'file': MultipartFile.fromBytes(bytes, filename: 'avatar.jpg'),
       });
       await _dio.post('/users/me/avatar', data: formData);
     } catch (e, stack) {
@@ -172,17 +186,25 @@ class AuthenticationService {
       final stats = data['stats'] as Map<String, dynamic>? ?? {};
 
       return UserProfile(
-        firstName: data['firstName'] as String? ?? data['first_name'] as String? ?? '',
-        lastName:  data['lastName'] as String? ?? data['last_name'] as String? ?? '',
-        username:  data['username'] as String? ?? '',
-        email:     data['email'] as String? ?? '',
-        phone:     data['phone'] as String? ?? '',
+        firstName:
+            data['firstName'] as String? ?? data['first_name'] as String? ?? '',
+        lastName:
+            data['lastName'] as String? ?? data['last_name'] as String? ?? '',
+        username: data['username'] as String? ?? '',
+        email: data['email'] as String? ?? '',
+        phone: data['phone'] as String? ?? '',
         avatarBytes: avatarBytes,
-        avatarUrl: data['avatarUrl'] as String? ?? data['avatar_url'] as String?,
+        avatarUrl:
+            data['avatarUrl'] as String? ?? data['avatar_url'] as String?,
         isAuthenticated: true,
-        streakDays: stats['streakDays'] as int? ?? stats['streak_days'] as int? ?? 0,
-        circlePulseDays: stats['circlePulseDays'] as int? ?? stats['circle_pulse_days'] as int? ?? 0,
-        countryRank: stats['countryRank'] as int? ?? stats['country_rank'] as int? ?? 1,
+        streakDays:
+            stats['streakDays'] as int? ?? stats['streak_days'] as int? ?? 0,
+        circlePulseDays:
+            stats['circlePulseDays'] as int? ??
+            stats['circle_pulse_days'] as int? ??
+            0,
+        countryRank:
+            stats['countryRank'] as int? ?? stats['country_rank'] as int? ?? 1,
         globalRank: stats['globalRank'] as int? ?? stats['global_rank'] as int?,
       );
     } catch (e, stack) {
@@ -194,11 +216,7 @@ class AuthenticationService {
   Future<List<CircleMember>> syncContacts(List<String> phones) async {
     if (kUseMockBackend) {
       return const [
-        CircleMember(
-          id: 'mock_amara',
-          username: 'amara',
-          firstName: 'Amara',
-        ),
+        CircleMember(id: 'mock_amara', username: 'amara', firstName: 'Amara'),
         CircleMember(
           id: 'mock_mum',
           username: 'mumsmemories',
@@ -208,7 +226,10 @@ class AuthenticationService {
     }
 
     try {
-      final response = await _dio.post('/users/sync-contacts', data: {'phones': phones});
+      final response = await _dio.post(
+        '/users/sync-contacts',
+        data: {'phones': phones},
+      );
       final rawList = response.data as List? ?? [];
       return rawList
           .map((item) => CircleMember.fromJson(item as Map<String, dynamic>))

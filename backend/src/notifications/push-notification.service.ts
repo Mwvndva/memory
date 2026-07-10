@@ -1,7 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { initializeApp, cert, App } from 'firebase-admin/app';
+import { initializeApp, cert, App, ServiceAccount } from 'firebase-admin/app';
 import { getMessaging, Message } from 'firebase-admin/messaging';
+import { buildNotificationContent } from './notification-content';
+import { errorMessage } from '../common/errors';
 
 @Injectable()
 export class PushNotificationService implements OnModuleInit {
@@ -14,16 +16,20 @@ export class PushNotificationService implements OnModuleInit {
     const credentialsStr = process.env.FIREBASE_CREDENTIALS;
     if (credentialsStr) {
       try {
-        const credentials = JSON.parse(credentialsStr);
+        const credentials = JSON.parse(credentialsStr) as ServiceAccount;
         this.firebaseApp = initializeApp({
           credential: cert(credentials),
         });
         this.logger.log('Firebase Admin SDK initialized successfully.');
       } catch (err) {
-        this.logger.error(`Failed to initialize Firebase Admin SDK: ${err.message}`);
+        this.logger.error(
+          `Failed to initialize Firebase Admin SDK: ${errorMessage(err)}`,
+        );
       }
     } else {
-      this.logger.warn('FIREBASE_CREDENTIALS not configured. Push notifications will be simulated.');
+      this.logger.warn(
+        'FIREBASE_CREDENTIALS not configured. Push notifications will be simulated.',
+      );
     }
   }
 
@@ -31,55 +37,17 @@ export class PushNotificationService implements OnModuleInit {
    * Translates a WebSocket event payload to a human-readable title and body,
    * then sends a push notification.
    */
-  async sendNotification(userId: string, event: string, payload: any): Promise<boolean> {
-    let title = 'New Notification';
-    let body = 'You have a new update in Memory.';
-    const data: Record<string, string> = { event };
-
-    try {
-      switch (event) {
-        case 'new_message': {
-          const sender = payload.sender ?? 'Someone';
-          title = `Message from @${sender}`;
-          body = payload.text ?? 'Sent a message.';
-          if (payload.id) data.messageId = payload.id;
-          break;
-        }
-        case 'new_circle_request': {
-          const requester = payload.requester ?? 'Someone';
-          title = 'New Circle Request';
-          body = `@${requester} wants to add you to their circle.`;
-          if (payload.id) data.membershipId = payload.id;
-          break;
-        }
-        case 'new_circle_milestone': {
-          const count = payload.count ?? 0;
-          title = 'Circle Milestone Reached!';
-          body = `You now have ${count} members in your circle!`;
-          break;
-        }
-        case 'new_memory': {
-          const creator = payload.creator ?? 'Someone';
-          title = 'New Memory Shared';
-          body = `@${creator} posted a new memory!`;
-          if (payload.id) data.memoryId = payload.id;
-          break;
-        }
-        case 'new_reaction': {
-          const reactor = payload.reactorName ?? 'Someone';
-          const emoji = payload.emoji ?? '❤️';
-          const caption = payload.memoryCaption ?? '';
-          title = 'New Reaction';
-          body = `@${reactor} reacted ${emoji} to your memory${caption ? `: "${caption}"` : '.'}`;
-          break;
-        }
-        default:
-          this.logger.log(`Using default notification text for event="${event}"`);
-      }
-    } catch (err) {
-      this.logger.error(`Failed to format notification for event="${event}": ${err.message}`);
-    }
-
+  async sendNotification(
+    userId: string,
+    event: string,
+    payload: Record<string, unknown>,
+  ): Promise<boolean> {
+    // Shared with NotificationsService.record() so the push a user receives and
+    // the row they later see in their history say exactly the same thing.
+    const { title, body, data } = buildNotificationContent(
+      event,
+      payload ?? {},
+    );
     return this.sendPush(userId, title, body, data);
   }
 
@@ -99,12 +67,16 @@ export class PushNotificationService implements OnModuleInit {
     });
 
     if (!user) {
-      this.logger.warn(`User with ID="${userId}" not found. Cannot send push notification.`);
+      this.logger.warn(
+        `User with ID="${userId}" not found. Cannot send push notification.`,
+      );
       return false;
     }
 
     if (!user.fcmToken) {
-      this.logger.warn(`User @${user.username} has no fcmToken registered. Push notification skipped.`);
+      this.logger.warn(
+        `User @${user.username} has no fcmToken registered. Push notification skipped.`,
+      );
       return false;
     }
 
@@ -134,10 +106,14 @@ export class PushNotificationService implements OnModuleInit {
         };
 
         const response = await getMessaging(this.firebaseApp).send(message);
-        this.logger.log(`Successfully sent push notification to @${user.username}: messageId="${response}"`);
+        this.logger.log(
+          `Successfully sent push notification to @${user.username}: messageId="${response}"`,
+        );
         return true;
       } catch (err) {
-        this.logger.error(`Error sending push notification to @${user.username}: ${err.message}`);
+        this.logger.error(
+          `Error sending push notification to @${user.username}: ${errorMessage(err)}`,
+        );
         return false;
       }
     } else {

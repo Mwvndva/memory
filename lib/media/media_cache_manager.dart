@@ -24,8 +24,10 @@ class MediaCacheManager {
 
     try {
       final uri = Uri.parse(url);
-      final filename = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'cached_media_${url.hashCode}';
-      
+      final filename = uri.pathSegments.isNotEmpty
+          ? uri.pathSegments.last
+          : 'cached_media_${url.hashCode}';
+
       // Target directory
       final cacheDir = await getTemporaryDirectory();
       final targetFile = File('${cacheDir.path}/$filename');

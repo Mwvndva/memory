@@ -19,7 +19,9 @@ export class StorageService implements OnModuleInit {
   onModuleInit() {
     const endpoint = this.configService.get<string>('R2_ENDPOINT');
     const accessKeyId = this.configService.get<string>('R2_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get<string>('R2_SECRET_ACCESS_KEY');
+    const secretAccessKey = this.configService.get<string>(
+      'R2_SECRET_ACCESS_KEY',
+    );
     this.bucketName = this.configService.get<string>('R2_BUCKET_NAME', '');
     this.publicUrl = this.configService.get<string>('R2_PUBLIC_URL', '');
 
@@ -39,10 +41,15 @@ export class StorageService implements OnModuleInit {
         this.isR2Configured = true;
         this.logger.log('✅ Cloudflare R2 client initialized successfully.');
       } catch (err) {
-        this.logger.error('Failed to initialize Cloudflare R2 client, falling back to local storage.', err);
+        this.logger.error(
+          'Failed to initialize Cloudflare R2 client, falling back to local storage.',
+          err,
+        );
       }
     } else {
-      this.logger.warn('⚠️ Cloudflare R2 credentials not fully set in .env. Falling back to local disk storage.');
+      this.logger.warn(
+        '⚠️ Cloudflare R2 credentials not fully set in .env. Falling back to local disk storage.',
+      );
     }
 
     // Ensure local directory exists
@@ -66,12 +73,17 @@ export class StorageService implements OnModuleInit {
             ContentType: file.mimetype,
           }),
         );
-        
+
         // Clean trailing slash if present on the public base URL
-        const baseUrl = this.publicUrl.endsWith('/') ? this.publicUrl.slice(0, -1) : this.publicUrl;
+        const baseUrl = this.publicUrl.endsWith('/')
+          ? this.publicUrl.slice(0, -1)
+          : this.publicUrl;
         return `${baseUrl}/${fileKey}`;
       } catch (err) {
-        this.logger.error(`R2 upload failed for key ${fileKey}, falling back to local saving`, err);
+        this.logger.error(
+          `R2 upload failed for key ${fileKey}, falling back to local saving`,
+          err,
+        );
       }
     }
 

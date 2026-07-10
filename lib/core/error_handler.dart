@@ -17,7 +17,11 @@ void showAppError(BuildContext context, String message, {Duration? duration}) {
   ScaffoldMessenger.of(context).showSnackBar(snack);
 }
 
-void showAppMessage(BuildContext context, String message, {Duration? duration}) {
+void showAppMessage(
+  BuildContext context,
+  String message, {
+  Duration? duration,
+}) {
   final snack = SnackBar(
     content: Text(message),
     backgroundColor: Colors.grey[900],
@@ -42,7 +46,11 @@ sealed class AppException implements Exception {
 }
 
 class AuthenticationException extends AppException {
-  AuthenticationException(super.message, [super.originalError, super.stackTrace]);
+  AuthenticationException(
+    super.message, [
+    super.originalError,
+    super.stackTrace,
+  ]);
 }
 
 class NetworkException extends AppException {
@@ -100,19 +108,28 @@ AppException mapException(dynamic error, [StackTrace? stackTrace]) {
   }
 
   if (error is DioException) {
-    final message = error.response?.data is Map && error.response?.data['message'] != null
+    final message =
+        error.response?.data is Map && error.response?.data['message'] != null
         ? error.response!.data['message'].toString()
         : (error.message ?? 'An unexpected error occurred.');
 
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.sendTimeout ||
         error.type == DioExceptionType.receiveTimeout) {
-      return TimeoutException('Connection timed out. Please try again.', error, trace);
+      return TimeoutException(
+        'Connection timed out. Please try again.',
+        error,
+        trace,
+      );
     }
 
     if (error.type == DioExceptionType.connectionError ||
         error.error is SocketException) {
-      return NetworkException('No internet connection. Please check your network settings.', error, trace);
+      return NetworkException(
+        'No internet connection. Please check your network settings.',
+        error,
+        trace,
+      );
     }
 
     final statusCode = error.response?.statusCode;
@@ -124,14 +141,22 @@ AppException mapException(dynamic error, [StackTrace? stackTrace]) {
         return ValidationException(message, error, trace);
       }
       if (statusCode >= 500) {
-        return ServerException('Server error ($statusCode). Please try again later.', error, trace);
+        return ServerException(
+          'Server error ($statusCode). Please try again later.',
+          error,
+          trace,
+        );
       }
     }
     return UnknownException(message, error, trace);
   }
 
   if (error is SocketException) {
-    return NetworkException('No internet connection. Please check your network settings.', error, trace);
+    return NetworkException(
+      'No internet connection. Please check your network settings.',
+      error,
+      trace,
+    );
   }
 
   return UnknownException(error.toString(), error, trace);

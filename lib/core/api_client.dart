@@ -23,12 +23,20 @@ final apiClientProvider = Provider<Dio>((ref) {
   (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
     final client = HttpClient(context: SecurityContext(withTrustedRoots: true));
     client.badCertificateCallback = (cert, host, port) {
-      const expectedFingerprint = String.fromEnvironment('SSL_PINNED_FINGERPRINT', defaultValue: '');
+      const expectedFingerprint = String.fromEnvironment(
+        'SSL_PINNED_FINGERPRINT',
+        defaultValue: '',
+      );
       if (expectedFingerprint.isEmpty) {
         // Fall back to standard OS-level CA certification verification if no custom fingerprint is pinned
         return false;
       }
-      final fingerprint = sha256.convert(cert.der).bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+      final fingerprint = sha256
+          .convert(cert.der)
+          .bytes
+          .map((b) => b.toRadixString(16).padLeft(2, '0'))
+          .join(':')
+          .toUpperCase();
       return fingerprint == expectedFingerprint;
     };
     return client;
@@ -44,7 +52,9 @@ final apiClientProvider = Provider<Dio>((ref) {
             if (options.path == '/auth/refresh') {
               var refreshToken = session.refreshToken;
               if (refreshToken == null || refreshToken.isEmpty) {
-                refreshToken = await ref.read(secureStorageProvider).read(key: 'refresh_token');
+                refreshToken = await ref
+                    .read(secureStorageProvider)
+                    .read(key: 'refresh_token');
               }
               if (refreshToken != null && refreshToken.isNotEmpty) {
                 options.headers['Authorization'] = 'Bearer $refreshToken';
@@ -52,7 +62,9 @@ final apiClientProvider = Provider<Dio>((ref) {
             } else {
               var token = session.accessToken;
               if (token == null || token.isEmpty) {
-                token = await ref.read(secureStorageProvider).read(key: 'auth_token');
+                token = await ref
+                    .read(secureStorageProvider)
+                    .read(key: 'auth_token');
               }
               if (token != null && token.isNotEmpty) {
                 options.headers['Authorization'] = 'Bearer $token';
@@ -60,7 +72,11 @@ final apiClientProvider = Provider<Dio>((ref) {
             }
           }
         } catch (e) {
-          StructuredLogger.logWarning('Fallback if secure storage is not ready or throws in tests', category: 'APIClient', error: e);
+          StructuredLogger.logWarning(
+            'Fallback if secure storage is not ready or throws in tests',
+            category: 'APIClient',
+            error: e,
+          );
         }
         return handler.next(options);
       },
@@ -68,7 +84,6 @@ final apiClientProvider = Provider<Dio>((ref) {
         if (err.response?.statusCode == 401 &&
             err.requestOptions.path != '/auth/refresh' &&
             err.requestOptions.extra['isRetry'] != true) {
-          
           bool shouldLogout = false;
           try {
             // Coordinate concurrent refresh operations
@@ -76,18 +91,27 @@ final apiClientProvider = Provider<Dio>((ref) {
               try {
                 final response = await dio.post('/auth/refresh');
                 final tokens = response.data['tokens'] as Map<String, dynamic>?;
-                final newAccessToken = tokens != null ? tokens['access_token'] as String? : null;
-                final newRefreshToken = tokens != null ? tokens['refresh_token'] as String? : null;
+                final newAccessToken = tokens != null
+                    ? tokens['access_token'] as String?
+                    : null;
+                final newRefreshToken = tokens != null
+                    ? tokens['refresh_token'] as String?
+                    : null;
 
                 if (newAccessToken != null && newRefreshToken != null) {
                   // Centralized token update inside SessionManager
-                  ref.read(sessionProvider.notifier).updateTokens(newAccessToken, newRefreshToken);
+                  ref
+                      .read(sessionProvider.notifier)
+                      .updateTokens(newAccessToken, newRefreshToken);
 
                   // Persist to secure storage
                   final storage = ref.read(secureStorageProvider);
                   await storage.write(key: 'auth_token', value: newAccessToken);
-                  await storage.write(key: 'refresh_token', value: newRefreshToken);
-                  
+                  await storage.write(
+                    key: 'refresh_token',
+                    value: newRefreshToken,
+                  );
+
                   return newAccessToken;
                 }
               } on DioException catch (refreshErr) {
@@ -97,7 +121,12 @@ final apiClientProvider = Provider<Dio>((ref) {
                   shouldLogout = true;
                 }
               } catch (e, st) {
-                StructuredLogger.logError('Other exception during token refresh', category: 'APIClient', error: e, stackTrace: st);
+                StructuredLogger.logError(
+                  'Other exception during token refresh',
+                  category: 'APIClient',
+                  error: e,
+                  stackTrace: st,
+                );
               }
               return null;
             }();
@@ -115,10 +144,9 @@ final apiClientProvider = Provider<Dio>((ref) {
               return handler.resolve(response);
             }
           } catch (e) {
-            return handler.next(DioException(
-              requestOptions: err.requestOptions,
-              error: e,
-            ));
+            return handler.next(
+              DioException(requestOptions: err.requestOptions, error: e),
+            );
           }
 
           if (shouldLogout) {

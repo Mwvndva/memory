@@ -6,12 +6,16 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 type JwtPayload = {
   sub: string;
   username: string;
+  /** JTI of the refresh session that minted this access token. */
+  sid?: string;
 };
 
 type JwtUser = {
   id: string;
   sub: string;
   username: string;
+  /** Absent on tokens issued before `sid` was introduced. */
+  sid?: string;
 };
 
 @Injectable()
@@ -31,6 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       id: payload.sub,
       sub: payload.sub,
       username: payload.username,
+      sid: payload.sid,
     };
   }
 }

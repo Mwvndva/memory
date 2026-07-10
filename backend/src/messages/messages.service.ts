@@ -9,15 +9,19 @@ export class MessagesService {
 
   /** Persist a chat message. Called by the WebSocket gateway. */
   async create(data: { senderId: string; receiverId: string; text: string }) {
-    this.logger.log(`[Messages DB] Persisting new message from senderId="${data.senderId}" to receiverId="${data.receiverId}"`);
+    this.logger.log(
+      `[Messages DB] Persisting new message from senderId="${data.senderId}" to receiverId="${data.receiverId}"`,
+    );
     const message = await this.prisma.message.create({
       data,
       include: {
-        sender:   { select: { id: true, username: true, avatarUrl: true } },
+        sender: { select: { id: true, username: true, avatarUrl: true } },
         receiver: { select: { id: true, username: true, avatarUrl: true } },
       },
     });
-    this.logger.log(`[Messages DB] Message persisted successfully with id="${message.id}"`);
+    this.logger.log(
+      `[Messages DB] Message persisted successfully with id="${message.id}"`,
+    );
     return message;
   }
 
@@ -44,7 +48,7 @@ export class MessagesService {
         skip,
         take: limit,
         include: {
-          sender:   { select: { id: true, username: true, avatarUrl: true } },
+          sender: { select: { id: true, username: true, avatarUrl: true } },
           receiver: { select: { id: true, username: true, avatarUrl: true } },
         },
       }),
@@ -66,7 +70,9 @@ export class MessagesService {
 
   /** Mark all messages from a sender to the current user as read. */
   async markRead(receiverId: string, senderId: string) {
-    this.logger.log(`[Messages DB] Marking messages as read: receiverId="${receiverId}" senderId="${senderId}"`);
+    this.logger.log(
+      `[Messages DB] Marking messages as read: receiverId="${receiverId}" senderId="${senderId}"`,
+    );
     const result = await this.prisma.message.updateMany({
       where: { receiverId, senderId, isRead: false },
       data: { isRead: true },

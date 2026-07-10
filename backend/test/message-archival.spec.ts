@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HeavyOpsProcessor } from '../src/jobs/heavy-ops.processor';
+import { NotificationsService } from '../src/notifications/notifications.service';
 import { UsersService } from '../src/users/users.service';
 import { CirclesService } from '../src/circles/circles.service';
 import { AppGateway } from '../src/gateway/app.gateway';
@@ -7,22 +8,36 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { StorageService } from '../src/storage/storage.service';
 import { RedisService } from '../src/redis/redis.service';
 import { PushNotificationService } from '../src/notifications/push-notification.service';
+import {
+  anyBuffer,
+  anyDate,
+  delegate,
+  MockDelegate,
+  objectContaining,
+  stringContaining,
+} from './prisma-mock';
+
+interface PrismaMock {
+  message: MockDelegate;
+}
+interface StorageMock {
+  uploadFile: jest.Mock;
+}
 
 describe('Message Archival Job', () => {
   let processor: HeavyOpsProcessor;
-  let prismaMock: any;
-  let storageMock: any;
+  let prismaMock: PrismaMock;
+  let storageMock: StorageMock;
 
   beforeEach(async () => {
     prismaMock = {
-      message: {
-        findMany: jest.fn(),
-        deleteMany: jest.fn(),
-      },
+      message: delegate('findMany', 'deleteMany'),
     };
 
     storageMock = {
-      uploadFile: jest.fn().mockResolvedValue('http://mock-storage.local/archive.json'),
+      uploadFile: jest
+        .fn()
+        .mockResolvedValue('http://mock-storage.local/archive.json'),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -33,6 +48,10 @@ describe('Message Archival Job', () => {
         { provide: AppGateway, useValue: {} },
         { provide: PrismaService, useValue: prismaMock },
         { provide: StorageService, useValue: storageMock },
+        {
+          provide: NotificationsService,
+          useValue: { record: jest.fn().mockResolvedValue(undefined) },
+        },
         { provide: RedisService, useValue: {} },
         { provide: PushNotificationService, useValue: {} },
       ],
@@ -49,11 +68,11 @@ describe('Message Archival Job', () => {
     expect(prismaMock.message.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          timestamp: { lt: expect.any(Date) },
+          timestamp: { lt: anyDate() },
         },
         take: 2000,
         orderBy: { timestamp: 'asc' },
-      })
+      }),
     );
     expect(storageMock.uploadFile).not.toHaveBeenCalled();
     expect(prismaMock.message.deleteMany).not.toHaveBeenCalled();
@@ -85,7 +104,9 @@ describe('Message Archival Job', () => {
     ];
 
     prismaMock.message.findMany.mockResolvedValue(mockMessages);
-    prismaMock.message.deleteMany.mockResolvedValue({ count: mockMessages.length });
+    prismaMock.message.deleteMany.mockResolvedValue({
+      count: mockMessages.length,
+    });
 
     await processor.archiveOldMessages();
 
@@ -97,22 +118,22 @@ describe('Message Archival Job', () => {
 
     // Verify first group upload (2026-01)
     expect(storageMock.uploadFile).toHaveBeenCalledWith(
-      expect.objectContaining({
-        originalname: expect.stringContaining('archive-2026-01-'),
+      objectContaining({
+        originalname: stringContaining('archive-2026-01-'),
         mimetype: 'application/json',
-        buffer: expect.any(Buffer),
+        buffer: anyBuffer(),
       }),
-      'archives/messages'
+      'archives/messages',
     );
 
     // Verify second group upload (2026-02)
     expect(storageMock.uploadFile).toHaveBeenCalledWith(
-      expect.objectContaining({
-        originalname: expect.stringContaining('archive-2026-02-'),
+      objectContaining({
+        originalname: stringContaining('archive-2026-02-'),
         mimetype: 'application/json',
-        buffer: expect.any(Buffer),
+        buffer: anyBuffer(),
       }),
-      'archives/messages'
+      'archives/messages',
     );
 
     // 3. Should delete archived messages from the database
@@ -120,18 +141,18 @@ describe('Message Archival Job', () => {
     expect(prismaMock.message.deleteMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          timestamp: { lt: expect.any(Date) },
+          timestamp: { lt: anyDate() },
           id: { in: ['msg-1', 'msg-2'] },
         },
-      })
+      }),
     );
     expect(prismaMock.message.deleteMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          timestamp: { lt: expect.any(Date) },
+          timestamp: { lt: anyDate() },
           id: { in: ['msg-3'] },
         },
-      })
+      }),
     );
   });
 });

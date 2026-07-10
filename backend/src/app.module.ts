@@ -7,6 +7,8 @@ import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MemoriesModule } from './memories/memories.module';
+import { CommentsModule } from './comments/comments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { CirclesModule } from './circles/circles.module';
 import { MessagesModule } from './messages/messages.module';
 import { GatewayModule } from './gateway/gateway.module';
@@ -24,9 +26,9 @@ import { SentryGlobalFilter } from '@sentry/nestjs/setup';
   imports: [
     // ── Core infrastructure (global) ──────────────────────
     ConfigModule.forRoot({ isGlobal: true }),
-    PrismaModule,   // @Global — PrismaService available everywhere
-    RedisModule,    // @Global — RedisService available everywhere
-    StorageModule,  // @Global — StorageService available everywhere
+    PrismaModule, // @Global — PrismaService available everywhere
+    RedisModule, // @Global — RedisService available everywhere
+    StorageModule, // @Global — StorageService available everywhere
     BullModule.forRoot({
       connection: {
         url: process.env.REDIS_URL || 'redis://localhost:6379',
@@ -37,7 +39,10 @@ import { SentryGlobalFilter } from '@sentry/nestjs/setup';
     LoggerModule.forRoot({
       pinoHttp: {
         autoLogging: false, // Disable automatic request logging to avoid duplication with LoggingMiddleware
-        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+        transport:
+          process.env.NODE_ENV !== 'production'
+            ? { target: 'pino-pretty' }
+            : undefined,
       },
     }),
 
@@ -51,8 +56,10 @@ import { SentryGlobalFilter } from '@sentry/nestjs/setup';
     AuthModule,
     UsersModule,
     MemoriesModule,
+    CommentsModule,
     CirclesModule,
     MessagesModule,
+    NotificationsModule,
     GatewayModule,
     HealthModule,
   ],
@@ -66,8 +73,6 @@ import { SentryGlobalFilter } from '@sentry/nestjs/setup';
   ],
 })
 export class AppModule implements NestModule {
-
-
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggingMiddleware).forRoutes('*');
   }

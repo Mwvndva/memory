@@ -8,7 +8,10 @@ class NotificationRepository {
 
   final Ref _ref;
 
-  Future<Map<String, dynamic>> fetchNotifications({String? cursor, int limit = 20}) async {
+  Future<Map<String, dynamic>> fetchNotifications({
+    String? cursor,
+    int limit = 20,
+  }) async {
     try {
       final dio = _ref.read(apiClientProvider);
       final cursorParam = cursor != null ? '?cursor=$cursor' : '';
@@ -17,14 +20,18 @@ class NotificationRepository {
       final dataMap = response.data as Map<String, dynamic>? ?? {};
       final list = dataMap['data'] as List? ?? [];
       final notifications = list
-          .map((item) => NotificationItem.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => NotificationItem.fromJson(item as Map<String, dynamic>),
+          )
           .toList();
 
       final unreadCount = dataMap['unreadCount'] as int? ?? 0;
 
       // Leverage cache service for first page of notifications
       if (cursor == null) {
-        await _ref.read(notificationCacheProvider).cacheNotifications(notifications);
+        await _ref
+            .read(notificationCacheProvider)
+            .cacheNotifications(notifications);
       }
 
       // Update system badge count
@@ -36,10 +43,17 @@ class NotificationRepository {
         'unreadCount': unreadCount,
       };
     } catch (e, st) {
-      StructuredLogger.logError('Failed to fetch notifications', category: 'NotificationRepository', error: e, stackTrace: st);
-      
+      StructuredLogger.logError(
+        'Failed to fetch notifications',
+        category: 'NotificationRepository',
+        error: e,
+        stackTrace: st,
+      );
+
       // Fallback to local cache if network request fails
-      final cached = _ref.read(notificationCacheProvider).getCachedNotifications();
+      final cached = _ref
+          .read(notificationCacheProvider)
+          .getCachedNotifications();
       final unreadCount = cached.where((n) => !n.isRead).length;
 
       return {
@@ -52,7 +66,9 @@ class NotificationRepository {
 
   Future<void> markAsRead(String notificationId) async {
     // Publish notification read event to the event bus
-    _ref.read(notificationEventBusProvider).fire(NotificationReadEvent(notificationId));
+    _ref
+        .read(notificationEventBusProvider)
+        .fire(NotificationReadEvent(notificationId));
 
     try {
       final dio = _ref.read(apiClientProvider);
@@ -73,7 +89,12 @@ class NotificationRepository {
       final unreadCount = updated.where((n) => !n.isRead).length;
       await _ref.read(badgeServiceProvider).setBadgeCount(unreadCount);
     } catch (e, st) {
-      StructuredLogger.logError('Failed to mark notification $notificationId as read', category: 'NotificationRepository', error: e, stackTrace: st);
+      StructuredLogger.logError(
+        'Failed to mark notification $notificationId as read',
+        category: 'NotificationRepository',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -94,7 +115,12 @@ class NotificationRepository {
       // Clear system badge
       await _ref.read(badgeServiceProvider).clearBadge();
     } catch (e, st) {
-      StructuredLogger.logError('Failed to mark all notifications as read', category: 'NotificationRepository', error: e, stackTrace: st);
+      StructuredLogger.logError(
+        'Failed to mark all notifications as read',
+        category: 'NotificationRepository',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 }
@@ -102,4 +128,3 @@ class NotificationRepository {
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   return NotificationRepository(ref);
 });
-

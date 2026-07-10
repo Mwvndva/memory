@@ -14,9 +14,6 @@ import '../../circle/circle_state_manager.dart';
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/shared/widgets/pills.dart';
 
-
-
-
 class ContactsSetupView extends ConsumerStatefulWidget {
   const ContactsSetupView({super.key});
 
@@ -82,6 +79,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           }
         }
 
+        // Contact sync is a network round trip; the user can leave this screen
+        // while it is in flight.
+        if (!mounted) return;
         setState(() {
           _matchedUsers = matched;
           _permissionGranted = true;
@@ -90,6 +90,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
 
         if (matched.isEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
             _showInviteSheet(context);
           });
         }
@@ -603,6 +604,6 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
   }
 }
 
-TextStyle _headline(Color color, double size) => headlineStyle(color).copyWith(fontSize: size);
+TextStyle _headline(Color color, double size) =>
+    headlineStyle(color).copyWith(fontSize: size);
 TextStyle _small(Color color) => smallStyle(color);
-

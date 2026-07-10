@@ -33,7 +33,7 @@ class ProfileState {
 
 class ProfileStateManager extends StateNotifier<ProfileState> {
   ProfileStateManager(this._ref)
-      : super(ProfileState(user: _ref.read(authProvider))) {
+    : super(ProfileState(user: _ref.read(authProvider))) {
     _ref.listen<UserProfile>(authProvider, (previous, next) {
       state = state.copyWith(user: next);
     });
@@ -64,5 +64,5 @@ class ProfileStateManager extends StateNotifier<ProfileState> {
 
 final profileStateManagerProvider =
     StateNotifierProvider<ProfileStateManager, ProfileState>((ref) {
-  return ProfileStateManager(ref);
-});
+      return ProfileStateManager(ref);
+    });

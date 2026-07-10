@@ -867,8 +867,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   }
 }
 
-
-TextStyle _headline(Color color, double size) => headlineStyle(color).copyWith(fontSize: size);
+TextStyle _headline(Color color, double size) =>
+    headlineStyle(color).copyWith(fontSize: size);
 Widget _status(String text, bool ok) => authStatusIndicator(text, ok);
 Widget _field(
   String label,
@@ -878,5 +878,14 @@ Widget _field(
   bool obscure = false,
   TextInputType? keyboard,
   VoidCallback? onToggleObscure,
-}) => authInputField(label, controller, hint, dark, obscure: obscure, keyboard: keyboard, onToggleObscure: onToggleObscure);
-Widget _passwordRequirements(String pass, String confirm) => passwordRequirements(pass, confirm);
+}) => authInputField(
+  label,
+  controller,
+  hint,
+  dark,
+  obscure: obscure,
+  keyboard: keyboard,
+  onToggleObscure: onToggleObscure,
+);
+Widget _passwordRequirements(String pass, String confirm) =>
+    passwordRequirements(pass, confirm);

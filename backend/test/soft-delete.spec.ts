@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { anyDate } from './prisma-mock';
 
 // Mock pg.Pool to prevent trying to connect to a real database during unit tests
 jest.mock('pg', () => {
-  const actualPg = jest.requireActual('pg');
+  const actualPg = jest.requireActual<Record<string, unknown>>('pg');
   return {
     ...actualPg,
     Pool: jest.fn().mockImplementation(() => {
@@ -21,8 +22,12 @@ describe('Prisma Soft Delete Extension', () => {
 
   beforeEach(async () => {
     // Stub $connect and $disconnect to avoid network/database dependency
-    jest.spyOn(PrismaService.prototype, '$connect').mockResolvedValue(undefined);
-    jest.spyOn(PrismaService.prototype, '$disconnect').mockResolvedValue(undefined);
+    jest
+      .spyOn(PrismaService.prototype, '$connect')
+      .mockResolvedValue(undefined);
+    jest
+      .spyOn(PrismaService.prototype, '$disconnect')
+      .mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [PrismaService],
@@ -37,15 +42,17 @@ describe('Prisma Soft Delete Extension', () => {
 
   it('should be defined and return the proxy', () => {
     expect(service).toBeDefined();
-    expect((service as any).extendedClient).toBeDefined();
+    expect(
+      (service as unknown as { extendedClient: unknown }).extendedClient,
+    ).toBeDefined();
   });
 
   it('should verify soft delete logic applies to User, Memory, Message, and CircleMembership models via middleware method', async () => {
     const softDeleteModels = ['User', 'Memory', 'Message', 'CircleMembership'];
-    
+
     for (const modelName of softDeleteModels) {
       const modelKey = modelName.charAt(0).toLowerCase() + modelName.slice(1);
-      
+
       // Mock client models to capture redirected calls
       const mockClientModel = {
         findFirst: jest.fn().mockResolvedValue({ id: 'test-id' }),
@@ -66,10 +73,10 @@ describe('Prisma Soft Delete Extension', () => {
         'findUnique',
         { where: { id: 'test-id' } },
         mockQuery,
-        dummyClient
+        dummyClient,
       );
       expect(mockClientModel.findFirst).toHaveBeenCalledWith({
-        where: { id: 'test-id' }
+        where: { id: 'test-id' },
       });
       expect(mockQuery).not.toHaveBeenCalled();
 
@@ -79,10 +86,10 @@ describe('Prisma Soft Delete Extension', () => {
         'findUniqueOrThrow',
         { where: { id: 'test-id' } },
         mockQuery,
-        dummyClient
+        dummyClient,
       );
       expect(mockClientModel.findFirstOrThrow).toHaveBeenCalledWith({
-        where: { id: 'test-id' }
+        where: { id: 'test-id' },
       });
       expect(mockQuery).not.toHaveBeenCalled();
 
@@ -92,10 +99,10 @@ describe('Prisma Soft Delete Extension', () => {
         'findFirst',
         { where: { id: 'test-id' } },
         mockQuery,
-        dummyClient
+        dummyClient,
       );
       expect(mockQuery).toHaveBeenCalledWith({
-        where: { id: 'test-id', deletedAt: null }
+        where: { id: 'test-id', deletedAt: null },
       });
 
       mockQuery.mockClear();
@@ -107,10 +114,10 @@ describe('Prisma Soft Delete Extension', () => {
         'findMany',
         { where: { deletedAt: explicitDate } },
         mockQuery,
-        dummyClient
+        dummyClient,
       );
       expect(mockQuery).toHaveBeenCalledWith({
-        where: { deletedAt: explicitDate }
+        where: { deletedAt: explicitDate },
       });
 
       mockQuery.mockClear();
@@ -121,11 +128,11 @@ describe('Prisma Soft Delete Extension', () => {
         'delete',
         { where: { id: 'test-id' } },
         mockQuery,
-        dummyClient
+        dummyClient,
       );
       expect(mockClientModel.update).toHaveBeenCalledWith({
         where: { id: 'test-id' },
-        data: { deletedAt: expect.any(Date) }
+        data: { deletedAt: anyDate() },
       });
       expect(mockQuery).not.toHaveBeenCalled();
 
@@ -135,11 +142,11 @@ describe('Prisma Soft Delete Extension', () => {
         'deleteMany',
         { where: { id: 'test-id' } },
         mockQuery,
-        dummyClient
+        dummyClient,
       );
       expect(mockClientModel.updateMany).toHaveBeenCalledWith({
         where: { id: 'test-id' },
-        data: { deletedAt: expect.any(Date) }
+        data: { deletedAt: anyDate() },
       });
       expect(mockQuery).not.toHaveBeenCalled();
     }
@@ -154,12 +161,15 @@ describe('Prisma Soft Delete Extension', () => {
       'findMany',
       { where: { emoji: '👍' } },
       mockQuery,
-      dummyClient
+      dummyClient,
     );
-    
+
     expect(mockQuery).toHaveBeenCalledWith({
       where: { emoji: '👍' },
     });
-    expect(mockQuery.mock.calls[0][0].where.deletedAt).toBeUndefined();
+    const firstArg = (mockQuery.mock.calls as unknown[][])[0][0] as {
+      where: { deletedAt?: unknown };
+    };
+    expect(firstArg.where.deletedAt).toBeUndefined();
   });
 });

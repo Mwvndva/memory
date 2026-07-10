@@ -59,13 +59,18 @@ class NotificationCache {
   List<NotificationItem> getCachedNotifications() {
     final jsonList = _prefs.getStringList(_cacheKey);
     if (jsonList == null) return [];
-    return jsonList.map((e) {
-      try {
-        return NotificationItem.fromJson(jsonDecode(e) as Map<String, dynamic>);
-      } catch (_) {
-        return null;
-      }
-    }).whereType<NotificationItem>().toList();
+    return jsonList
+        .map((e) {
+          try {
+            return NotificationItem.fromJson(
+              jsonDecode(e) as Map<String, dynamic>,
+            );
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<NotificationItem>()
+        .toList();
   }
 
   Future<void> clearCache() async {
@@ -84,7 +89,10 @@ class NotificationPreferencesService {
     return _prefs.getBool('$_prefix${type.name}') ?? true;
   }
 
-  Future<void> setNotificationTypeEnabled(NotificationType type, bool enabled) async {
+  Future<void> setNotificationTypeEnabled(
+    NotificationType type,
+    bool enabled,
+  ) async {
     await _prefs.setBool('$_prefix${type.name}', enabled);
   }
 
@@ -130,10 +138,11 @@ final notificationCacheProvider = Provider<NotificationCache>((ref) {
   return NotificationCache(prefs);
 });
 
-final notificationPreferencesServiceProvider = Provider<NotificationPreferencesService>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return NotificationPreferencesService(prefs);
-});
+final notificationPreferencesServiceProvider =
+    Provider<NotificationPreferencesService>((ref) {
+      final prefs = ref.watch(sharedPreferencesProvider);
+      return NotificationPreferencesService(prefs);
+    });
 
 final badgeServiceProvider = Provider<BadgeService>((ref) {
   return BadgeService();

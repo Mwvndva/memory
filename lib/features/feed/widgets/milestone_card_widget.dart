@@ -8,8 +8,6 @@ import 'package:memory_app/features/circle/circle.dart';
 
 enum ShapeType { rect, circle, triangle, ring, star, sparkle, wave }
 
-
-
 class PatternShape {
   final ShapeType type;
   final double x; // normalized 0..1
@@ -51,7 +49,7 @@ class CardDesignData {
       const Color(0xFF00F5FF), // Electric cyan
       const Color(0xFF39FF14), // Neon lime
       const Color(0xFFFF5E00), // Vivid orange
-  const Color(0xFFFADA5E), // Gold yellow (updated)
+      const Color(0xFFFADA5E), // Gold yellow (updated)
       const Color(0xFFFF3366), // Coral red
       const Color(0xFF6C5DD3), // Retro lavender
     ];
@@ -74,63 +72,86 @@ class CardDesignData {
     }
 
     final shapesList = <PatternShape>[];
-    final style = rand.nextInt(3); // 0: Memphis/Confetti, 1: Wavy Lines, 2: Rings/Stars
+    final style = rand.nextInt(
+      3,
+    ); // 0: Memphis/Confetti, 1: Wavy Lines, 2: Rings/Stars
 
     if (style == 0) {
       // Confetti & Memphis shapes
       for (int i = 0; i < 35; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.values[rand.nextInt(ShapeType.values.length - 1)], // skip wave
-          x: rand.nextDouble(),
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 20 + 8,
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.35 + 0.15),
-          rotation: rand.nextDouble() * 2 * pi,
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType
+                .values[rand.nextInt(ShapeType.values.length - 1)], // skip wave
+            x: rand.nextDouble(),
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 20 + 8,
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.35 + 0.15,
+            ),
+            rotation: rand.nextDouble() * 2 * pi,
+          ),
+        );
       }
     } else if (style == 1) {
       // Wavy patterns + sparkles
       for (int i = 0; i < 5; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.wave,
-          x: 0,
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 5 + 2, // stroke width
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.25 + 0.1),
-          rotation: rand.nextDouble() * 8 - 4, // frequency factor or shift
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType.wave,
+            x: 0,
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 5 + 2, // stroke width
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.25 + 0.1,
+            ),
+            rotation: rand.nextDouble() * 8 - 4, // frequency factor or shift
+          ),
+        );
       }
       for (int i = 0; i < 15; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.sparkle,
-          x: rand.nextDouble(),
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 14 + 8,
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.45 + 0.25),
-          rotation: rand.nextDouble() * 2 * pi,
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType.sparkle,
+            x: rand.nextDouble(),
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 14 + 8,
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.45 + 0.25,
+            ),
+            rotation: rand.nextDouble() * 2 * pi,
+          ),
+        );
       }
     } else {
       // Hypnotic Rings & Stars
       for (int i = 0; i < 6; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.ring,
-          x: rand.nextDouble(),
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 80 + 30,
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.2 + 0.05),
-          rotation: 0,
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType.ring,
+            x: rand.nextDouble(),
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 80 + 30,
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.2 + 0.05,
+            ),
+            rotation: 0,
+          ),
+        );
       }
       for (int i = 0; i < 15; i++) {
-        shapesList.add(PatternShape(
-          type: ShapeType.star,
-          x: rand.nextDouble(),
-          y: rand.nextDouble(),
-          size: rand.nextDouble() * 18 + 10,
-          color: Colors.white.withValues(alpha: rand.nextDouble() * 0.4 + 0.2),
-          rotation: rand.nextDouble() * 2 * pi,
-        ));
+        shapesList.add(
+          PatternShape(
+            type: ShapeType.star,
+            x: rand.nextDouble(),
+            y: rand.nextDouble(),
+            size: rand.nextDouble() * 18 + 10,
+            color: Colors.white.withValues(
+              alpha: rand.nextDouble() * 0.4 + 0.2,
+            ),
+            rotation: rand.nextDouble() * 2 * pi,
+          ),
+        );
       }
     }
 
@@ -174,7 +195,11 @@ class MilestoneCardPainter extends CustomPainter {
       switch (shape.type) {
         case ShapeType.rect:
           canvas.drawRect(
-            Rect.fromCenter(center: Offset.zero, width: shape.size, height: shape.size),
+            Rect.fromCenter(
+              center: Offset.zero,
+              width: shape.size,
+              height: shape.size,
+            ),
             shapePaint,
           );
           break;
@@ -243,7 +268,8 @@ class MilestoneCardPainter extends CustomPainter {
 
           for (int i = 0; i <= points; i++) {
             final px = (i / points) * size.width;
-            final py = startY + amplitude * sin((px / wavelength) * 2 * pi + phase);
+            final py =
+                startY + amplitude * sin((px / wavelength) * 2 * pi + phase);
             path.lineTo(px, py);
           }
           canvas.drawPath(path, wavePaint);
@@ -278,8 +304,8 @@ class MilestoneCardWidget extends ConsumerWidget {
     final avatarProvider = user.avatarBytes != null
         ? MemoryImage(user.avatarBytes!) as ImageProvider
         : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
-            ? NetworkImage(formatImageUrl(user.avatarUrl!)) as ImageProvider
-            : null;
+        ? NetworkImage(formatImageUrl(user.avatarUrl!)) as ImageProvider
+        : null;
 
     final nameInitial = user.firstName.isNotEmpty
         ? user.firstName[0].toUpperCase()
@@ -304,23 +330,30 @@ class MilestoneCardWidget extends ConsumerWidget {
           children: [
             // Procedurally painted background pattern
             Positioned.fill(
-              child: CustomPaint(
-                painter: MilestoneCardPainter(designData),
-              ),
+              child: CustomPaint(painter: MilestoneCardPainter(designData)),
             ),
             // Card Content
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22.0,
+                vertical: 24.0,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Top Milestone Banner
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
                     ),
                     child: Text(
                       '$milestone-DAY STREAK!',
@@ -354,7 +387,9 @@ class MilestoneCardWidget extends ConsumerWidget {
                         ),
                         child: CircleAvatar(
                           radius: 50,
-                          backgroundColor: ref.watch(isDarkProvider) ? kYellow : kBlack,
+                          backgroundColor: ref.watch(isDarkProvider)
+                              ? kYellow
+                              : kBlack,
                           backgroundImage: avatarProvider,
                           child: avatarProvider == null
                               ? Text(
@@ -379,7 +414,11 @@ class MilestoneCardWidget extends ConsumerWidget {
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
                           shadows: [
-                            Shadow(color: Colors.black45, offset: Offset(0, 2), blurRadius: 4),
+                            Shadow(
+                              color: Colors.black45,
+                              offset: Offset(0, 2),
+                              blurRadius: 4,
+                            ),
                           ],
                         ),
                       ),
@@ -388,12 +427,18 @@ class MilestoneCardWidget extends ConsumerWidget {
 
                   // Bottom Translucent Congratulatory bubble
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.22),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        width: 1.5,
+                      ),
                     ),
                     child: Text(
                       message,
@@ -404,7 +449,11 @@ class MilestoneCardWidget extends ConsumerWidget {
                         height: 1.35,
                         fontWeight: FontWeight.w700,
                         shadows: [
-                          Shadow(color: Colors.black26, offset: Offset(0, 1), blurRadius: 2),
+                          Shadow(
+                            color: Colors.black26,
+                            offset: Offset(0, 1),
+                            blurRadius: 2,
+                          ),
                         ],
                       ),
                     ),
@@ -418,4 +467,3 @@ class MilestoneCardWidget extends ConsumerWidget {
     );
   }
 }
-

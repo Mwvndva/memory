@@ -1,4 +1,3 @@
-
 enum TransactionStatus { pending, committed, rolledBack }
 
 class OptimisticTransaction {
@@ -20,9 +19,7 @@ class OptimisticTransaction {
     required this.timestamp,
   });
 
-  OptimisticTransaction copyWith({
-    TransactionStatus? status,
-  }) {
+  OptimisticTransaction copyWith({TransactionStatus? status}) {
     return OptimisticTransaction(
       id: id,
       memoryId: memoryId,
@@ -42,7 +39,10 @@ class OptimisticTransactionManager {
   bool hasPending(String memoryId, String actionType) {
     final list = _transactions[memoryId];
     if (list == null) return false;
-    return list.any((t) => t.actionType == actionType && t.status == TransactionStatus.pending);
+    return list.any(
+      (t) =>
+          t.actionType == actionType && t.status == TransactionStatus.pending,
+    );
   }
 
   /// Registers a new pending transaction.
@@ -61,12 +61,20 @@ class OptimisticTransactionManager {
         }
       }
       // Cleanup completed (non-pending) transactions periodically to prevent leaks
-      list.removeWhere((t) => t.status != TransactionStatus.pending && DateTime.now().difference(t.timestamp).inSeconds > 10);
+      list.removeWhere(
+        (t) =>
+            t.status != TransactionStatus.pending &&
+            DateTime.now().difference(t.timestamp).inSeconds > 10,
+      );
     }
   }
 
   /// Get pending transaction count for testing or validation.
   int get pendingCount {
-    return _transactions.values.fold(0, (sum, list) => sum + list.where((t) => t.status == TransactionStatus.pending).length);
+    return _transactions.values.fold(
+      0,
+      (sum, list) =>
+          sum + list.where((t) => t.status == TransactionStatus.pending).length,
+    );
   }
 }

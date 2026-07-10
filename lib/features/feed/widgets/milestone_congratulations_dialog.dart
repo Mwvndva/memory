@@ -38,6 +38,7 @@ const _streak30Messages = [
   "A full month of memories. You have immortalized 30 beautiful days! 📸🌟",
   "Unbelievable consistency! 30 days of sharing your light. ☀️💛",
 ];
+
 class MilestoneCongratulationsDialog extends StatefulWidget {
   final UserProfile user;
   final int milestone;
@@ -49,10 +50,12 @@ class MilestoneCongratulationsDialog extends StatefulWidget {
   });
 
   @override
-  State<MilestoneCongratulationsDialog> createState() => _MilestoneCongratulationsDialogState();
+  State<MilestoneCongratulationsDialog> createState() =>
+      _MilestoneCongratulationsDialogState();
 }
 
-class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulationsDialog> {
+class _MilestoneCongratulationsDialogState
+    extends State<MilestoneCongratulationsDialog> {
   late final CardDesignData _designData;
   late final String _message;
   final GlobalKey _boundaryKey = GlobalKey();
@@ -62,7 +65,9 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
   void initState() {
     super.initState();
     _designData = CardDesignData.generate(widget.milestone);
-    final messages = widget.milestone == 30 ? _streak30Messages : _streak7Messages;
+    final messages = widget.milestone == 30
+        ? _streak30Messages
+        : _streak7Messages;
     _message = messages[Random().nextInt(messages.length)];
 
     // Celebrate! Fire a confetti burst once the dialog is on screen.
@@ -76,7 +81,9 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
     setState(() => _isSharing = true);
 
     try {
-      final boundary = _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _boundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception("RenderRepaintBoundary not found");
       }
@@ -91,7 +98,8 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
 
       // Write bytes to a temp file
       final tempDir = await getTemporaryDirectory();
-      final path = '${tempDir.path}/${widget.milestone}_streak_card_${DateTime.now().millisecondsSinceEpoch}.png';
+      final path =
+          '${tempDir.path}/${widget.milestone}_streak_card_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File(path);
       await file.writeAsBytes(bytes);
 
@@ -99,13 +107,17 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Conquered the ${widget.milestone}-day memory streak! 🌟 Capture and share your daily memories on Memory App!',
+          text:
+              'Conquered the ${widget.milestone}-day memory streak! 🌟 Capture and share your daily memories on Memory App!',
         ),
       );
     } catch (e) {
       debugPrint('Error sharing milestone card: $e');
       if (mounted) {
-        showAppError(context, 'Could not generate shareable card: ${e.toString()}');
+        showAppError(
+          context,
+          'Could not generate shareable card: ${e.toString()}',
+        );
       }
     } finally {
       if (mounted) {
@@ -146,7 +158,10 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1.5,
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -183,7 +198,11 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
                             : const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.share_rounded, color: kBlack, size: 16),
+                                  Icon(
+                                    Icons.share_rounded,
+                                    color: kBlack,
+                                    size: 16,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Share Card',
@@ -231,7 +250,11 @@ class _MilestoneCongratulationsDialogState extends State<MilestoneCongratulation
 }
 
 // Global Trigger and Milestone Logic Checker
-Future<void> checkMilestones(BuildContext context, WidgetRef ref, int streakDays) async {
+Future<void> checkMilestones(
+  BuildContext context,
+  WidgetRef ref,
+  int streakDays,
+) async {
   if (streakDays <= 0) return;
 
   final prefs = ref.read(sharedPreferencesProvider);
@@ -260,12 +283,14 @@ Future<void> checkMilestones(BuildContext context, WidgetRef ref, int streakDays
     // Show celebratory in-app global notification
     showGlobalNotification(
       title: 'Streak Milestone! 🏆',
-      body: 'You reached a $milestone-day streak! Tap to view your unique shareable card.',
+      body:
+          'You reached a $milestone-day streak! Tap to view your unique shareable card.',
       onTap: () {
         showDialog(
           context: context,
           barrierDismissible: true,
-          builder: (context) => MilestoneCongratulationsDialog(user: user, milestone: milestone),
+          builder: (context) =>
+              MilestoneCongratulationsDialog(user: user, milestone: milestone),
         );
       },
     );
@@ -274,7 +299,8 @@ Future<void> checkMilestones(BuildContext context, WidgetRef ref, int streakDays
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => MilestoneCongratulationsDialog(user: user, milestone: milestone),
+      builder: (context) =>
+          MilestoneCongratulationsDialog(user: user, milestone: milestone),
     );
   }
 
@@ -298,4 +324,3 @@ Future<void> checkMilestones(BuildContext context, WidgetRef ref, int streakDays
 }
 
 // ─── Circle Size Milestones ──────────────────────────────────────────────────
-

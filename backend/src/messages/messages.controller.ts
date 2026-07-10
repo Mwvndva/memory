@@ -1,7 +1,17 @@
-import { Controller, Get, Param, Query, Req, UseGuards, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Req,
+  UseGuards,
+  Logger,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MessagesService } from './messages.service';
 import { PrismaService } from '../prisma/prisma.service';
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
+import { errorMessage, errorStack } from '../common/errors';
 
 @UseGuards(JwtAuthGuard)
 @Controller('messages')
@@ -21,7 +31,7 @@ export class MessagesController {
    */
   @Get('history/:conversationId')
   async getHistory(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('conversationId') conversationId: string,
     @Query('page') page = '1',
     @Query('limit') limit = '50',
@@ -32,22 +42,32 @@ export class MessagesController {
       this.logger.error(`[Get History] Unauthenticated request context.`);
       return {
         data: [],
-        meta: { page: 1, limit: 50, total: 0, totalPages: 0 }
+        meta: { page: 1, limit: 50, total: 0, totalPages: 0 },
       };
     }
 
     try {
-      this.logger.log(`[Get History] Fetching relationship for callerId="${callerId}" with memberId/convId="${conversationId}"`);
+      this.logger.log(
+        `[Get History] Fetching relationship for callerId="${callerId}" with memberId/convId="${conversationId}"`,
+      );
       // Resolve either-direction membership details
       const outgoing = await this.prisma.circleMembership.findUnique({
-        where: { unique_user_member: { userId: callerId, memberId: conversationId } },
+        where: {
+          unique_user_member: { userId: callerId, memberId: conversationId },
+        },
       });
       const incoming = await this.prisma.circleMembership.findUnique({
-        where: { unique_user_member: { userId: conversationId, memberId: callerId } },
+        where: {
+          unique_user_member: { userId: conversationId, memberId: callerId },
+        },
       });
 
-      if (!((outgoing && outgoing.accepted) || (incoming && incoming.accepted))) {
-        this.logger.warn(`[Get History] Request blocked: No active circle membership between caller="${callerId}" and target="${conversationId}"`);
+      if (
+        !((outgoing && outgoing.accepted) || (incoming && incoming.accepted))
+      ) {
+        this.logger.warn(
+          `[Get History] Request blocked: No active circle membership between caller="${callerId}" and target="${conversationId}"`,
+        );
         return {
           data: [],
           meta: {
@@ -60,7 +80,9 @@ export class MessagesController {
       }
 
       const shouldMarkRead = markRead !== 'false';
-      this.logger.log(`[Get History] Loading conversation: callerId="${callerId}" targetId="${conversationId}" markRead=${shouldMarkRead}`);
+      this.logger.log(
+        `[Get History] Loading conversation: callerId="${callerId}" targetId="${conversationId}" markRead=${shouldMarkRead}`,
+      );
 
       const result = await this.messagesService.getConversation(
         callerId,
@@ -70,16 +92,26 @@ export class MessagesController {
       );
 
       if (shouldMarkRead) {
-        this.logger.log(`[Get History] Marking messages as read for callerId="${callerId}" from senderId="${conversationId}"`);
+        this.logger.log(
+          `[Get History] Marking messages as read for callerId="${callerId}" from senderId="${conversationId}"`,
+        );
         this.messagesService.markRead(callerId, conversationId).catch((err) => {
-          this.logger.error(`[Get History] Failed to mark messages as read: ${err.message}`, err.stack);
+          this.logger.error(
+            `[Get History] Failed to mark messages as read: ${errorMessage(err)}`,
+            errorStack(err),
+          );
         });
       } else {
-        this.logger.log(`[Get History] Skipping markRead (background preview load) for callerId="${callerId}"`);
+        this.logger.log(
+          `[Get History] Skipping markRead (background preview load) for callerId="${callerId}"`,
+        );
       }
       return result;
-    } catch (err: any) {
-      this.logger.error(`[Get History] Exception caught during loading: ${err.message}`, err.stack);
+    } catch (err) {
+      this.logger.error(
+        `[Get History] Exception caught during loading: ${errorMessage(err)}`,
+        errorStack(err),
+      );
       return {
         data: [],
         meta: {

@@ -6,7 +6,7 @@ import 'package:memory_app/realtime/realtime_providers.dart';
 
 class NotificationStateManager extends StateNotifier<NotificationState> {
   NotificationStateManager(this._ref)
-      : super(const NotificationState(notifications: [], unreadCount: 0)) {
+    : super(const NotificationState(notifications: [], unreadCount: 0)) {
     Future.microtask(() {
       _listenToRealtimeEvents();
     });
@@ -53,7 +53,8 @@ class NotificationStateManager extends StateNotifier<NotificationState> {
         item = NotificationItem(
           id: event.eventId,
           title: 'New Reaction ${event.emoji} ❤️',
-          body: '${event.reactorName} reacted to your memory: "${event.memoryCaption}".',
+          body:
+              '${event.reactorName} reacted to your memory: "${event.memoryCaption}".',
           timestamp: DateTime.now(),
           isRead: false,
           type: NotificationType.reaction,
@@ -63,7 +64,8 @@ class NotificationStateManager extends StateNotifier<NotificationState> {
         item = NotificationItem(
           id: event.eventId,
           title: 'Circle Request 👥',
-          body: '${event.senderFirstName} (@${event.senderUsername}) wants to join your circle.',
+          body:
+              '${event.senderFirstName} (@${event.senderUsername}) wants to join your circle.',
           timestamp: DateTime.now(),
           isRead: false,
           type: NotificationType.circleRequest,
@@ -73,7 +75,8 @@ class NotificationStateManager extends StateNotifier<NotificationState> {
         item = NotificationItem(
           id: event.eventId,
           title: 'Circle Milestone! 🎉',
-          body: '@${event.circleOwnerUsername}\'s circle reached a ${event.milestone}-user milestone!',
+          body:
+              '@${event.circleOwnerUsername}\'s circle reached a ${event.milestone}-user milestone!',
           timestamp: DateTime.now(),
           isRead: false,
           type: NotificationType.circleMilestone,
@@ -88,7 +91,11 @@ class NotificationStateManager extends StateNotifier<NotificationState> {
     }
   }
 
-  void handlePushNotification(String title, String body, Map<String, dynamic> rawData) {
+  void handlePushNotification(
+    String title,
+    String body,
+    Map<String, dynamic> rawData,
+  ) {
     final typeName = rawData['type'] as String? ?? 'message';
     final type = NotificationType.values.firstWhere(
       (e) => e.name == typeName,
@@ -96,7 +103,9 @@ class NotificationStateManager extends StateNotifier<NotificationState> {
     );
 
     final item = NotificationItem(
-      id: rawData['id']?.toString() ?? 'push-${DateTime.now().millisecondsSinceEpoch}',
+      id:
+          rawData['id']?.toString() ??
+          'push-${DateTime.now().millisecondsSinceEpoch}',
       title: title,
       body: body,
       timestamp: DateTime.now(),
@@ -137,10 +146,7 @@ class NotificationStateManager extends StateNotifier<NotificationState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -150,7 +156,10 @@ class NotificationStateManager extends StateNotifier<NotificationState> {
 
     try {
       final repo = _ref.read(notificationRepositoryProvider);
-      final res = await repo.fetchNotifications(cursor: state.cursor, limit: 20);
+      final res = await repo.fetchNotifications(
+        cursor: state.cursor,
+        limit: 20,
+      );
 
       final nextList = res['notifications'] as List<NotificationItem>;
       final merged = [...state.notifications];
@@ -194,12 +203,11 @@ class NotificationStateManager extends StateNotifier<NotificationState> {
     final repo = _ref.read(notificationRepositoryProvider);
     unawaited(repo.markAllAsRead());
 
-    final updated = state.notifications.map((n) => n.copyWith(isRead: true)).toList();
+    final updated = state.notifications
+        .map((n) => n.copyWith(isRead: true))
+        .toList();
 
-    state = state.copyWith(
-      notifications: updated,
-      unreadCount: 0,
-    );
+    state = state.copyWith(notifications: updated, unreadCount: 0);
   }
 
   @override
@@ -211,5 +219,5 @@ class NotificationStateManager extends StateNotifier<NotificationState> {
 
 final notificationProvider =
     StateNotifierProvider<NotificationStateManager, NotificationState>((ref) {
-  return NotificationStateManager(ref);
-});
+      return NotificationStateManager(ref);
+    });

@@ -1,11 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../src/users/users.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { RedisService } from '../src/redis/redis.service';
 import { NotFoundException } from '@nestjs/common';
+import { delegate, MockDelegate } from './prisma-mock';
+
+interface PrismaMock {
+  user: MockDelegate;
+  memory: MockDelegate;
+  message: MockDelegate;
+  circleMembership: MockDelegate;
+  $transaction: jest.Mock;
+}
 
 // Mock pg to prevent real connection attempts during tests
 jest.mock('pg', () => {
-  const actualPg = jest.requireActual('pg');
+  const actualPg = jest.requireActual<Record<string, unknown>>('pg');
   return {
     ...actualPg,
     Pool: jest.fn().mockImplementation(() => {
@@ -18,31 +28,44 @@ jest.mock('pg', () => {
   };
 });
 
+/** Jest's asymmetric matchers are typed `any`; narrow them once here. */
+const anyDate = (): unknown => expect.any(Date) as unknown;
+const stringContaining = (needle: string): unknown =>
+  expect.stringContaining(needle) as unknown;
+const objectContaining = (shape: Record<string, unknown>): unknown =>
+  expect.objectContaining(shape) as unknown;
+
 describe('UsersService - GDPR Compliance Controls', () => {
   let service: UsersService;
-  let prismaMock: any;
+  let prismaMock: PrismaMock;
 
   beforeEach(async () => {
     prismaMock = {
-      user: {
-        findUnique: jest.fn(),
-        update: jest.fn(),
-      },
-      memory: {
-        updateMany: jest.fn(),
-      },
-      message: {
-        updateMany: jest.fn(),
-      },
-      circleMembership: {
-        updateMany: jest.fn(),
-      },
+      user: delegate('findUnique', 'update'),
+      memory: delegate('updateMany'),
+      message: delegate('updateMany'),
+      circleMembership: delegate('updateMany'),
+      $transaction: jest.fn(),
+    };
+    // deleteAccount() anonymizes and soft-deletes inside one interactive
+    // transaction; hand the callback the same mock so its writes are observed.
+    prismaMock.$transaction.mockImplementation(
+      (cb: (tx: PrismaMock) => unknown) => cb(prismaMock),
+    );
+
+    // Profile reads/writes go through the Redis cache; a null-returning cache
+    // keeps every lookup falling through to the Prisma mock above.
+    const redisMock = {
+      cacheGetJson: jest.fn().mockResolvedValue(null),
+      cacheSetJson: jest.fn().mockResolvedValue(undefined),
+      cacheDel: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: PrismaService, useValue: prismaMock },
+        { provide: RedisService, useValue: redisMock },
       ],
     }).compile();
 
@@ -77,40 +100,41 @@ describe('UsersService - GDPR Compliance Controls', () => {
       const result = await service.deleteAccount('user-123');
 
       expect(result.success).toBe(true);
-      
+
       // Verify User record is anonymized & soft deleted
       expect(prismaMock.user.update).toHaveBeenCalledWith({
         where: { id: 'user-123' },
-        data: expect.objectContaining({
+        data: objectContaining({
           firstName: 'Deleted',
           lastName: 'User',
-          username: expect.stringContaining('deleted_'),
-          email: expect.stringContaining('@erasure.example.com'),
-          phone: 'deleted-user-123',
-          phoneNormalized: 'deleted-user-123',
+          username: stringContaining('deleted_'),
+          email: stringContaining('@erasure.example.com'),
+          // deleteAccount() writes `del-${userId.slice(0, 12)}`.
+          phone: 'del-user-123',
+          phoneNormalized: 'del-user-123',
           avatarUrl: null,
-          deletedAt: expect.any(Date),
+          deletedAt: anyDate(),
         }),
       });
 
       // Verify associated memories, messages, and circle memberships are soft-deleted
       expect(prismaMock.memory.updateMany).toHaveBeenCalledWith({
         where: { creatorId: 'user-123', deletedAt: null },
-        data: { deletedAt: expect.any(Date) },
+        data: { deletedAt: anyDate() },
       });
       expect(prismaMock.message.updateMany).toHaveBeenCalledWith({
         where: {
           OR: [{ senderId: 'user-123' }, { receiverId: 'user-123' }],
           deletedAt: null,
         },
-        data: { deletedAt: expect.any(Date) },
+        data: { deletedAt: anyDate() },
       });
       expect(prismaMock.circleMembership.updateMany).toHaveBeenCalledWith({
         where: {
           OR: [{ userId: 'user-123' }, { memberId: 'user-123' }],
           deletedAt: null,
         },
-        data: { deletedAt: expect.any(Date) },
+        data: { deletedAt: anyDate() },
       });
     });
   });

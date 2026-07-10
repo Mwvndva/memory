@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HeavyOpsProcessor } from '../src/jobs/heavy-ops.processor';
+import { NotificationsService } from '../src/notifications/notifications.service';
+import type { Job } from 'bullmq';
+import type { HeavyOpsJobData } from '../src/jobs/heavy-ops.processor';
+
 import { AppGateway } from '../src/gateway/app.gateway';
 import { RedisService } from '../src/redis/redis.service';
 import { PushNotificationService } from '../src/notifications/push-notification.service';
@@ -11,7 +15,7 @@ import { MessagesService } from '../src/messages/messages.service';
 
 // Mock pg to prevent real connection attempts during tests
 jest.mock('pg', () => {
-  const actualPg = jest.requireActual('pg');
+  const actualPg = jest.requireActual<Record<string, unknown>>('pg');
   return {
     ...actualPg,
     Pool: jest.fn().mockImplementation(() => {
@@ -26,9 +30,6 @@ jest.mock('pg', () => {
 
 describe('Push Notification & Offline Fallback', () => {
   let processor: HeavyOpsProcessor;
-  let gateway: AppGateway;
-  let redisService: RedisService;
-  let pushNotificationService: PushNotificationService;
 
   const mockRedisService = {
     getSocketId: jest.fn(),
@@ -64,18 +65,29 @@ describe('Push Notification & Offline Fallback', () => {
 
   beforeEach(async () => {
     // Stub $connect and $disconnect to avoid network/database dependency
-    jest.spyOn(PrismaService.prototype, '$connect').mockResolvedValue(undefined);
-    jest.spyOn(PrismaService.prototype, '$disconnect').mockResolvedValue(undefined);
+    jest
+      .spyOn(PrismaService.prototype, '$connect')
+      .mockResolvedValue(undefined);
+    jest
+      .spyOn(PrismaService.prototype, '$disconnect')
+      .mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HeavyOpsProcessor,
         { provide: AppGateway, useValue: mockAppGateway },
         { provide: RedisService, useValue: mockRedisService },
-        { provide: PushNotificationService, useValue: mockPushNotificationService },
+        {
+          provide: PushNotificationService,
+          useValue: mockPushNotificationService,
+        },
         { provide: UsersService, useValue: {} },
         { provide: CirclesService, useValue: {} },
         { provide: PrismaService, useValue: mockPrismaService },
+        {
+          provide: NotificationsService,
+          useValue: { record: jest.fn().mockResolvedValue(undefined) },
+        },
         { provide: StorageService, useValue: {} },
         { provide: MessagesService, useValue: mockMessagesService },
       ],
@@ -84,7 +96,9 @@ describe('Push Notification & Offline Fallback', () => {
     processor = module.get<HeavyOpsProcessor>(HeavyOpsProcessor);
     gateway = module.get<AppGateway>(AppGateway);
     redisService = module.get<RedisService>(RedisService);
-    pushNotificationService = module.get<PushNotificationService>(PushNotificationService);
+    pushNotificationService = module.get<PushNotificationService>(
+      PushNotificationService,
+    );
   });
 
   afterEach(() => {
@@ -93,7 +107,7 @@ describe('Push Notification & Offline Fallback', () => {
 
   describe('HeavyOpsProcessor - send-notification job', () => {
     it('should send via WebSocket gateway if recipient is online', async () => {
-      const mockJob: any = {
+      const mockJob = {
         name: 'send-notification',
         data: {
           userId: 'user-123',
@@ -104,7 +118,7 @@ describe('Push Notification & Offline Fallback', () => {
 
       mockRedisService.getSocketId.mockResolvedValue('socket-abc');
 
-      await processor.process(mockJob);
+      await processor.process(mockJob as Job<HeavyOpsJobData, unknown, string>);
 
       expect(mockRedisService.getSocketId).toHaveBeenCalledWith('user-123');
       expect(mockAppGateway.sendToUser).toHaveBeenCalledWith(
@@ -112,11 +126,13 @@ describe('Push Notification & Offline Fallback', () => {
         'new_memory',
         mockJob.data.payload,
       );
-      expect(mockPushNotificationService.sendNotification).not.toHaveBeenCalled();
+      expect(
+        mockPushNotificationService.sendNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it('should fall back to FCM push notification if recipient is offline', async () => {
-      const mockJob: any = {
+      const mockJob = {
         name: 'send-notification',
         data: {
           userId: 'user-123',
@@ -127,7 +143,7 @@ describe('Push Notification & Offline Fallback', () => {
 
       mockRedisService.getSocketId.mockResolvedValue(null);
 
-      await processor.process(mockJob);
+      await processor.process(mockJob as Job<HeavyOpsJobData, unknown, string>);
 
       expect(mockRedisService.getSocketId).toHaveBeenCalledWith('user-123');
       expect(mockAppGateway.sendToUser).not.toHaveBeenCalled();

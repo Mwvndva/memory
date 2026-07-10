@@ -7,7 +7,8 @@ class PulseRedDot extends StatefulWidget {
   State<PulseRedDot> createState() => PulseRedDotState();
 }
 
-class PulseRedDotState extends State<PulseRedDot> with SingleTickerProviderStateMixin {
+class PulseRedDotState extends State<PulseRedDot>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override

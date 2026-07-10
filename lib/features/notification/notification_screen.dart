@@ -50,7 +50,10 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: dark ? kYellow : kBlack),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: dark ? kYellow : kBlack,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -64,7 +67,8 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         actions: [
           if (state.notifications.any((n) => !n.isRead))
             TextButton(
-              onPressed: () => ref.read(notificationProvider.notifier).markAllAsRead(),
+              onPressed: () =>
+                  ref.read(notificationProvider.notifier).markAllAsRead(),
               child: Text(
                 'Read All',
                 style: TextStyle(
@@ -78,8 +82,8 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
       body: state.isLoading && state.notifications.isEmpty
           ? const Center(child: CircularProgressIndicator.adaptive())
           : state.notifications.isEmpty
-              ? _buildEmptyState(dark)
-              : _buildList(state.notifications, dark),
+          ? _buildEmptyState(dark)
+          : _buildList(state.notifications, dark),
     );
   }
 
@@ -129,7 +133,9 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             : (dark ? kBlack.withValues(alpha: 0.4) : Colors.white),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: (dark ? kYellow : kBlack).withValues(alpha: item.isRead ? 0.05 : 0.15),
+          color: (dark ? kYellow : kBlack).withValues(
+            alpha: item.isRead ? 0.05 : 0.15,
+          ),
           width: 1.5,
         ),
         boxShadow: item.isRead
@@ -165,7 +171,9 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                         item.title,
                         style: TextStyle(
                           color: dark ? kYellow : kBlack,
-                          fontWeight: item.isRead ? FontWeight.w700 : FontWeight.w900,
+                          fontWeight: item.isRead
+                              ? FontWeight.w700
+                              : FontWeight.w900,
                           fontSize: 13,
                         ),
                       ),
@@ -173,7 +181,9 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                       Text(
                         item.body,
                         style: TextStyle(
-                          color: (dark ? kYellow : kBlack).withValues(alpha: 0.7),
+                          color: (dark ? kYellow : kBlack).withValues(
+                            alpha: 0.7,
+                          ),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -226,13 +236,17 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         color: dark ? kBlack : color.withValues(alpha: 0.15),
         shape: BoxShape.circle,
         border: Border.all(
-          color: dark ? kYellow.withValues(alpha: 0.2) : color.withValues(alpha: 0.4),
+          color: dark
+              ? kYellow.withValues(alpha: 0.2)
+              : color.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
       child: Icon(
         icon,
-        color: dark ? kYellow : (dark ? Colors.white : color.withValues(alpha: 0.95)),
+        color: dark
+            ? kYellow
+            : (dark ? Colors.white : color.withValues(alpha: 0.95)),
         size: 18,
       ),
     );

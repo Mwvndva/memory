@@ -27,11 +27,9 @@ const _stubUser = UserProfile(
 class _FakeSessionManager extends StateNotifier<SessionState>
     implements SessionManager {
   _FakeSessionManager()
-      : super(SessionState(
-          isAuthenticated: false,
-          user: _stubUser,
-          accessToken: '',
-        ));
+    : super(
+        SessionState(isAuthenticated: false, user: _stubUser, accessToken: ''),
+      );
 
   // All SessionManager methods are no-ops in tests
   @override
@@ -44,7 +42,8 @@ class _MockInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     handler.resolve(
-        Response(requestOptions: options, statusCode: 200, data: {}));
+      Response(requestOptions: options, statusCode: 200, data: {}),
+    );
   }
 }
 
@@ -56,8 +55,7 @@ ProviderContainer _makeContainer(Dio dio, SharedPreferences prefs) {
       sharedPreferencesProvider.overrideWithValue(prefs),
       apiClientProvider.overrideWithValue(dio),
       // Short-circuit SessionManager so no native channel or network is needed
-      sessionProvider
-          .overrideWith((_) => _FakeSessionManager()),
+      sessionProvider.overrideWith((_) => _FakeSessionManager()),
       // Also override authProvider so any direct reads return the stub user
       authProvider.overrideWithValue(_stubUser),
     ],
@@ -74,8 +72,9 @@ void main() {
 
   setUpAll(() {
     // Silence any stray native-channel calls that may still leak through
-    const secureStorageChannel =
-        MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+    const secureStorageChannel = MethodChannel(
+      'plugins.it_nomads.com/flutter_secure_storage',
+    );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(secureStorageChannel, (_) async => null);
 
@@ -110,8 +109,11 @@ void main() {
       // Message must appear in the list immediately (optimistic UI).
       // In the test environment there is no WS channel, so _markFailed fires
       // synchronously — we only assert presence, not delivery status.
-      expect(messages.any((m) => m.text == 'Optimistic test message'), isTrue,
-          reason: 'Message should appear immediately after sendMessage()');
+      expect(
+        messages.any((m) => m.text == 'Optimistic test message'),
+        isTrue,
+        reason: 'Message should appear immediately after sendMessage()',
+      );
     });
 
     // ── 2. Retry ────────────────────────────────────────────────────────────
@@ -133,7 +135,7 @@ void main() {
       );
       notifier.state = notifier.state.copyWith(
         messagesByContact: {
-          'Amara': [failedMsg]
+          'Amara': [failedMsg],
         },
       );
 
@@ -144,8 +146,11 @@ void main() {
 
       final msgs =
           container.read(chatProvider).messagesByContact['Amara'] ?? [];
-      expect(msgs.any((m) => m.id == 'msg-fail-1'), isTrue,
-          reason: 'Retried message should remain in the conversation list');
+      expect(
+        msgs.any((m) => m.id == 'msg-fail-1'),
+        isTrue,
+        reason: 'Retried message should remain in the conversation list',
+      );
     });
 
     // ── 3. Optimistic delete ─────────────────────────────────────────────────
@@ -165,8 +170,11 @@ void main() {
 
       final after =
           container.read(chatProvider).messagesByContact['Amara'] ?? [];
-      expect(after.any((m) => m.id == targetId), isFalse,
-          reason: 'Deleted message should be removed from state');
+      expect(
+        after.any((m) => m.id == targetId),
+        isFalse,
+        reason: 'Deleted message should be removed from state',
+      );
     });
 
     // ── 4. Typing indicators ─────────────────────────────────────────────────
@@ -176,12 +184,14 @@ void main() {
 
       final notifier = container.read(chatProvider.notifier);
 
-      notifier.state =
-          notifier.state.copyWith(typingIndicators: {'Amara': true});
+      notifier.state = notifier.state.copyWith(
+        typingIndicators: {'Amara': true},
+      );
       expect(container.read(chatProvider).typingIndicators['Amara'], isTrue);
 
-      notifier.state =
-          notifier.state.copyWith(typingIndicators: {'Amara': false});
+      notifier.state = notifier.state.copyWith(
+        typingIndicators: {'Amara': false},
+      );
       expect(container.read(chatProvider).typingIndicators['Amara'], isFalse);
     });
 
@@ -202,7 +212,7 @@ void main() {
 
       notifier.state = notifier.state.copyWith(
         messagesByContact: {
-          'Amara': [msg]
+          'Amara': [msg],
         },
       );
 
@@ -210,14 +220,19 @@ void main() {
       final existing = notifier.state.messagesByContact['Amara']!;
       if (!existing.any((m) => m.id == msg.id)) {
         notifier.state = notifier.state.copyWith(
-          messagesByContact: {'Amara': [...existing, msg]},
+          messagesByContact: {
+            'Amara': [...existing, msg],
+          },
         );
       }
 
       final msgs =
           container.read(chatProvider).messagesByContact['Amara'] ?? [];
-      expect(msgs.length, equals(1),
-          reason: 'Duplicate id should not be appended again');
+      expect(
+        msgs.length,
+        equals(1),
+        reason: 'Duplicate id should not be appended again',
+      );
     });
   });
 }

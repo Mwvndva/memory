@@ -5,11 +5,18 @@ import { Pool } from 'pg';
 import * as crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-cbc';
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-secret-key-32-chars-long-x';
+const ENCRYPTION_KEY =
+  process.env.ENCRYPTION_KEY || 'default-secret-key-32-chars-long-x';
 const KEY = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
 const IV = crypto.scryptSync(ENCRYPTION_KEY, 'iv-salt', 16);
 
-function encrypt(text: string): string {
+/**
+ * Deterministic by design: the IV is derived from the key, not random, so the
+ * same plaintext always yields the same ciphertext. That is what allows
+ * `where: { email }` lookups to match an encrypted column. It also means this
+ * scheme leaks equality — acceptable for lookup columns, not for secrets.
+ */
+export function encrypt(text: string): string {
   if (!text) return text;
   const cipher = crypto.createCipheriv(ALGORITHM, KEY, IV);
   let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -17,100 +24,181 @@ function encrypt(text: string): string {
   return encrypted;
 }
 
-function decrypt(ciphertext: string): string {
+export function decrypt(ciphertext: string): string {
   if (!ciphertext) return ciphertext;
   try {
     const decipher = crypto.createDecipheriv(ALGORITHM, KEY, IV);
     let decrypted = decipher.update(ciphertext, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;
-  } catch (err) {
+  } catch {
     return ciphertext; // Fallback if not encrypted (e.g. migration phase)
   }
 }
 
-// Recursively traverse returned objects to decrypt User PII transparently
-function decryptUserPII(obj: any): any {
-  if (!obj || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) {
-    return obj.map(decryptUserPII);
-  }
-  
-  const decryptedObj = { ...obj };
-  
-  // If this object is a User model, decrypt its PII
-  if (decryptedObj.id && (decryptedObj.email !== undefined || decryptedObj.phone !== undefined)) {
-    if (decryptedObj.email) decryptedObj.email = decrypt(decryptedObj.email);
-    if (decryptedObj.phone) decryptedObj.phone = decrypt(decryptedObj.phone);
-    if (decryptedObj.phoneNormalized) decryptedObj.phoneNormalized = decrypt(decryptedObj.phoneNormalized);
-  }
-  
-  // Recurse into nested fields (e.g., relations)
-  for (const key of Object.keys(decryptedObj)) {
-    if (typeof decryptedObj[key] === 'object') {
-      decryptedObj[key] = decryptUserPII(decryptedObj[key]);
-    }
-  }
-  
-  return decryptedObj;
+/**
+ * True only for `{}`-style objects.
+ *
+ * Traversal must not descend into class instances. A `Date` has no own
+ * enumerable properties, so `{ ...date }` is `{}` — spreading one silently
+ * destroys every timestamp Prisma returns. The same applies to `Buffer` and
+ * `Decimal`. Those are leaf values, not containers.
+ */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== 'object') return false;
+  const proto: unknown = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
 }
 
-// Encrypt query arguments transparently
-function encryptUserPIIQueryArgs(model: string, args: any) {
+/** A row is a User when it has an id and at least one of the PII columns. */
+function looksLikeUserRow(row: Record<string, unknown>): boolean {
+  return (
+    Boolean(row.id) && (row.email !== undefined || row.phone !== undefined)
+  );
+}
+
+function decryptField(row: Record<string, unknown>, key: string): void {
+  const value = row[key];
+  if (typeof value === 'string' && value.length > 0) {
+    row[key] = decrypt(value);
+  }
+}
+
+function decryptValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => decryptValue(entry));
+  }
+  if (!isPlainObject(value)) {
+    // Primitives, null, Date, Buffer, Decimal — returned untouched.
+    return value;
+  }
+
+  const row: Record<string, unknown> = { ...value };
+
+  if (looksLikeUserRow(row)) {
+    decryptField(row, 'email');
+    decryptField(row, 'phone');
+    decryptField(row, 'phoneNormalized');
+  }
+
+  // Recurse into nested relations (arrays and plain objects only).
+  for (const key of Object.keys(row)) {
+    row[key] = decryptValue(row[key]);
+  }
+
+  return row;
+}
+
+/** Recursively decrypt User PII on any value returned by Prisma. */
+export function decryptUserPII<T>(obj: T): T {
+  return decryptValue(obj) as T;
+}
+
+/** The subset of Prisma query arguments this layer rewrites. */
+export interface PIIQueryArgs {
+  where?: Record<string, unknown>;
+  data?: Record<string, unknown>;
+  create?: Record<string, unknown>;
+  update?: Record<string, unknown>;
+}
+
+/** Encrypt `container[key]` when it is a plain string. */
+function encryptStringField(
+  container: Record<string, unknown>,
+  key: string,
+): void {
+  const value = container[key];
+  if (typeof value === 'string') {
+    container[key] = encrypt(value);
+  }
+}
+
+/**
+ * Encrypt `container[key]` when it is a string, or every entry of an
+ * `{ in: [...] }` filter. Used for the columns that are queried by list —
+ * email (login) and phoneNormalized (contact sync).
+ */
+function encryptStringOrInFilter(
+  container: Record<string, unknown>,
+  key: string,
+): void {
+  const value = container[key];
+  if (typeof value === 'string') {
+    container[key] = encrypt(value);
+    return;
+  }
+  if (isPlainObject(value) && Array.isArray(value.in)) {
+    value.in = (value.in as unknown[]).map((entry) =>
+      typeof entry === 'string' ? encrypt(entry) : entry,
+    );
+  }
+}
+
+/** Encrypt User PII in query arguments, in place. */
+export function encryptUserPIIQueryArgs(
+  model: string | undefined,
+  args: PIIQueryArgs | undefined | null,
+): PIIQueryArgs | undefined | null {
   if (!args) return args;
-  
-  // 1. Encrypt filters in where clause
-  if (args.where && model === 'User') {
-    if (typeof args.where.email === 'string') {
-      args.where.email = encrypt(args.where.email);
-    } else if (args.where.email && Array.isArray(args.where.email.in)) {
-      args.where.email.in = args.where.email.in.map(encrypt);
-    }
-    
-    if (typeof args.where.phone === 'string') {
-      args.where.phone = encrypt(args.where.phone);
-    }
-    
-    if (typeof args.where.phoneNormalized === 'string') {
-      args.where.phoneNormalized = encrypt(args.where.phoneNormalized);
-    } else if (args.where.phoneNormalized && Array.isArray(args.where.phoneNormalized.in)) {
-      args.where.phoneNormalized.in = args.where.phoneNormalized.in.map(encrypt);
-    }
+  if (model !== 'User') return args;
+
+  // 1. Filters in the where clause
+  if (args.where) {
+    encryptStringOrInFilter(args.where, 'email');
+    encryptStringField(args.where, 'phone');
+    encryptStringOrInFilter(args.where, 'phoneNormalized');
   }
-  
-  // 2. Encrypt input data in create/update
-  if (model === 'User' && args.data) {
-    if (typeof args.data.email === 'string') {
-      args.data.email = encrypt(args.data.email);
-    }
-    if (typeof args.data.phone === 'string') {
-      args.data.phone = encrypt(args.data.phone);
-    }
-    if (typeof args.data.phoneNormalized === 'string') {
-      args.data.phoneNormalized = encrypt(args.data.phoneNormalized);
-    }
+
+  // 2. Input data in create/update
+  if (args.data) {
+    encryptStringField(args.data, 'email');
+    encryptStringField(args.data, 'phone');
+    encryptStringField(args.data, 'phoneNormalized');
   }
-  
-  // 3. Encrypt input data in upsert
-  if (model === 'User' && (args.create || args.update)) {
-    if (args.create) {
-      if (typeof args.create.email === 'string') args.create.email = encrypt(args.create.email);
-      if (typeof args.create.phone === 'string') args.create.phone = encrypt(args.create.phone);
-      if (typeof args.create.phoneNormalized === 'string') args.create.phoneNormalized = encrypt(args.create.phoneNormalized);
-    }
-    if (args.update) {
-      if (typeof args.update.email === 'string') args.update.email = encrypt(args.update.email);
-      if (typeof args.update.phone === 'string') args.update.phone = encrypt(args.update.phone);
-      if (typeof args.update.phoneNormalized === 'string') args.update.phoneNormalized = encrypt(args.update.phoneNormalized);
-    }
+
+  // 3. Both branches of an upsert
+  for (const branch of [args.create, args.update]) {
+    if (!branch) continue;
+    encryptStringField(branch, 'email');
+    encryptStringField(branch, 'phone');
+    encryptStringField(branch, 'phoneNormalized');
   }
 
   return args;
 }
 
+/** The delegate methods the soft-delete rewrite reaches for. */
+interface ModelDelegate {
+  findFirst(args: unknown): Promise<unknown>;
+  findFirstOrThrow(args: unknown): Promise<unknown>;
+  update(args: unknown): Promise<unknown>;
+  updateMany(args: unknown): Promise<unknown>;
+}
+
+export type DelegateClient = Record<string, ModelDelegate>;
+
+/** Query arguments as seen by the soft-delete rewrite. */
+export interface SoftDeleteArgs {
+  where?: Record<string, unknown>;
+  data?: Record<string, unknown>;
+}
+
+/** Models carrying a `deletedAt` column. */
+const SOFT_DELETE_MODELS = [
+  'User',
+  'Memory',
+  'Message',
+  'CircleMembership',
+  'Comment',
+  'Notification',
+];
+
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  private extendedClient: any;
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
+  private extendedClient!: Record<string | symbol, unknown>;
 
   constructor() {
     const pool = new Pool({
@@ -119,74 +207,93 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     const adapter = new PrismaPg(pool);
     super({ adapter });
 
+    // An arrow function, not a method: it closes over `this` (the raw instance,
+    // not the proxy, which is still in its temporal dead zone here).
     const client = this.$extends({
       query: {
         $allModels: {
-          async $allOperations({ model, operation, args, query }) {
-            encryptUserPIIQueryArgs(model, args);
-            const result = await (proxy as any).softDeleteQueryMiddleware(model, operation, args, query, client);
+          $allOperations: async ({ model, operation, args, query }) => {
+            encryptUserPIIQueryArgs(model, args as PIIQueryArgs);
+            const result = await this.softDeleteQueryMiddleware(
+              model,
+              operation,
+              args as SoftDeleteArgs,
+              query,
+              client as unknown as DelegateClient,
+            );
             return decryptUserPII(result);
-          }
-        }
-      }
-    });
+          },
+        },
+      },
+    }) as unknown as Record<string | symbol, unknown>;
 
     this.extendedClient = client;
 
     const proxy = new Proxy(this, {
       get: (target, prop, receiver) => {
-        if (prop in target.extendedClient) {
-          const value = target.extendedClient[prop];
+        const extended = target.extendedClient;
+        if (prop in extended) {
+          const value = extended[prop];
           if (typeof value === 'function') {
-            return value.bind(target.extendedClient);
+            const fn = value as (...args: unknown[]) => unknown;
+            return fn.bind(extended) as unknown;
           }
           return value;
         }
-        return Reflect.get(target, prop, receiver);
-      }
+        return Reflect.get(target, prop, receiver) as unknown;
+      },
     });
     return proxy;
   }
 
-
-  async softDeleteQueryMiddleware(model: string, operation: string, args: any, query: (args: any) => Promise<any>, client: any) {
-    const softDeleteModels = ['User', 'Memory', 'Message', 'CircleMembership'];
-    if (!softDeleteModels.includes(model)) {
+  async softDeleteQueryMiddleware(
+    model: string | undefined,
+    operation: string,
+    args: SoftDeleteArgs,
+    query: (args: unknown) => Promise<unknown>,
+    client: DelegateClient,
+  ): Promise<unknown> {
+    if (!model || !SOFT_DELETE_MODELS.includes(model)) {
       return query(args);
     }
 
     const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
 
     if (operation === 'findUnique' || operation === 'findUniqueOrThrow') {
-      const whereKeys = Object.keys(args.where || {});
-      const isCompoundUnique = whereKeys.length === 1 && whereKeys[0] === 'unique_user_member';
+      const whereKeys = Object.keys(args.where ?? {});
+      const isCompoundUnique =
+        whereKeys.length === 1 && whereKeys[0] === 'unique_user_member';
       if (isCompoundUnique) {
         // Direct query pass-through to let the prisma engine match the unique constraint properly
         return query(args);
       }
       if (operation === 'findUnique') {
-        return (client as any)[modelKey].findFirst(args);
-      } else {
-        return (client as any)[modelKey].findFirstOrThrow(args);
+        return client[modelKey].findFirst(args);
       }
+      return client[modelKey].findFirstOrThrow(args);
     }
 
-    if (operation === 'findFirst' || operation === 'findFirstOrThrow' || operation === 'findMany' || operation === 'count') {
-      args.where = args.where || {};
-      if ((args.where as any).deletedAt === undefined) {
-        (args.where as any).deletedAt = null;
+    if (
+      operation === 'findFirst' ||
+      operation === 'findFirstOrThrow' ||
+      operation === 'findMany' ||
+      operation === 'count'
+    ) {
+      args.where = args.where ?? {};
+      if (args.where.deletedAt === undefined) {
+        args.where.deletedAt = null;
       }
     }
 
     if (operation === 'delete') {
-      (args as any).data = { deletedAt: new Date() };
-      return (client as any)[modelKey].update(args);
+      args.data = { deletedAt: new Date() };
+      return client[modelKey].update(args);
     }
 
     if (operation === 'deleteMany') {
-      (args as any).data = (args as any).data || {};
-      (args as any).data.deletedAt = new Date();
-      return (client as any)[modelKey].updateMany(args);
+      args.data = args.data ?? {};
+      args.data.deletedAt = new Date();
+      return client[modelKey].updateMany(args);
     }
 
     return query(args);

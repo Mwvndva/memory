@@ -16,15 +16,17 @@ describe('StorageService (Local Fallback)', () => {
     destination: '',
     filename: '',
     path: '',
-    stream: null as any,
+    stream: null as unknown as NodeJS.ReadableStream,
   };
 
   beforeEach(async () => {
     const configServiceMock = {
-      get: jest.fn().mockImplementation((key: string, defaultValue?: any) => {
-        if (key === 'PORT') return 3000;
-        return defaultValue;
-      }),
+      get: jest
+        .fn()
+        .mockImplementation((key: string, defaultValue?: unknown) => {
+          if (key === 'PORT') return 3000;
+          return defaultValue;
+        }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -49,15 +51,20 @@ describe('StorageService (Local Fallback)', () => {
 
   it('should fallback to local disk and save the file buffer', async () => {
     const url = await service.uploadFile(dummyFile, 'test-memories');
-    
+
     // Assert url is local fallback url
     expect(url).toContain('http://localhost:3000/uploads/test-memories/');
-    
+
     // Assert file actually exists on disk
     const urlParts = url.split('/');
     const filename = urlParts[urlParts.length - 1];
-    const filePath = path.join(process.cwd(), 'uploads', 'test-memories', filename);
-    
+    const filePath = path.join(
+      process.cwd(),
+      'uploads',
+      'test-memories',
+      filename,
+    );
+
     expect(fs.existsSync(filePath)).toBe(true);
     const content = fs.readFileSync(filePath, 'utf-8');
     expect(content).toBe('dummy video data');

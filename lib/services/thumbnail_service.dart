@@ -18,7 +18,9 @@ class ThumbnailService {
   Future<File> getThumbnail(String mediaPath) async {
     final file = File(mediaPath);
     if (!await file.exists()) {
-      throw FileNotFoundException('Media file not found for thumbnail: $mediaPath');
+      throw FileNotFoundException(
+        'Media file not found for thumbnail: $mediaPath',
+      );
     }
 
     final cacheDir = await getTemporaryDirectory();
@@ -27,11 +29,17 @@ class ThumbnailService {
     final thumbnailFile = File(thumbnailPath);
 
     if (await thumbnailFile.exists()) {
-      StructuredLogger.log('Returning cached thumbnail for: $mediaPath', category: 'ThumbnailService');
+      StructuredLogger.log(
+        'Returning cached thumbnail for: $mediaPath',
+        category: 'ThumbnailService',
+      );
       return thumbnailFile;
     }
 
-    StructuredLogger.log('Generating new thumbnail for: $mediaPath', category: 'ThumbnailService');
+    StructuredLogger.log(
+      'Generating new thumbnail for: $mediaPath',
+      category: 'ThumbnailService',
+    );
     final metadata = await _mediaProcessor.extractMetadata(mediaPath);
 
     final bytes = await _generateThumbnailBytes(metadata);
@@ -44,7 +52,10 @@ class ThumbnailService {
     if (!metadata.isVideo) {
       try {
         final originalBytes = await File(metadata.path).readAsBytes();
-        final codec = await ui.instantiateImageCodec(originalBytes, targetWidth: 200);
+        final codec = await ui.instantiateImageCodec(
+          originalBytes,
+          targetWidth: 200,
+        );
         final frame = await codec.getNextFrame();
         final img = frame.image;
         final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
@@ -53,7 +64,11 @@ class ThumbnailService {
           return byteData.buffer.asUint8List();
         }
       } catch (e) {
-        StructuredLogger.logWarning('Failed to downscale image thumbnail, falling back to original bytes', category: 'ThumbnailService', error: e);
+        StructuredLogger.logWarning(
+          'Failed to downscale image thumbnail, falling back to original bytes',
+          category: 'ThumbnailService',
+          error: e,
+        );
       }
       return File(metadata.path).readAsBytes();
     }
@@ -72,7 +87,7 @@ class ThumbnailService {
     final iconPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
-    
+
     final path = Path()
       ..moveTo(145, 100)
       ..lineTo(185, 120)
@@ -82,7 +97,10 @@ class ThumbnailService {
 
     if (metadata.duration != null) {
       final minutes = metadata.duration!.inMinutes.toString().padLeft(2, '0');
-      final seconds = (metadata.duration!.inSeconds % 60).toString().padLeft(2, '0');
+      final seconds = (metadata.duration!.inSeconds % 60).toString().padLeft(
+        2,
+        '0',
+      );
       final durationStr = '$minutes:$seconds';
 
       final textPainter = TextPainter(
@@ -105,10 +123,7 @@ class ThumbnailService {
     final namePainter = TextPainter(
       text: TextSpan(
         text: name.length > 25 ? '${name.substring(0, 22)}...' : name,
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 10,
-        ),
+        style: const TextStyle(color: Colors.white70, fontSize: 10),
       ),
       textDirection: TextDirection.ltr,
     );

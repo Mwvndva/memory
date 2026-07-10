@@ -18,9 +18,9 @@ interface Signature {
 
 // Only formats we actually accept. Each entry is one acceptable signature.
 const IMAGE_SIGNATURES: Signature[] = [
-  { offset: 0, bytes: [0xff, 0xd8, 0xff] },                         // JPEG
+  { offset: 0, bytes: [0xff, 0xd8, 0xff] }, // JPEG
   { offset: 0, bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] }, // PNG
-  { offset: 0, bytes: [0x52, 0x49, 0x46, 0x46] },                   // RIFF (WebP container; 'WEBP' checked below)
+  { offset: 0, bytes: [0x52, 0x49, 0x46, 0x46] }, // RIFF (WebP container; 'WEBP' checked below)
 ];
 
 const VIDEO_SIGNATURES: Signature[] = [
@@ -38,10 +38,7 @@ function matches(buffer: Buffer, sig: Signature): boolean {
 
 function isWebp(buffer: Buffer): boolean {
   // RIFF....WEBP — verify the 'WEBP' fourcc at offset 8
-  return (
-    buffer.length >= 12 &&
-    buffer.toString('ascii', 8, 12) === 'WEBP'
-  );
+  return buffer.length >= 12 && buffer.toString('ascii', 8, 12) === 'WEBP';
 }
 
 export class FileSignatureValidator extends FileValidator<{ kind: FileKind }> {

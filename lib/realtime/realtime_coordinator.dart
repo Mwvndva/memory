@@ -74,7 +74,8 @@ class RealtimeCoordinator {
   int _connectionGeneration = 0;
 
   // ── Connection state ────────────────────────────────────────────────────────
-  RealtimeConnectionState _connectionState = RealtimeConnectionState.disconnected;
+  RealtimeConnectionState _connectionState =
+      RealtimeConnectionState.disconnected;
 
   RealtimeConnectionState get connectionState => _connectionState;
 
@@ -143,10 +144,9 @@ class RealtimeCoordinator {
       }
 
       final baseUri = Uri.parse(kWebSocketUrl);
-      final wsUri = baseUri.replace(queryParameters: {
-        ...baseUri.queryParameters,
-        'ticket': ticket,
-      });
+      final wsUri = baseUri.replace(
+        queryParameters: {...baseUri.queryParameters, 'ticket': ticket},
+      );
 
       _manualClose = false;
       _channel = IOWebSocketChannel.connect(wsUri);
@@ -183,7 +183,9 @@ class RealtimeCoordinator {
   /// Feature modules must call this instead of accessing the channel directly.
   void emit(Map<String, dynamic> frame) {
     if (_channel == null) {
-      debugPrint('[Realtime] emit() called with no open channel; frame dropped.');
+      debugPrint(
+        '[Realtime] emit() called with no open channel; frame dropped.',
+      );
       return;
     }
     try {
@@ -209,10 +211,12 @@ class RealtimeCoordinator {
     _keepAliveTimer = Timer.periodic(const Duration(seconds: 25), (_) {
       if (_disposed || _manualClose || _channel == null) return;
       try {
-        _channel!.sink.add(jsonEncode({
-          'event': 'ping',
-          'data': {'ts': DateTime.now().toIso8601String()},
-        }));
+        _channel!.sink.add(
+          jsonEncode({
+            'event': 'ping',
+            'data': {'ts': DateTime.now().toIso8601String()},
+          }),
+        );
       } catch (e) {
         heartbeatFailures++;
         debugPrint('[Realtime] Heartbeat ping failed: $e');
@@ -237,14 +241,17 @@ class RealtimeCoordinator {
 
     _setConnectionState(RealtimeConnectionState.reconnecting);
 
-    final index =
-        _reconnectAttempt < _reconnectDelays.length ? _reconnectAttempt : _reconnectDelays.length - 1;
+    final index = _reconnectAttempt < _reconnectDelays.length
+        ? _reconnectAttempt
+        : _reconnectDelays.length - 1;
     final delay = _reconnectDelays[index];
     if (_reconnectAttempt < _reconnectDelays.length - 1) _reconnectAttempt++;
 
     reconnectAttempts++;
     _addDisconnectReason(reason);
-    debugPrint('[Realtime] Reconnecting in ${delay.inSeconds}s (attempt $reconnectAttempts). Reason: $reason');
+    debugPrint(
+      '[Realtime] Reconnecting in ${delay.inSeconds}s (attempt $reconnectAttempts). Reason: $reason',
+    );
 
     _reconnectTimer = Timer(delay, () {
       _reconnectTimer = null;
@@ -255,7 +262,9 @@ class RealtimeCoordinator {
   }
 
   void _addDisconnectReason(String reason) {
-    recentDisconnectReasons.add('${DateTime.now().toIso8601String()} — $reason');
+    recentDisconnectReasons.add(
+      '${DateTime.now().toIso8601String()} — $reason',
+    );
     if (recentDisconnectReasons.length > 20) {
       recentDisconnectReasons.removeAt(0);
     }
@@ -327,10 +336,7 @@ class RealtimeCoordinator {
 
     switch (eventName) {
       case 'pong':
-        return PongEvent(
-          eventId: 'pong-$now',
-          serverTs: data['ts'] as String?,
-        );
+        return PongEvent(eventId: 'pong-$now', serverTs: data['ts'] as String?);
 
       case 'new_message':
         final id = data['id']?.toString() ?? now;
@@ -339,7 +345,9 @@ class RealtimeCoordinator {
           id: id,
           sender: data['sender'] as String? ?? 'Unknown',
           text: data['text'] as String? ?? '',
-          timestamp: DateTime.tryParse(data['timestamp']?.toString() ?? '') ?? DateTime.now(),
+          timestamp:
+              DateTime.tryParse(data['timestamp']?.toString() ?? '') ??
+              DateTime.now(),
           receiver: data['receiver'] as String?,
         );
 
@@ -363,10 +371,7 @@ class RealtimeCoordinator {
       case 'read_receipt':
         final sender = data['sender'] as String? ?? '';
         if (sender.isEmpty) return null;
-        return ReadReceiptEvent(
-          eventId: 'read-$sender-$now',
-          sender: sender,
-        );
+        return ReadReceiptEvent(eventId: 'read-$sender-$now', sender: sender);
 
       case 'new_memory':
         final id = data['memoryId']?.toString() ?? now;
@@ -394,7 +399,9 @@ class RealtimeCoordinator {
           senderId: senderId,
           senderUsername: data['senderUsername'] as String? ?? '',
           senderFirstName: data['senderFirstName'] as String? ?? '',
-          senderAvatarUrl: data['senderAvatarUrl'] as String? ?? data['senderAvatar'] as String?,
+          senderAvatarUrl:
+              data['senderAvatarUrl'] as String? ??
+              data['senderAvatar'] as String?,
         );
 
       case 'new_circle_milestone':
@@ -431,21 +438,25 @@ class RealtimeCoordinator {
         return null;
 
       case 'auth_error':
-        debugPrint('[Realtime] auth_error received from server: ${data['message']}');
+        debugPrint(
+          '[Realtime] auth_error received from server: ${data['message']}',
+        );
         _setConnectionState(RealtimeConnectionState.authFailed);
         // Attempt a session refresh then reconnect
         _scheduleReconnect('auth_error from server');
         return null;
 
       case 'reaction_update':
-        // Treat as a new reaction notification — same data shape as new_reaction
-        final id = data['memoryId']?.toString() ?? now;
-        return NewReactionEvent(
-          eventId: 'reaction-update-$id-$now',
-          reactorName: data['reactorName'] as String? ?? 'A friend',
-          emoji: data['emoji'] as String? ?? '❤️',
-          memoryCaption: data['memoryCaption'] as String? ?? 'your memory',
-          memoryId: data['memoryId'] as String?,
+        // A count update for the memory's whole audience — not a notification.
+        final memoryId = data['memoryId']?.toString() ?? '';
+        final emoji = data['emoji'] as String? ?? '';
+        if (memoryId.isEmpty || emoji.isEmpty) return null;
+        final count = (data['count'] as num?)?.toInt() ?? 0;
+        return ReactionUpdateEvent(
+          eventId: 'reaction-update-$memoryId-$emoji-$count',
+          memoryId: memoryId,
+          emoji: emoji,
+          count: count,
         );
 
       default:

@@ -7,7 +7,8 @@ import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/auth/auth.dart';
 
 class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
-  MemoryDetailStateManager(this._ref, this._memoryId) : super(MemoryDetailState()) {
+  MemoryDetailStateManager(this._ref, this._memoryId)
+    : super(MemoryDetailState()) {
     loadMemory();
   }
 
@@ -19,22 +20,27 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
   MemoryItem? _memoryBackup;
 
   Future<void> loadMemory() async {
-    state = state.copyWith(status: MemoryDetailLoadStatus.loading, errorMessage: null);
+    state = state.copyWith(
+      status: MemoryDetailLoadStatus.loading,
+      errorMessage: null,
+    );
     try {
       // Find the memory from feed first to bootstrap quickly
       final feedState = _ref.read(feedProvider);
-      MemoryItem? found = feedState.memories.firstWhere((m) => m.id == _memoryId,
-          orElse: () => MemoryItem(
-                id: _memoryId,
-                person: 'Loading...',
-                username: '...',
-                initial: 'L',
-                time: '...',
-                caption: '',
-                avatar: Color(0xFFFADA5E),
-                colors: [Color(0xFFFADA5E)],
-                ageHours: 0.0,
-              ));
+      MemoryItem? found = feedState.memories.firstWhere(
+        (m) => m.id == _memoryId,
+        orElse: () => MemoryItem(
+          id: _memoryId,
+          person: 'Loading...',
+          username: '...',
+          initial: 'L',
+          time: '...',
+          caption: '',
+          avatar: Color(0xFFFADA5E),
+          colors: [Color(0xFFFADA5E)],
+          ageHours: 0.0,
+        ),
+      );
 
       state = state.copyWith(memory: found);
 
@@ -44,10 +50,12 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
         // Let's assume standard single object response or parse it
         final raw = response.data;
         // In NestJS single memory endpoint parses same format
-        final colors = (raw['gradient_colors'] as List? ?? []).map((c) => parseHexColor(c as String)).toList();
+        final colors = (raw['gradient_colors'] as List? ?? [])
+            .map((c) => parseHexColor(c as String))
+            .toList();
         final avatarColor = parseHexColor(raw['avatar'] as String? ?? '');
         final creator = raw['creator'] as Map<String, dynamic>?;
-        
+
         found = MemoryItem(
           id: raw['id'] as String? ?? '',
           person: raw['person'] as String? ?? '',
@@ -60,12 +68,15 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
           ageHours: (raw['age_hours'] as num?)?.toDouble() ?? 0.0,
           videoPath: raw['video_url'] as String?,
           avatarUrl: creator?['avatar_url'] as String?,
-          reactions: (raw['reactions'] as List? ?? []).fold<Map<String, int>>({}, (map, r) {
-            final emoji = r['emoji'] as String? ?? '';
-            final count = r['count'] as int? ?? 0;
-            if (emoji.isNotEmpty) map[emoji] = count;
-            return map;
-          }),
+          reactions: (raw['reactions'] as List? ?? []).fold<Map<String, int>>(
+            {},
+            (map, r) {
+              final emoji = r['emoji'] as String? ?? '';
+              final count = r['count'] as int? ?? 0;
+              if (emoji.isNotEmpty) map[emoji] = count;
+              return map;
+            },
+          ),
         );
       }
 
@@ -95,11 +106,15 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
 
     try {
       final cursor = replaceAll ? null : state.commentCursor;
-      final result = await _ref.read(commentRepositoryProvider).fetchComments(_memoryId, cursor: cursor, limit: 15);
+      final result = await _ref
+          .read(commentRepositoryProvider)
+          .fetchComments(_memoryId, cursor: cursor, limit: 15);
       final fetchedComments = result.comments;
       final nextCursor = result.nextCursor;
 
-      final newList = replaceAll ? fetchedComments : [...state.comments, ...fetchedComments];
+      final newList = replaceAll
+          ? fetchedComments
+          : [...state.comments, ...fetchedComments];
       // Deduplicate comments by ID
       final Map<String, CommentItem> deduped = {};
       for (final c in newList) {
@@ -108,7 +123,10 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
 
       if (mounted) {
         state = state.copyWith(
-          comments: deduped.values.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp)), // Newest first
+          comments: deduped.values.toList()
+            ..sort(
+              (a, b) => b.timestamp.compareTo(a.timestamp),
+            ), // Newest first
           commentCursor: nextCursor,
           hasMoreComments: nextCursor != null,
           isCommentsLoading: false,
@@ -127,7 +145,8 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
     if (text.trim().isEmpty) return;
 
     final user = _ref.read(authProvider);
-    final optimisticId = 'local-comment-${DateTime.now().millisecondsSinceEpoch}';
+    final optimisticId =
+        'local-comment-${DateTime.now().millisecondsSinceEpoch}';
     final optimisticComment = CommentItem(
       id: optimisticId,
       memoryId: _memoryId,
@@ -149,7 +168,9 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
     );
 
     try {
-      final realComment = await _ref.read(commentRepositoryProvider).postComment(_memoryId, text.trim());
+      final realComment = await _ref
+          .read(commentRepositoryProvider)
+          .postComment(_memoryId, text.trim());
 
       // Replace optimistic representation with the confirmed backend item
       final updated = List<CommentItem>.from(state.comments);
@@ -172,8 +193,6 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
   }
 
   // ─── Reaction Syncing ───────────────────────────────────────────────────────
-
-
 
   Future<void> sendReaction(String emoji) async {
     final m = state.memory;
@@ -238,7 +257,11 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
         feedNotifier.state = feedNotifier.state.copyWith(memories: list);
       }
 
-      state = state.copyWith(isSavingEdit: false, isEditing: false, draftCaption: null);
+      state = state.copyWith(
+        isSavingEdit: false,
+        isEditing: false,
+        draftCaption: null,
+      );
       _memoryBackup = null;
     } catch (e, stack) {
       state = state.copyWith(
@@ -282,6 +305,10 @@ class MemoryDetailStateManager extends StateNotifier<MemoryDetailState> {
 }
 
 // Auto-dispose state manager provider parameterized by Memory ID
-final memoryDetailProvider = StateNotifierProvider.family.autoDispose<MemoryDetailStateManager, MemoryDetailState, String>((ref, memoryId) {
-  return MemoryDetailStateManager(ref, memoryId);
-});
+final memoryDetailProvider = StateNotifierProvider.family
+    .autoDispose<MemoryDetailStateManager, MemoryDetailState, String>((
+      ref,
+      memoryId,
+    ) {
+      return MemoryDetailStateManager(ref, memoryId);
+    });

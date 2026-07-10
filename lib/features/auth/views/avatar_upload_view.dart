@@ -51,6 +51,7 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
       }
 
       final bytes = await file.readAsBytes();
+      if (!mounted) return;
       setState(() {
         _avatarBytes = bytes;
         _uploading = true;
@@ -180,5 +181,3 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
     );
   }
 }
-
-

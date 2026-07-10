@@ -1,11 +1,6 @@
 import 'package:memory_app/features/feed/feed.dart';
 
-enum MemoryDetailLoadStatus {
-  idle,
-  loading,
-  loaded,
-  error,
-}
+enum MemoryDetailLoadStatus { idle, loading, loaded, error }
 
 class MemoryDetailState {
   final MemoryItem? memory;
@@ -56,13 +51,19 @@ class MemoryDetailState {
       status: status ?? this.status,
       isCommentsLoading: isCommentsLoading ?? this.isCommentsLoading,
       hasMoreComments: hasMoreComments ?? this.hasMoreComments,
-      commentCursor: commentCursor == _kUnset ? this.commentCursor : commentCursor as String?,
-      errorMessage: errorMessage == _kUnset ? this.errorMessage : errorMessage as String?,
+      commentCursor: commentCursor == _kUnset
+          ? this.commentCursor
+          : commentCursor as String?,
+      errorMessage: errorMessage == _kUnset
+          ? this.errorMessage
+          : errorMessage as String?,
       isPostingComment: isPostingComment ?? this.isPostingComment,
       isEditing: isEditing ?? this.isEditing,
       isSavingEdit: isSavingEdit ?? this.isSavingEdit,
       isDeleting: isDeleting ?? this.isDeleting,
-      draftCaption: draftCaption == _kUnset ? this.draftCaption : draftCaption as String?,
+      draftCaption: draftCaption == _kUnset
+          ? this.draftCaption
+          : draftCaption as String?,
     );
   }
 }

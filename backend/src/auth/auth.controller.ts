@@ -7,12 +7,15 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
   UseGuards,
   Param,
   Delete,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
-import { AuthService } from './auth.service';
+import { AuthService, SessionContext } from './auth.service';
+import type { AuthenticatedRequest } from './authenticated-request';
+import type { Request } from 'express';
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { RateLimit } from './decorators/rate-limit.decorator';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
@@ -22,16 +25,44 @@ import { RedisService } from '../redis/redis.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
+/**
+ * Describe the device a session was created from, for the active-sessions list.
+ * `req.ip` respects the `trust proxy` setting configured in main.ts.
+ */
+function sessionContext(req: Request): SessionContext {
+  const ua = req.headers['user-agent'];
+  return {
+    device: typeof ua === 'string' && ua.length > 0 ? ua : undefined,
+    ip: typeof req.ip === 'string' ? req.ip : undefined,
+  };
+}
+
+/** Routes behind JwtRefreshGuard carry the decoded refresh token on `user`. */
+interface RefreshRequest extends Request {
+  user: RefreshTokenPayload;
+}
+
 // ─── Helper: camelCase user → snake_case response ──────────────────────────
 
-function toSnakeUser(user: Record<string, any>) {
+interface PublicUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  phone: string;
+  avatarUrl?: string | null;
+  createdAt: Date;
+}
+
+function toSnakeUser(user: PublicUser) {
   return {
-    id:         user.id,
+    id: user.id,
     first_name: user.firstName,
-    last_name:  user.lastName,
-    username:   user.username,
-    email:      user.email,
-    phone:      user.phone,
+    last_name: user.lastName,
+    username: user.username,
+    email: user.email,
+    phone: user.phone,
     avatar_url: user.avatarUrl ?? null,
     created_at: user.createdAt,
   };
@@ -39,12 +70,16 @@ function toSnakeUser(user: Record<string, any>) {
 
 // ─── Helper: token pair → snake_case response ──────────────────────────────
 
-function toSnakeTokens(tokens: { accessToken: string; refreshToken: string; expiresAt: number }) {
+function toSnakeTokens(tokens: {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}) {
   return {
-    access_token:  tokens.accessToken,
+    access_token: tokens.accessToken,
     refresh_token: tokens.refreshToken,
-    expires_at:    tokens.expiresAt,   // Unix timestamp (seconds)
-    token_type:    'Bearer',
+    expires_at: tokens.expiresAt, // Unix timestamp (seconds)
+    token_type: 'Bearer',
   };
 }
 
@@ -62,11 +97,11 @@ export class AuthController {
   @UseGuards(RateLimitGuard)
   @RateLimit({ limit: 5, windowSeconds: 3600 })
   @Post('register')
-  async register(@Body() dto: RegisterDto) {
-    const result = await this.authService.register(dto);
+  async register(@Body() dto: RegisterDto, @Req() req: Request) {
+    const result = await this.authService.register(dto, sessionContext(req));
     return {
       tokens: toSnakeTokens(result.tokens),
-      user:   toSnakeUser(result.user),
+      user: toSnakeUser(result.user),
     };
   }
 
@@ -78,11 +113,11 @@ export class AuthController {
   @RateLimit({ limit: 10, windowSeconds: 900 })
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto) {
-    const result = await this.authService.login(dto);
+  async login(@Body() dto: LoginDto, @Req() req: Request) {
+    const result = await this.authService.login(dto, sessionContext(req));
     return {
       tokens: toSnakeTokens(result.tokens),
-      user:   toSnakeUser(result.user),
+      user: toSnakeUser(result.user),
     };
   }
 
@@ -103,9 +138,14 @@ export class AuthController {
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Req() req: { user: RefreshTokenPayload }) {
+  async refresh(@Req() req: RefreshRequest) {
     const { sub: userId, username, jti } = req.user;
-    const tokens = await this.authService.refreshTokens(userId, username, jti);
+    const tokens = await this.authService.refreshTokens(
+      userId,
+      username,
+      jti,
+      sessionContext(req),
+    );
     return { tokens: toSnakeTokens(tokens) };
   }
 
@@ -119,21 +159,45 @@ export class AuthController {
   @UseGuards(JwtRefreshGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: { user: RefreshTokenPayload }) {
+  async logout(@Req() req: RefreshRequest) {
     const { sub: userId, jti } = req.user;
     return this.authService.logout(userId, jti);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('sessions')
-  async listSessions(@Req() req: any) {
+  async listSessions(@Req() req: AuthenticatedRequest) {
     const sessions = await this.redis.listRefreshSessions(req.user.id);
-    return { sessions };
+    const currentSid = req.user.sid;
+    return {
+      sessions: sessions.map((s) => ({ ...s, current: s.jti === currentSid })),
+    };
+  }
+
+  // ─── POST /auth/sessions/revoke-others ───────────────────────────────────
+  // Signs out every other device, keeping the caller signed in.
+
+  @UseGuards(JwtAuthGuard)
+  @Post('sessions/revoke-others')
+  @HttpCode(HttpStatus.OK)
+  async revokeOtherSessions(@Req() req: AuthenticatedRequest) {
+    const currentSid = req.user.sid;
+    if (!currentSid) {
+      // Pre-`sid` access token: we cannot tell which session is the caller's,
+      // and revoking blindly would sign them out too.
+      throw new UnauthorizedException(
+        'Your session predates this feature. Sign in again, then retry.',
+      );
+    }
+    return this.authService.revokeOtherSessions(req.user.id, currentSid);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('sessions/:jti')
-  async revokeSession(@Req() req: any, @Param('jti') jti: string) {
+  async revokeSession(
+    @Req() req: AuthenticatedRequest,
+    @Param('jti') jti: string,
+  ) {
     await this.redis.revokeRefreshToken(req.user.id, jti);
     return { message: 'Session revoked successfully' };
   }
@@ -155,8 +219,11 @@ export class AuthController {
   @RateLimit({ limit: 10, windowSeconds: 60 })
   @Post('ws-ticket')
   @HttpCode(HttpStatus.OK)
-  async issueWsTicket(@Req() req: any) {
-    const { id: userId, username } = req.user as { id: string; username: string };
+  async issueWsTicket(@Req() req: AuthenticatedRequest) {
+    const { id: userId, username } = req.user as {
+      id: string;
+      username: string;
+    };
     const ticket = crypto.randomBytes(32).toString('hex'); // 256 bits of entropy
     await this.redis.issueWsTicket(userId, username, ticket);
     return {
