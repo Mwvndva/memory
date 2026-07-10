@@ -2,258 +2,16 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/media/unified_media_widgets.dart';
 
-/// A titled group of rows, e.g. "CONTACT" or "LEGAL & SUPPORT".
-class ProfileSectionCard extends StatelessWidget {
-  const ProfileSectionCard({
-    super.key,
-    required this.title,
-    required this.dark,
-    required this.children,
-  });
-
-  final String title;
-  final bool dark;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 6, bottom: 8, top: 14),
-          child: Text(
-            title,
-            style: TextStyle(
-              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.76),
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-          decoration: BoxDecoration(
-            color: dark ? kBlack : Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: dark ? 0.12 : 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(children: children),
-        ),
-      ],
-    );
-  }
-}
-
-/// A read-only `label — value` row inside a [ProfileSectionCard].
-class ProfileDetailRow extends StatelessWidget {
-  const ProfileDetailRow({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.isLast,
-    required this.dark,
-  });
-
-  final String label;
-  final String value;
-  final bool isLast;
-  final bool dark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: isLast
-          ? null
-          : BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: (dark ? Colors.white : kCharcoal).withValues(
-                    alpha: 0.1,
-                  ),
-                  width: 0.8,
-                ),
-              ),
-            ),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.68),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              color: dark ? kCream : kCharcoal,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A tappable row with a chevron, used for settings and legal entries.
-class ProfilePolicyRow extends StatelessWidget {
-  const ProfilePolicyRow({
-    super.key,
-    required this.title,
-    required this.onTap,
-    required this.isLast,
-    required this.dark,
-  });
-
-  final String title;
-  final VoidCallback onTap;
-  final bool isLast;
-  final bool dark;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: isLast
-            ? null
-            : BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: (dark ? Colors.white : kCharcoal).withValues(
-                      alpha: 0.1,
-                    ),
-                    width: 0.8,
-                  ),
-                ),
-              ),
-        child: Row(
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: dark ? kCream : kCharcoal,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: (dark ? kCream : kCharcoal).withValues(alpha: 0.68),
-              size: 11,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The rounded container every profile bottom sheet is wrapped in.
-class ProfileActionSheet extends StatelessWidget {
-  const ProfileActionSheet({
-    super.key,
-    required this.dark,
-    required this.child,
-  });
-
-  final bool dark;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: kBlack,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(
-            color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
-          ),
-        ),
-        child: child,
-      ),
-    );
-  }
-}
-
-/// A pill-shaped button.
-class ProfilePill extends StatelessWidget {
-  const ProfilePill({
-    super.key,
-    required this.text,
-    required this.onTap,
-    required this.dark,
-    this.color,
-    this.foreground,
-    this.compact = false,
-    this.width,
-  });
-
-  final String text;
-  final VoidCallback onTap;
-  final bool dark;
-  final Color? color;
-  final Color? foreground;
-  final bool compact;
-  final double? width;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: width ?? double.infinity,
-        height: compact ? 34 : 46,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: color ?? (dark ? kDarkCream : kCream),
-          borderRadius: BorderRadius.circular(999),
-          border: color == null
-              ? Border.all(
-                  color: (dark ? Colors.white : kCharcoal).withValues(
-                    alpha: 0.06,
-                  ),
-                )
-              : null,
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: foreground ?? (dark ? kCream : kCharcoal),
-            fontSize: compact ? 10 : 13,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ),
-    );
-  }
-}
+// ProfileSectionCard, ProfileDetailRow, ProfilePolicyRow, ProfileActionSheet
+// and ProfilePill used to live here. They were generic surfaces wearing a
+// feature's name, and are now MemoryCard / MemoryListTile / MemoryActionTile /
+// MemoryBottomSheet / MemoryButton in the design system.
+//
+// What remains is genuinely specific to the profile: the achievement card and
+// the circle headcount card.
 
 /// Shows the circle headcount and an "Add someone" action, capped at 30.
 class ProfileAddPersonCard extends StatelessWidget {
@@ -272,23 +30,11 @@ class ProfileAddPersonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: dark ? kBlack : Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.08),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: dark ? 0.12 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    final isFull = circleCount >= maxCircleSize;
+
+    return MemoryCard(
+      dark: dark,
+      padding: const EdgeInsets.all(MemorySpacing.xxl),
       child: Row(
         children: [
           Column(
@@ -296,18 +42,20 @@ class ProfileAddPersonCard extends StatelessWidget {
             children: [
               Text(
                 '$circleCount / $maxCircleSize',
-                style: TextStyle(
-                  color: dark ? kCream : kCharcoal,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
+                style: MemoryTypography.onSurface(
+                  MemoryTypography.headline.copyWith(fontSize: 19),
+                  dark,
                 ),
               ),
               Text(
                 'in your circle',
-                style: TextStyle(
-                  color: (dark ? kCream : kCharcoal).withValues(alpha: 0.68),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                style: MemoryTypography.mutedOnSurface(
+                  MemoryTypography.sectionLabel.copyWith(
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  dark,
+                  alpha: 0.68,
                 ),
               ),
             ],
@@ -315,13 +63,15 @@ class ProfileAddPersonCard extends StatelessWidget {
           const Spacer(),
           SizedBox(
             width: 124,
-            child: ProfilePill(
-              text: 'Add someone',
-              onTap: circleCount < maxCircleSize ? onAddPerson : () {},
+            child: MemoryButton(
+              label: 'Add someone',
+              // A full circle disables the button rather than presenting one
+              // that silently does nothing.
+              onPressed: isFull ? null : onAddPerson,
               dark: dark,
-              compact: true,
-              color: dark ? Colors.white : kBlack,
-              foreground: dark ? kBlack : Colors.white,
+              size: MemoryButtonSize.compact,
+              background: dark ? Colors.white : MemoryColors.ink,
+              foreground: dark ? MemoryColors.ink : Colors.white,
             ),
           ),
         ],
@@ -407,8 +157,8 @@ class ProfileFunCard extends StatelessWidget {
       height: 310,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: kBlack,
-        borderRadius: BorderRadius.circular(28),
+        color: MemoryColors.ink,
+        borderRadius: BorderRadius.circular(MemoryRadius.xxl),
         border: Border.all(color: tierColor, width: 2),
         boxShadow: [
           BoxShadow(
@@ -497,14 +247,17 @@ class ProfileFunCard extends StatelessWidget {
           ),
           Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22,
+                vertical: MemorySpacing.xxl,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     width: 82,
                     height: 82,
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(MemorySpacing.xs),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: tierColor, width: 3),
@@ -520,7 +273,7 @@ class ProfileFunCard extends StatelessWidget {
                                 child: Text(
                                   avatarInitial,
                                   style: const TextStyle(
-                                    color: kCream,
+                                    color: MemoryColors.cream,
                                     fontSize: 24,
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -533,7 +286,7 @@ class ProfileFunCard extends StatelessWidget {
                               child: Text(
                                 avatarInitial,
                                 style: const TextStyle(
-                                  color: kBlack,
+                                  color: MemoryColors.ink,
                                   fontSize: 24,
                                   fontWeight: FontWeight.w900,
                                 ),
@@ -541,45 +294,42 @@ class ProfileFunCard extends StatelessWidget {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: MemorySpacing.lg),
                   Text(
                     '@$username',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: kCream,
-                      fontSize: 16,
+                    style: MemoryTypography.subtitle.copyWith(
+                      color: MemoryColors.cream,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: MemorySpacing.sm),
                   Text(
                     descriptiveHeading,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: tierColor,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                    ),
+                    style: MemoryTypography.headline.copyWith(color: tierColor),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: MemorySpacing.xs),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: MemorySpacing.gutter,
+                    ),
                     child: Text(
                       descriptiveWording,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: kCream.withValues(alpha: 0.65),
-                        fontSize: 10,
+                      style: MemoryTypography.sectionLabel.copyWith(
+                        letterSpacing: 0,
                         fontWeight: FontWeight.w500,
                         height: 1.25,
+                        color: MemoryColors.cream.withValues(alpha: 0.65),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   Wrap(
                     alignment: WrapAlignment.center,
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: MemorySpacing.sm,
+                    runSpacing: MemorySpacing.sm,
                     children: [
                       _RankChip(
                         text: '🏆 Streak Rank: #$countryRank in $countryFlag',
@@ -608,12 +358,11 @@ class ProfileFunCard extends StatelessWidget {
                         width: 14,
                         height: 14,
                       ),
-                      const SizedBox(width: 4),
-                      const Text(
+                      const SizedBox(width: MemorySpacing.xs),
+                      Text(
                         'Memory • Real moments. Real friends.',
-                        style: TextStyle(
+                        style: MemoryTypography.micro.copyWith(
                           color: Colors.white38,
-                          fontSize: 8,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.2,
                         ),
@@ -639,10 +388,13 @@ class _RankChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: MemorySpacing.md,
+        vertical: MemorySpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: Colors.black45,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: MemoryRadius.allPill,
         border: Border.all(
           color: borderAccent.withValues(alpha: 0.25),
           width: 1,
@@ -650,10 +402,9 @@ class _RankChip extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          color: kCream,
+        style: MemoryTypography.micro.copyWith(
           fontSize: 9,
-          fontWeight: FontWeight.w800,
+          color: MemoryColors.cream,
         ),
       ),
     );

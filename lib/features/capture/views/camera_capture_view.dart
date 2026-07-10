@@ -883,27 +883,13 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
         final radius = size * 0.20;
         final borderRadius = BorderRadius.circular(radius);
 
-        return Container(
+        // The preview is edge-to-edge inside its container: no stroke, no glow,
+        // no inset. The rounded clip is the only shape applied to it.
+        return SizedBox(
           width: double.infinity,
           height: double.infinity,
-          padding: const EdgeInsets.all(2), // 2px border outline
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            border: Border.all(
-              color: kYellow.withValues(alpha: 0.85),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: kYellow.withValues(alpha: 0.18),
-                blurRadius: 10,
-                spreadRadius: 1,
-              ),
-            ],
-            color: Colors.white.withValues(alpha: 0.12),
-          ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius - 2),
+            borderRadius: borderRadius,
             child: GestureDetector(
               onTap: _hasRecording
                   ? () => setState(() => _captureCaptionOpen = true)

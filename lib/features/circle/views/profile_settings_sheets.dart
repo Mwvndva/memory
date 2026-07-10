@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/notification/models/notification_item.dart';
 import 'package:memory_app/features/notification/services/notification_services.dart';
 
 import '../services/profile_services.dart';
-import '../widgets/profile_widgets.dart';
 
 void showNotificationPreferences(BuildContext context, bool dark) {
   showModalBottomSheet(
@@ -48,7 +48,7 @@ class _NotificationPreferencesSheetState
       activeThumbColor: kYellow,
     );
 
-    return ProfileActionSheet(
+    return MemoryBottomSheet(
       dark: dark,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -79,10 +79,11 @@ class _NotificationPreferencesSheetState
           typeSwitch('Messages', NotificationType.message),
           typeSwitch('Circle Invitations', NotificationType.circleRequest),
           const SizedBox(height: 12),
-          ProfilePill(
-            text: 'Done',
-            onTap: () => Navigator.pop(context),
+          MemoryButton(
+            label: 'Done',
+            onPressed: () => Navigator.pop(context),
             dark: dark,
+            variant: MemoryButtonVariant.secondary,
           ),
         ],
       ),
@@ -132,7 +133,7 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
       activeThumbColor: kYellow,
     );
 
-    return ProfileActionSheet(
+    return MemoryBottomSheet(
       dark: dark,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -168,10 +169,11 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
             privacyService.setCanReceiveCircleInvitations,
           ),
           const SizedBox(height: 12),
-          ProfilePill(
-            text: 'Done',
-            onTap: () => Navigator.pop(context),
+          MemoryButton(
+            label: 'Done',
+            onPressed: () => Navigator.pop(context),
             dark: dark,
+            variant: MemoryButtonVariant.secondary,
           ),
         ],
       ),
@@ -234,7 +236,7 @@ class _SecuritySettingsSheetState
   Widget build(BuildContext context) {
     final dark = widget.dark;
 
-    return ProfileActionSheet(
+    return MemoryBottomSheet(
       dark: dark,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -316,20 +318,21 @@ class _SecuritySettingsSheetState
             },
           ),
           const SizedBox(height: 12),
-          ProfilePill(
-            text: _signingOut
-                ? 'Signing out…'
-                : 'Sign out of all other devices',
-            onTap: _signingOut ? () {} : _signOutOthers,
+          MemoryButton(
+            label: 'Sign out of all other devices',
+            // The button now owns its own in-flight state: it dims and shows a
+            // spinner rather than swapping its label for "Signing out…".
+            onPressed: _signOutOthers,
+            isLoading: _signingOut,
             dark: dark,
-            color: Colors.red,
-            foreground: Colors.white,
+            variant: MemoryButtonVariant.danger,
           ),
           const SizedBox(height: 8),
-          ProfilePill(
-            text: 'Close',
-            onTap: () => Navigator.pop(context),
+          MemoryButton(
+            label: 'Close',
+            onPressed: () => Navigator.pop(context),
             dark: dark,
+            variant: MemoryButtonVariant.secondary,
           ),
         ],
       ),
