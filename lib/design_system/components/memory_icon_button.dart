@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../foundation/memory_interactions.dart';
@@ -59,17 +61,22 @@ class MemoryIconButton extends StatelessWidget {
             child: Center(child: glyph),
           );
 
+    // A fixed square, not a min-size box. A ConstrainedBox with only a minimum
+    // lets the inner Center grow to whatever maximum width it is offered. In a
+    // Row that maximum is unbounded, so it shrink-wraps and all is well — but as
+    // a TextField's suffixIcon, InputDecorator offers it the whole field width,
+    // and the button swells to cover the input, so the field can never be typed
+    // in. Sizing to a definite side keeps the hit target at 48dp everywhere.
+    final side = math.max(visualSize, minTouchTarget);
+
     return Semantics(
       button: true,
       enabled: onPressed != null,
       label: semanticLabel,
       child: BouncyTap(
         onTap: onPressed,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: minTouchTarget,
-            minHeight: minTouchTarget,
-          ),
+        child: SizedBox.square(
+          dimension: side,
           child: Center(child: visual),
         ),
       ),
