@@ -348,10 +348,8 @@ class MilestoneCardWidget extends ConsumerWidget {
                     ),
                     child: Text(
                       '$milestone-DAY STREAK!',
-                      style: const TextStyle(
+                      style: MemoryTypography.button.copyWith(
                         color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
                         letterSpacing: 2.0,
                       ),
                     ),
@@ -423,11 +421,9 @@ class MilestoneCardWidget extends ConsumerWidget {
                     child: Text(
                       message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: MemoryTypography.body.copyWith(
                         color: Colors.white,
-                        fontSize: 13,
                         height: 1.35,
-                        fontWeight: FontWeight.w700,
                         shadows: [
                           Shadow(
                             color: Colors.black26,

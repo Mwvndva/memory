@@ -58,10 +58,8 @@ class _NotificationPreferencesSheetState
         children: [
           Text(
             'Notification Preferences',
-            style: TextStyle(
+            style: MemoryTypography.subtitle.copyWith(
               color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 12),
@@ -149,10 +147,8 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
         children: [
           Text(
             'Privacy Settings',
-            style: TextStyle(
+            style: MemoryTypography.subtitle.copyWith(
               color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 12),
@@ -252,10 +248,8 @@ class _SecuritySettingsSheetState
         children: [
           Text(
             'Security & Active Sessions',
-            style: TextStyle(
+            style: MemoryTypography.subtitle.copyWith(
               color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 12),
@@ -301,12 +295,10 @@ class _SecuritySettingsSheetState
                     ListTile(
                       title: Text(
                         s.isCurrent ? '${s.device} (this device)' : s.device,
-                        style: TextStyle(
+                        style: MemoryTypography.body.copyWith(
                           color: dark
                               ? MemoryColors.cream
                               : MemoryColors.charcoal,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       subtitle: Text(

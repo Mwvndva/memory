@@ -223,12 +223,10 @@ void showGlobalNotification({
                         children: [
                           Text(
                             title,
-                            style: TextStyle(
+                            style: MemoryTypography.button.copyWith(
                               color: dark
                                   ? MemoryColors.accent
                                   : MemoryColors.ink,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
                             ),
                           ),
                           const SizedBox(height: 2),

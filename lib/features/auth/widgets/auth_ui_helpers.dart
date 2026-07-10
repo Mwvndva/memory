@@ -16,10 +16,8 @@ Widget authStatusIndicator(String text, bool ok) => Padding(
   padding: const EdgeInsets.only(top: 6),
   child: Text(
     text,
-    style: TextStyle(
+    style: MemoryTypography.buttonCompact.copyWith(
       color: ok ? MemoryColors.success : MemoryColors.ink,
-      fontSize: 10,
-      fontWeight: FontWeight.w900,
     ),
   ),
 );
@@ -51,9 +49,7 @@ Widget authInputField(
       inputFormatters: keyboard == TextInputType.phone
           ? [FilteringTextInputFormatter.digitsOnly]
           : null,
-      style: TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w900,
+      style: MemoryTypography.button.copyWith(
         color: dark ? MemoryColors.ink : Colors.white,
       ),
       decoration: InputDecoration(

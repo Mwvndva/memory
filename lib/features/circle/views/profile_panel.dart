@@ -131,10 +131,8 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                   ),
                   child: Text(
                     'Close',
-                    style: TextStyle(
+                    style: MemoryTypography.body.copyWith(
                       color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -151,13 +149,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 ),
                 child: Row(
                   children: [
-                    Text(
-                      flag,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                    Text(flag, style: MemoryTypography.button),
                     const SizedBox(width: 6),
                     Text(
                       '#${user.countryRank}',
@@ -282,12 +274,10 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         const SizedBox(height: 12),
                         Text(
                           '$displayFirstName $displayLastName',
-                          style: TextStyle(
+                          style: MemoryTypography.title.copyWith(
                             color: dark
                                 ? MemoryColors.cream
                                 : MemoryColors.charcoal,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -441,7 +431,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
@@ -452,10 +442,8 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                           SizedBox(width: 8),
                           Text(
                             'Log Out',
-                            style: TextStyle(
+                            style: MemoryTypography.body.copyWith(
                               color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],

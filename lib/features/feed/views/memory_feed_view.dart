@@ -792,10 +792,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 const Spacer(),
                 Text(
                   'All memories',
-                  style: TextStyle(
+                  style: MemoryTypography.title.copyWith(
                     color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
                   ),
                 ),
                 const Spacer(),
@@ -839,10 +837,8 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
                 const Spacer(),
                 Text(
                   'All memories',
-                  style: TextStyle(
+                  style: MemoryTypography.title.copyWith(
                     color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
                   ),
                 ),
                 const Spacer(),
@@ -981,12 +977,10 @@ class _MemoryFeedViewState extends ConsumerState<MemoryFeedView>
             Expanded(
               child: Text(
                 'Send ${m.person} a message',
-                style: TextStyle(
+                style: MemoryTypography.bodySmall.copyWith(
                   color: dark
                       ? MemoryColors.cream.withValues(alpha: 0.6)
                       : MemoryColors.charcoal.withValues(alpha: 0.6),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

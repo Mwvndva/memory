@@ -156,12 +156,10 @@ class InboxBubble extends ConsumerWidget {
                 children: [
                   Text(
                     msg.text,
-                    style: TextStyle(
+                    style: MemoryTypography.body.copyWith(
                       color: mine
                           ? (dark ? MemoryColors.ink : Colors.white)
                           : (dark ? MemoryColors.cream : MemoryColors.charcoal),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
                       height: 1.3,
                     ),
                   ),

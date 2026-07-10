@@ -196,10 +196,8 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                     ),
                     child: Text(
                       '$milestone-USER CIRCLE!',
-                      style: const TextStyle(
+                      style: MemoryTypography.button.copyWith(
                         color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
                         letterSpacing: 2.0,
                       ),
                     ),
@@ -228,10 +226,8 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                       children: [
                         Text(
                           '@$circleOwnerUsername\'s Circle',
-                          style: const TextStyle(
+                          style: MemoryTypography.button.copyWith(
                             color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
                           ),
                         ),
                         const SizedBox(height: 4),

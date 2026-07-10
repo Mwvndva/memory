@@ -45,13 +45,10 @@ class CircleChatListView extends ConsumerWidget {
                       child: Center(
                         child: Text(
                           'Your circle',
-                          style: TextStyle(
+                          style: MemoryTypography.display.copyWith(
                             color: dark
                                 ? MemoryColors.cream
                                 : MemoryColors.charcoal,
-                            fontSize: 30,
-                            height: 1.05,
-                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),

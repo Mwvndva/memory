@@ -637,10 +637,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
             if (friendsCount > 3) ...[
               Text(
                 '+${friendsCount - 3} ',
-                style: const TextStyle(
+                style: MemoryTypography.buttonCompact.copyWith(
                   color: MemoryColors.accent,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(width: 4),
@@ -1004,12 +1002,10 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                               children: [
                                 Text(
                                   _getUploadStageMessage(uploadState.status),
-                                  style: TextStyle(
+                                  style: MemoryTypography.bodyStrong.copyWith(
                                     color: dark
                                         ? MemoryColors.cream
                                         : MemoryColors.charcoal,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                                 const SizedBox(height: 16),

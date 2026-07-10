@@ -651,12 +651,10 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       color: dark ? MemoryColors.accent : MemoryColors.ink,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Text(
+                    child: Text(
                       'I Understand',
-                      style: TextStyle(
+                      style: MemoryTypography.button.copyWith(
                         color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
@@ -739,9 +737,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                             const SizedBox(width: 8),
                             Text(
                               c.code,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
+                              style: MemoryTypography.body.copyWith(
                                 color: dark
                                     ? MemoryColors.cream
                                     : MemoryColors.charcoal,
@@ -772,9 +768,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                           const SizedBox(width: 6),
                           Text(
                             c.code,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
+                            style: MemoryTypography.button.copyWith(
                               color: dark
                                   ? MemoryColors.cream
                                   : MemoryColors.charcoal,
@@ -806,11 +800,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 controller: _phone,
                 keyboardType: TextInputType.phone,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
+                style: MemoryTypography.button.copyWith(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: '',
                   filled: true,

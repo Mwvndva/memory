@@ -152,11 +152,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               const SizedBox(height: 6),
               Text(
                 'Invite your friends to keep your circle alive! ⚡',
-                style: TextStyle(
-                  fontSize: 12,
+                style: MemoryTypography.bodySmall.copyWith(
                   color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
                       .withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 20),
@@ -220,12 +218,10 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                       const SizedBox(width: 8),
                       Text(
                         'Copy invite link',
-                        style: TextStyle(
+                        style: MemoryTypography.button.copyWith(
                           color: dark
                               ? MemoryColors.cream
                               : MemoryColors.charcoal,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
                         ),
                       ),
                     ],
@@ -303,10 +299,8 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           child: Text(
             'None of your contacts are on Memory yet. Invite them below!',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: MemoryTypography.bodySmall.copyWith(
               color: fg.withValues(alpha: .5),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ),

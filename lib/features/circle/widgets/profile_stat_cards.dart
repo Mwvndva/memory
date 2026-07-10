@@ -95,10 +95,8 @@ class _StatCard extends StatelessWidget {
                 ),
                 child: Text(
                   subtitle,
-                  style: TextStyle(
+                  style: MemoryTypography.micro.copyWith(
                     color: dark ? MemoryColors.cream : MemoryColors.charcoal,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),

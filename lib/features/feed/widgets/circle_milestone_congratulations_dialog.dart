@@ -153,12 +153,10 @@ class _CircleMilestoneCongratulationsDialogState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'Share circle milestone!',
-                      style: TextStyle(
+                      style: MemoryTypography.bodyStrong.copyWith(
                         color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -178,7 +176,7 @@ class _CircleMilestoneCongratulationsDialogState
                                 size: 16,
                                 color: MemoryColors.ink,
                               )
-                            : const Row(
+                            : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
@@ -189,10 +187,8 @@ class _CircleMilestoneCongratulationsDialogState
                                   SizedBox(width: 8),
                                   Text(
                                     'Share Card',
-                                    style: TextStyle(
+                                    style: MemoryTypography.button.copyWith(
                                       color: MemoryColors.ink,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w900,
                                     ),
                                   ),
                                 ],

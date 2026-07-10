@@ -166,12 +166,10 @@ class _MilestoneCongratulationsDialogState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'Share your achievement!',
-                      style: TextStyle(
+                      style: MemoryTypography.bodyStrong.copyWith(
                         color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -191,7 +189,7 @@ class _MilestoneCongratulationsDialogState
                                 size: 16,
                                 color: MemoryColors.ink,
                               )
-                            : const Row(
+                            : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
@@ -202,10 +200,8 @@ class _MilestoneCongratulationsDialogState
                                   SizedBox(width: 8),
                                   Text(
                                     'Share Card',
-                                    style: TextStyle(
+                                    style: MemoryTypography.button.copyWith(
                                       color: MemoryColors.ink,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w900,
                                     ),
                                   ),
                                 ],

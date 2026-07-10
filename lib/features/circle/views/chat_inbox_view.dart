@@ -199,10 +199,8 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                                 : (isPendingRequest
                                       ? 'Wants to share'
                                       : 'Not in Circle'),
-                            style: TextStyle(
+                            style: MemoryTypography.sectionLabel.copyWith(
                               color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ],
@@ -247,12 +245,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                             Text(
                               'Say hello to start the conversation!',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: MemoryTypography.body.copyWith(
                                 color: MemoryColors.charcoal.withValues(
                                   alpha: 0.6,
                                 ),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -402,12 +398,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         color: Colors.white.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Ignore',
-                        style: TextStyle(
+                        style: MemoryTypography.button.copyWith(
                           color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
                         ),
                       ),
                     ),
@@ -450,12 +444,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         color: MemoryColors.accent,
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Accept',
-                        style: TextStyle(
+                        style: MemoryTypography.button.copyWith(
                           color: MemoryColors.ink,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
                         ),
                       ),
                     ),
@@ -515,13 +507,9 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                   color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Text(
+                child: Text(
                   'Back',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                  ),
+                  style: MemoryTypography.button.copyWith(color: Colors.white),
                 ),
               ),
             ),

@@ -54,21 +54,15 @@ class RequestRow extends ConsumerWidget {
               children: [
                 Text(
                   name,
-                  style: TextStyle(
-                    color: fg,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
+                  style: MemoryTypography.bodyStrong.copyWith(color: fg),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '@${req.username}',
-                  style: TextStyle(
+                  style: MemoryTypography.caption.copyWith(
                     color: dark
                         ? MemoryColors.mutedOnDark
                         : MemoryColors.mutedOnLight,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -235,12 +229,10 @@ class ChatRow extends ConsumerWidget {
                           children: [
                             Text(
                               name,
-                              style: TextStyle(
+                              style: MemoryTypography.bodyStrong.copyWith(
                                 color: dark
                                     ? MemoryColors.cream
                                     : MemoryColors.charcoal,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
                               ),
                             ),
                             const SizedBox(width: 6),
