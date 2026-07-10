@@ -2,9 +2,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/features/circle/circle.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 enum ShapeType { rect, circle, triangle, ring, star, sparkle, wave }
 
@@ -42,18 +43,8 @@ class CardDesignData {
   factory CardDesignData.generate(int milestone) {
     final rand = Random();
 
-    // Vibrant neon/bright color palette
-    final palette = [
-      const Color(0xFFFF1493), // Hot pink
-      const Color(0xFFBD3EFF), // Electric purple
-      const Color(0xFF00F5FF), // Electric cyan
-      const Color(0xFF39FF14), // Neon lime
-      const Color(0xFFFF5E00), // Vivid orange
-      const Color(0xFFFADA5E), // Gold yellow (updated)
-      const Color(0xFFFF3366), // Coral red
-      const Color(0xFF6C5DD3), // Retro lavender
-    ];
-
+    // Copied because shuffle mutates in place, and the token list is const.
+    final palette = [...MemoryColors.celebration];
     palette.shuffle(rand);
     final colors = [palette[0], palette[1], palette[2]];
 
@@ -315,7 +306,7 @@ class MilestoneCardWidget extends ConsumerWidget {
       width: 310,
       height: 420,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -325,7 +316,7 @@ class MilestoneCardWidget extends ConsumerWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         child: Stack(
           children: [
             // Procedurally painted background pattern
@@ -344,12 +335,12 @@ class MilestoneCardWidget extends ConsumerWidget {
                   // Top Milestone Banner
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
+                      horizontal: MemorySpacing.gutter,
+                      vertical: MemorySpacing.sm,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(MemoryRadius.pill),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.2),
                         width: 1,
@@ -357,10 +348,8 @@ class MilestoneCardWidget extends ConsumerWidget {
                     ),
                     child: Text(
                       '$milestone-DAY STREAK!',
-                      style: const TextStyle(
+                      style: MemoryTypography.button.copyWith(
                         color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
                         letterSpacing: 2.0,
                       ),
                     ),
@@ -385,33 +374,20 @@ class MilestoneCardWidget extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        child: CircleAvatar(
+                        child: MemoryAvatar(
                           radius: 50,
-                          backgroundColor: ref.watch(isDarkProvider)
-                              ? kYellow
-                              : kBlack,
-                          backgroundImage: avatarProvider,
-                          child: avatarProvider == null
-                              ? Text(
-                                  nameInitial,
-                                  style: const TextStyle(
-                                    fontSize: 38,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : null,
+                          dark: ref.watch(isDarkProvider),
+                          image: avatarProvider,
+                          initial: nameInitial,
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: MemorySpacing.xxl),
                       // Large bold username
                       Text(
                         '@${user.username.isNotEmpty ? user.username : "memory_user"}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: MemoryTypography.headlineLarge.copyWith(
                           color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
                           shadows: [
                             Shadow(
@@ -428,13 +404,13 @@ class MilestoneCardWidget extends ConsumerWidget {
                   // Bottom Translucent Congratulatory bubble
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: MemorySpacing.gutter,
+                      vertical: MemorySpacing.xl,
                     ),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(MemoryRadius.xl),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.25),
                         width: 1.5,
@@ -443,11 +419,9 @@ class MilestoneCardWidget extends ConsumerWidget {
                     child: Text(
                       message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: MemoryTypography.bodyMedium.copyWith(
                         color: Colors.white,
-                        fontSize: 13,
                         height: 1.35,
-                        fontWeight: FontWeight.w700,
                         shadows: [
                           Shadow(
                             color: Colors.black26,

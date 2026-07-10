@@ -16,6 +16,7 @@ class MemoryAvatar extends StatelessWidget {
     required this.dark,
     this.imageUrl,
     this.bytes,
+    this.image,
     this.initial,
     this.background,
     this.foreground,
@@ -30,6 +31,10 @@ class MemoryAvatar extends StatelessWidget {
   /// A locally-picked photo, shown before it finishes uploading.
   final Uint8List? bytes;
 
+  /// An already-resolved provider, for callers that build their own (cached,
+  /// file-backed, or asset images). Takes precedence over [imageUrl].
+  final ImageProvider? image;
+
   /// Falls back to '?' when the name is empty.
   final String? initial;
 
@@ -38,6 +43,7 @@ class MemoryAvatar extends StatelessWidget {
 
   ImageProvider? get _image {
     if (bytes != null) return MemoryImage(bytes!);
+    if (image != null) return image;
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return NetworkImage(imageUrl!);
     }
@@ -60,7 +66,7 @@ class MemoryAvatar extends StatelessWidget {
           ? null
           : Text(
               letter,
-              style: MemoryTypography.title.copyWith(
+              style: MemoryTypography.headlineLarge.copyWith(
                 // Scale the initial with the circle so it never crowds the edge.
                 fontSize: radius * 0.75,
                 color: foreground ?? Colors.white,

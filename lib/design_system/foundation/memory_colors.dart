@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 /// Memory's colour palette.
 ///
 /// Every value here is lifted verbatim from the constants that were previously
-/// scattered across feature code, so adopting these tokens changes nothing on
-/// screen. `lib/core/theme.dart` re-exports the historical `k*` names, which
-/// remain as deprecated aliases until the last screen is migrated.
+/// scattered across feature code, so adopting these tokens changed nothing on
+/// screen. Those legacy `k*` constants have since been deleted: this class is
+/// now the only place a colour is defined.
 abstract final class MemoryColors {
   // ── Brand ────────────────────────────────────────────────────────────────
   /// The single accent. Used sparingly: primary actions, active state, focus.
@@ -42,11 +42,65 @@ abstract final class MemoryColors {
 
   // ── Semantic ─────────────────────────────────────────────────────────────
   static const danger = Colors.red;
-  static const success = mint;
+
+  /// Confirmation. Deeper than [mint] so it stays legible as 10px text on
+  /// the cream auth surfaces, where mint washes out.
+  static const success = Color(0xFF20A978);
 
   // ── Third-party brand marks (share sheets only) ──────────────────────────
   static const instagram = Color(0xFFE1306C);
   static const whatsApp = Color(0xFF25D366);
+
+  /// Instagram's story gradient, in the order Instagram draws it.
+  static const instagramGradient = [
+    Color(0xFFF058A0),
+    Color(0xFFBD3EFF),
+    Color(0xFFFF6B00),
+  ];
+
+  /// WhatsApp's two greens, light stop first.
+  static const whatsAppGradient = [whatsApp, Color(0xFF128C7E)];
+
+  // ── Streak tiers ─────────────────────────────────────────────────────────
+  //
+  // Bronze → Silver → Gold → Diamond, by consecutive days. These are the
+  // metals, not brand hues: they are recognisable precisely because they are
+  // the colours everyone already expects a medal to be.
+  static const tierBronze = Color(0xFFCD7F32);
+  static const tierSilver = Color(0xFFC0C0C0);
+  static const tierGold = Color(0xFFFFD700);
+  static const tierDiamond = Color(0xFF89CFF0);
+
+  // ── Elevated dark surfaces ───────────────────────────────────────────────
+  //
+  // The second stop of a dark gradient. Near-black, but not [ink]: a gradient
+  // from ink to ink is a flat fill.
+  static const inkRaised = Color(0xFF151515);
+  static const inkRaisedAlt = Color(0xFF171717);
+  static const inkElevated = Color(0xFF1E1E1E);
+  static const inkElevatedAlt = Color(0xFF2C2C2C);
+
+  /// The warm stop paired with [accent] in an outgoing chat bubble.
+  static const accentGlow = Color(0xFFFFD54F);
+
+  /// The violet a capture is tinted with when it carries no colour of its own.
+  static const captureGradient = [Color(0xFF8E2DE2), Color(0xFF4A00E0)];
+
+  /// The default memory gradient, for a memory the server sent no colours for.
+  static const memoryFallbackGradient = [Color(0xFFFF826E), amber, mint];
+
+  /// Milestone confetti. Deliberately loud, and deliberately not the brand:
+  /// a milestone card is the one place Memory is allowed to shout.
+  static const celebration = [
+    Color(0xFFFF1493), // hot pink
+    Color(0xFFBD3EFF), // electric purple
+    Color(0xFF00F5FF), // electric cyan
+    Color(0xFF39FF14), // neon lime
+    Color(0xFFFF5E00), // vivid orange
+    accentWarm, // gold yellow
+    Color(0xFFFF3366), // coral red
+    Color(0xFF6C5DD3), // retro lavender
+  ];
 
   // ── Opacity ramp ─────────────────────────────────────────────────────────
   //

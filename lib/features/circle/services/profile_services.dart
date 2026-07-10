@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:memory_app/core/api_client.dart';
 import 'package:memory_app/core/structured_logger.dart';
-import 'package:memory_app/core/theme.dart'; // contains sharedPreferencesProvider
+import 'package:memory_app/core/app_providers.dart'; // contains sharedPreferencesProvider
 import 'package:memory_app/features/auth/auth.dart'; // contains sessionProvider
 
 // 1. AvatarUploadService

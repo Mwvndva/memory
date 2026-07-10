@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/core/api_client.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/realtime/realtime_providers.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class DevDiagnosticsView extends ConsumerStatefulWidget {
   const DevDiagnosticsView({super.key});
@@ -103,19 +104,25 @@ class _DevDiagnosticsViewState extends ConsumerState<DevDiagnosticsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dev Diagnostics'),
+      appBar: MemoryAppBar(
+        title: 'Dev Diagnostics',
+        dark: Theme.of(context).brightness == Brightness.dark,
         actions: [
-          IconButton(
-            icon: _loading
-                ? const CircularProgressIndicator.adaptive()
-                : const Icon(Icons.refresh),
-            onPressed: _loading ? null : _refreshAll,
-          ),
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: MemorySpacing.gutter),
+              child: Center(child: MemoryLoading()),
+            )
+          else
+            MemoryIconButton(
+              icon: Icons.refresh,
+              semanticLabel: 'Refresh diagnostics',
+              onPressed: _refreshAll,
+            ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(MemorySpacing.xl),
         child: SelectableText(
           _lastRaw.isEmpty ? 'No data yet' : _prettyJson(_lastRaw),
         ),

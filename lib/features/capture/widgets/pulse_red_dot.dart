@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:memory_app/design_system/design_system.dart';
+
 class PulseRedDot extends StatefulWidget {
   const PulseRedDot({super.key});
 
@@ -16,7 +18,7 @@ class PulseRedDotState extends State<PulseRedDot>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: MemoryDurations.pulse,
     )..repeat(reverse: true);
   }
 
@@ -34,7 +36,7 @@ class PulseRedDotState extends State<PulseRedDot>
         width: 12,
         height: 12,
         decoration: const BoxDecoration(
-          color: Colors.red,
+          color: MemoryColors.danger,
           shape: BoxShape.circle,
         ),
       ),

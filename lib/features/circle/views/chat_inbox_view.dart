@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class ChatInboxView extends ConsumerStatefulWidget {
   const ChatInboxView({super.key, required this.contactName});
@@ -142,10 +143,13 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
               bottom: false,
               child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: MemorySpacing.md,
+                  vertical: MemorySpacing.md,
+                ),
                 decoration: BoxDecoration(
-                  color: kBlack,
-                  borderRadius: BorderRadius.circular(24),
+                  color: MemoryColors.ink,
+                  borderRadius: BorderRadius.circular(MemoryRadius.xl),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.15),
@@ -156,43 +160,28 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 ),
                 child: Row(
                   children: [
-                    IconButton(
+                    MemoryIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      semanticLabel: 'Back',
+                      color: Colors.white,
+                      iconSize: 18,
                       onPressed: () => context.pop(),
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      tooltip: 'Back',
                     ),
-                    const SizedBox(width: 4),
-                    CircleAvatar(
+                    const SizedBox(width: MemorySpacing.xs),
+                    MemoryAvatar(
                       radius: 18,
-                      backgroundColor: kYellow,
-                      backgroundImage:
-                          (contactMember.avatarUrl != null &&
-                              contactMember.avatarUrl!.isNotEmpty)
-                          ? NetworkImage(
-                                  formatImageUrl(contactMember.avatarUrl!),
-                                )
-                                as ImageProvider
-                          : null,
-                      child:
-                          (contactMember.avatarUrl == null ||
-                              contactMember.avatarUrl!.isEmpty)
-                          ? Text(
-                              contactMember.firstName.isNotEmpty
-                                  ? contactMember.firstName[0].toUpperCase()
-                                  : widget.contactName[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: kBlack,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 13,
-                              ),
-                            )
-                          : null,
+                      dark: dark,
+                      imageUrl:
+                          contactMember.avatarUrl == null ||
+                              contactMember.avatarUrl!.isEmpty
+                          ? null
+                          : formatImageUrl(contactMember.avatarUrl!),
+                      initial: contactMember.firstName.isNotEmpty
+                          ? contactMember.firstName
+                          : contactMember.username,
+                      background: MemoryColors.accent,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: MemorySpacing.xl),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,23 +189,20 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                         children: [
                           Text(
                             widget.contactName,
-                            style: const TextStyle(
+                            style: MemoryTypography.titleMedium.copyWith(
                               color: Colors.white,
-                              fontSize: 15,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: MemorySpacing.xxs),
                           Text(
                             isAccepted
                                 ? 'Circle Member'
                                 : (isPendingRequest
                                       ? 'Wants to share'
                                       : 'Not in Circle'),
-                            style: TextStyle(
+                            style: MemoryTypography.overline.copyWith(
                               color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ],
@@ -235,38 +221,34 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                     Positioned.fill(
                       child: CustomPaint(
                         painter: ChatPatternPainter(
-                          patternColor: (dark ? Colors.white : kBlack)
+                          patternColor: (dark ? Colors.white : MemoryColors.ink)
                               .withValues(alpha: 0.04),
                         ),
                       ),
                     ),
                     if (_loadingHistory)
-                      Center(
-                        child: CircularProgressIndicator(
-                          color: dark ? kYellow : kBlack,
-                        ),
+                      MemoryLoading.block(
+                        color: dark ? MemoryColors.accent : MemoryColors.ink,
                       )
                     else if (messages.isEmpty)
                       Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               'No messages yet',
-                              style: TextStyle(
-                                color: kCharcoal,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
+                              style: MemoryTypography.titleLarge.copyWith(
+                                color: MemoryColors.charcoal,
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: MemorySpacing.sm),
                             Text(
                               'Say hello to start the conversation!',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: kCharcoal.withValues(alpha: 0.6),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
+                              style: MemoryTypography.bodyMedium.copyWith(
+                                color: MemoryColors.charcoal.withValues(
+                                  alpha: 0.6,
+                                ),
                               ),
                             ),
                           ],
@@ -281,30 +263,35 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                           return ListView.builder(
                             controller: _scrollController,
                             itemCount: messages.length + (isTyping ? 1 : 0),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: MemorySpacing.gutter,
+                            ),
                             physics: const BouncingScrollPhysics(),
                             itemBuilder: (context, i) {
                               if (i == messages.length) {
                                 return Align(
                                   alignment: Alignment.centerLeft,
                                   child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.only(
+                                      bottom: MemorySpacing.xl,
+                                    ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         const SizedBox(width: 36),
                                         Text(
                                           '${widget.contactName} is typing...',
-                                          style: TextStyle(
-                                            color:
-                                                (dark
-                                                        ? Colors.white
-                                                        : kCharcoal)
-                                                    .withValues(alpha: 0.6),
-                                            fontSize: 11,
-                                            fontStyle: FontStyle.italic,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: MemoryTypography.caption
+                                              .copyWith(
+                                                color:
+                                                    (dark
+                                                            ? Colors.white
+                                                            : MemoryColors
+                                                                  .charcoal)
+                                                        .withValues(alpha: 0.6),
+                                                fontStyle: FontStyle.italic,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -349,10 +336,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
   ) {
     if (isPendingRequest) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(MemorySpacing.gutter),
         decoration: BoxDecoration(
-          color: kBlack,
-          borderRadius: BorderRadius.circular(20),
+          color: MemoryColors.ink,
+          borderRadius: BorderRadius.circular(MemoryRadius.xl),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.2),
@@ -368,23 +355,21 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             Text(
               '${widget.contactName} wants to share memories',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: MemoryTypography.bodyLarge.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: 14,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: MemorySpacing.xs),
             Text(
               'Accept to start messaging and sharing memories.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: MemoryTypography.caption.copyWith(
                 color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: MemorySpacing.xxl),
             Row(
               children: [
                 Expanded(
@@ -414,20 +399,18 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(MemoryRadius.pill),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Ignore',
-                        style: TextStyle(
+                        style: MemoryTypography.button.copyWith(
                           color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: MemorySpacing.xl),
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
@@ -461,15 +444,13 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                       height: 44,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: kYellow,
-                        borderRadius: BorderRadius.circular(999),
+                        color: MemoryColors.accent,
+                        borderRadius: BorderRadius.circular(MemoryRadius.pill),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Accept',
-                        style: TextStyle(
-                          color: kBlack,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
+                        style: MemoryTypography.button.copyWith(
+                          color: MemoryColors.ink,
                         ),
                       ),
                     ),
@@ -482,10 +463,10 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
       );
     } else if (!isAccepted) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(MemorySpacing.gutter),
         decoration: BoxDecoration(
-          color: kBlack,
-          borderRadius: BorderRadius.circular(20),
+          color: MemoryColors.ink,
+          borderRadius: BorderRadius.circular(MemoryRadius.xl),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.2),
@@ -501,23 +482,21 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
             Text(
               '${widget.contactName} is not in your circle',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: MemoryTypography.bodyLarge.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: 14,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: MemorySpacing.xs),
             Text(
               'You can only message after a circle request is accepted.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: MemoryTypography.caption.copyWith(
                 color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: MemorySpacing.xxl),
             GestureDetector(
               onTap: () {
                 if (mounted) context.pop();
@@ -527,15 +506,11 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
-                child: const Text(
+                child: Text(
                   'Back',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                  ),
+                  style: MemoryTypography.button.copyWith(color: Colors.white),
                 ),
               ),
             ),
@@ -545,10 +520,13 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
     } else {
       return Container(
         height: 52,
-        padding: const EdgeInsets.only(left: 18, right: 6),
+        padding: const EdgeInsets.only(
+          left: MemorySpacing.sheet,
+          right: MemorySpacing.sm,
+        ),
         decoration: BoxDecoration(
-          color: kBlack,
-          borderRadius: BorderRadius.circular(999),
+          color: MemoryColors.ink,
+          borderRadius: BorderRadius.circular(MemoryRadius.pill),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
@@ -560,40 +538,29 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
         child: Row(
           children: [
             Expanded(
-              child: TextField(
+              child: MemoryInlineField(
                 controller: _messageController,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
+                hint: 'Message ${widget.contactName}',
+                style: MemoryTypography.bodyLarge.copyWith(color: Colors.white),
                 onSubmitted: (_) => _sendMessage(),
-                decoration: InputDecoration(
-                  hintText: 'Message ${widget.contactName}',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                  ),
-                  border: InputBorder.none,
-                ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: MemorySpacing.md),
             GestureDetector(
               onTap: _sendMessage,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
+                  horizontal: MemorySpacing.sheet,
+                  vertical: MemorySpacing.lg,
                 ),
                 decoration: BoxDecoration(
-                  color: kYellow,
-                  borderRadius: BorderRadius.circular(999),
+                  color: MemoryColors.accent,
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
-                child: const Text(
+                child: Text(
                   'Send',
-                  style: TextStyle(
-                    color: kBlack,
-                    fontSize: 12,
+                  style: MemoryTypography.bodySmall.copyWith(
+                    color: MemoryColors.ink,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -614,9 +581,11 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
       );
 
   BoxDecoration _softBackground(bool dark) => BoxDecoration(
-    color: dark ? kDarkCream : kCream,
+    color: dark ? MemoryColors.ink : MemoryColors.cream,
     gradient: LinearGradient(
-      colors: dark ? const [kDarkCream, kCharcoal] : const [kYellow, kYellow],
+      colors: dark
+          ? const [MemoryColors.ink, MemoryColors.charcoal]
+          : const [MemoryColors.accent, MemoryColors.accent],
       begin: Alignment.topRight,
       end: Alignment.bottomLeft,
     ),

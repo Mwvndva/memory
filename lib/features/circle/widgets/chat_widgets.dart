@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/core/api_config.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class InboxBubble extends ConsumerWidget {
   final Message msg;
@@ -30,7 +30,7 @@ class InboxBubble extends ConsumerWidget {
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.only(bottom: MemorySpacing.xl),
         child: Row(
           mainAxisAlignment: mine
               ? MainAxisAlignment.end
@@ -39,48 +39,32 @@ class InboxBubble extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (!mine) ...[
-              CircleAvatar(
+              MemoryAvatar(
                 radius: 14,
-                backgroundColor: dark ? kYellow : kBlack,
-                backgroundImage:
-                    (member.avatarUrl != null && member.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(formatImageUrl(member.avatarUrl!))
-                          as ImageProvider
-                    : null,
-                child: (member.avatarUrl == null || member.avatarUrl!.isEmpty)
-                    ? Text(
-                        member.firstName.isNotEmpty
-                            ? member.firstName[0].toUpperCase()
-                            : member.username[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 10,
-                        ),
-                      )
-                    : null,
+                dark: dark,
+                imageUrl: member.avatarUrl == null || member.avatarUrl!.isEmpty
+                    ? null
+                    : formatImageUrl(member.avatarUrl!),
+                initial: member.firstName.isNotEmpty
+                    ? member.firstName
+                    : member.username,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: MemorySpacing.md),
             ],
             if (mine && msg.isFailed)
               GestureDetector(
                 onTap: () {
                   showModalBottomSheet(
                     context: context,
-                    backgroundColor: kCharcoal,
+                    backgroundColor: MemoryColors.charcoal,
                     builder: (ctx) => SafeArea(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          ListTile(
-                            leading: const Icon(
-                              Icons.refresh_rounded,
-                              color: Colors.white,
-                            ),
-                            title: const Text(
-                              'Retry sending',
-                              style: TextStyle(color: Colors.white),
-                            ),
+                          MemorySheetAction(
+                            icon: Icons.refresh_rounded,
+                            label: 'Retry sending',
+                            dark: true,
                             onTap: () {
                               Navigator.pop(ctx);
                               ref
@@ -88,15 +72,11 @@ class InboxBubble extends ConsumerWidget {
                                   .retryMessage(contactName, msg.id);
                             },
                           ),
-                          ListTile(
-                            leading: const Icon(
-                              Icons.delete_outline_rounded,
-                              color: Colors.redAccent,
-                            ),
-                            title: const Text(
-                              'Delete message',
-                              style: TextStyle(color: Colors.redAccent),
-                            ),
+                          MemorySheetAction(
+                            icon: Icons.delete_outline_rounded,
+                            label: 'Delete message',
+                            dark: true,
+                            isDestructive: true,
                             onTap: () {
                               Navigator.pop(ctx);
                               ref
@@ -110,7 +90,7 @@ class InboxBubble extends ConsumerWidget {
                   );
                 },
                 child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6.0),
+                  padding: EdgeInsets.symmetric(horizontal: MemorySpacing.sm),
                   child: Icon(
                     Icons.error_outline_rounded,
                     color: Colors.redAccent,
@@ -119,21 +99,30 @@ class InboxBubble extends ConsumerWidget {
                 ),
               ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MemorySpacing.gutter,
+                vertical: 11,
+              ),
               constraints: const BoxConstraints(maxWidth: 240),
               decoration: BoxDecoration(
                 gradient: mine
                     ? LinearGradient(
                         colors: dark
-                            ? const [kYellow, Color(0xFFFFD54F)]
-                            : const [kBlack, Color(0xFF2C2C2C)],
+                            ? const [
+                                MemoryColors.accent,
+                                MemoryColors.accentGlow,
+                              ]
+                            : const [
+                                MemoryColors.ink,
+                                MemoryColors.inkElevatedAlt,
+                              ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
                     : LinearGradient(
                         colors: dark
-                            ? const [kBlack, Color(0xFF1E1E1E)]
-                            : const [Colors.white, kCream],
+                            ? const [MemoryColors.ink, MemoryColors.inkElevated]
+                            : const [Colors.white, MemoryColors.cream],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -161,42 +150,33 @@ class InboxBubble extends ConsumerWidget {
                 children: [
                   Text(
                     msg.text,
-                    style: TextStyle(
+                    style: MemoryTypography.bodyMedium.copyWith(
                       color: mine
-                          ? (dark ? kBlack : Colors.white)
-                          : (dark ? kCream : kCharcoal),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                          ? (dark ? MemoryColors.ink : Colors.white)
+                          : (dark ? MemoryColors.cream : MemoryColors.charcoal),
                       height: 1.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: MemorySpacing.xs),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         _formatTime(msg.timestamp),
-                        style: TextStyle(
+                        style: MemoryTypography.micro.copyWith(
                           color:
                               (mine
-                                      ? (dark ? kBlack : Colors.white)
-                                      : (dark ? kCream : kCharcoal))
+                                      ? (dark ? MemoryColors.ink : Colors.white)
+                                      : (dark
+                                            ? MemoryColors.cream
+                                            : MemoryColors.charcoal))
                                   .withValues(alpha: 0.5),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       if (mine) ...[
-                        const SizedBox(width: 4),
+                        const SizedBox(width: MemorySpacing.xs),
                         if (msg.isPending)
-                          const SizedBox(
-                            width: 10,
-                            height: 10,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 1.2,
-                              color: kYellow,
-                            ),
-                          )
+                          const MemoryLoading(size: 10)
                         else
                           Icon(
                             msg.isRead
@@ -204,7 +184,7 @@ class InboxBubble extends ConsumerWidget {
                                 : Icons.done_rounded,
                             size: 11,
                             color: dark
-                                ? kBlack.withValues(alpha: 0.5)
+                                ? MemoryColors.ink.withValues(alpha: 0.5)
                                 : Colors.white.withValues(alpha: 0.5),
                           ),
                       ],

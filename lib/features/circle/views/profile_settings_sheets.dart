@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/notification/models/notification_item.dart';
 import 'package:memory_app/features/notification/services/notification_services.dart';
@@ -35,17 +34,14 @@ class _NotificationPreferencesSheetState
     final dark = widget.dark;
     final prefService = ref.read(notificationPreferencesServiceProvider);
 
-    Widget typeSwitch(String label, NotificationType type) => SwitchListTile(
-      title: Text(
-        label,
-        style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13),
-      ),
+    Widget typeSwitch(String label, NotificationType type) => MemorySwitchTile(
+      label: label,
+      dark: dark,
       value: prefService.isNotificationTypeEnabled(type),
       onChanged: (val) async {
         await prefService.setNotificationTypeEnabled(type, val);
         if (mounted) setState(() {});
       },
-      activeThumbColor: kYellow,
     );
 
     return MemoryBottomSheet(
@@ -56,29 +52,24 @@ class _NotificationPreferencesSheetState
         children: [
           Text(
             'Notification Preferences',
-            style: TextStyle(
-              color: dark ? kCream : kCharcoal,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+            style: MemoryTypography.titleMedium.copyWith(
+              color: dark ? MemoryColors.cream : MemoryColors.charcoal,
             ),
           ),
-          const SizedBox(height: 12),
-          SwitchListTile(
-            title: Text(
-              'Push Notifications',
-              style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13),
-            ),
+          const SizedBox(height: MemorySpacing.xl),
+          MemorySwitchTile(
+            label: 'Push Notifications',
+            dark: dark,
             value: prefService.isAllNotificationsEnabled(),
             onChanged: (val) async {
               await prefService.setAllNotificationsEnabled(val);
               if (mounted) setState(() {});
             },
-            activeThumbColor: kYellow,
           ),
           typeSwitch('Comments', NotificationType.reaction),
           typeSwitch('Messages', NotificationType.message),
           typeSwitch('Circle Invitations', NotificationType.circleRequest),
-          const SizedBox(height: 12),
+          const SizedBox(height: MemorySpacing.xl),
           MemoryButton(
             label: 'Done',
             onPressed: () => Navigator.pop(context),
@@ -120,17 +111,14 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
       String label,
       bool value,
       Future<void> Function(bool) onSet,
-    ) => SwitchListTile(
-      title: Text(
-        label,
-        style: TextStyle(color: dark ? kCream : kCharcoal, fontSize: 13),
-      ),
+    ) => MemorySwitchTile(
+      label: label,
+      dark: dark,
       value: value,
       onChanged: (val) async {
         await onSet(val);
         if (mounted) setState(() {});
       },
-      activeThumbColor: kYellow,
     );
 
     return MemoryBottomSheet(
@@ -141,13 +129,11 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
         children: [
           Text(
             'Privacy Settings',
-            style: TextStyle(
-              color: dark ? kCream : kCharcoal,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+            style: MemoryTypography.titleMedium.copyWith(
+              color: dark ? MemoryColors.cream : MemoryColors.charcoal,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: MemorySpacing.xl),
           toggle(
             'Profile Visibility',
             privacyService.isProfileVisible(),
@@ -168,7 +154,7 @@ class _PrivacySettingsSheetState extends ConsumerState<_PrivacySettingsSheet> {
             privacyService.canReceiveCircleInvitations(),
             privacyService.setCanReceiveCircleInvitations,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: MemorySpacing.xl),
           MemoryButton(
             label: 'Done',
             onPressed: () => Navigator.pop(context),
@@ -244,30 +230,27 @@ class _SecuritySettingsSheetState
         children: [
           Text(
             'Security & Active Sessions',
-            style: TextStyle(
-              color: dark ? kCream : kCharcoal,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+            style: MemoryTypography.titleMedium.copyWith(
+              color: dark ? MemoryColors.cream : MemoryColors.charcoal,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: MemorySpacing.xl),
           FutureBuilder<List<ActiveSession>>(
             future: _sessions,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
-                );
+                return const MemoryLoading.block();
               }
               if (snapshot.hasError) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: MemorySpacing.xl,
+                  ),
                   child: Text(
                     'Could not load your active sessions.',
-                    style: TextStyle(
-                      color: (dark ? kCream : kCharcoal).withValues(alpha: 0.7),
-                      fontSize: 12,
+                    style: MemoryTypography.bodySmall.copyWith(
+                      color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
+                          .withValues(alpha: 0.7),
                     ),
                   ),
                 );
@@ -276,12 +259,14 @@ class _SecuritySettingsSheetState
               final sessions = snapshot.data ?? const <ActiveSession>[];
               if (sessions.isEmpty) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: MemorySpacing.xl,
+                  ),
                   child: Text(
                     'No active sessions.',
-                    style: TextStyle(
-                      color: (dark ? kCream : kCharcoal).withValues(alpha: 0.7),
-                      fontSize: 12,
+                    style: MemoryTypography.bodySmall.copyWith(
+                      color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
+                          .withValues(alpha: 0.7),
                     ),
                   ),
                 );
@@ -291,33 +276,25 @@ class _SecuritySettingsSheetState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   for (final s in sessions)
-                    ListTile(
-                      title: Text(
-                        s.isCurrent ? '${s.device} (this device)' : s.device,
-                        style: TextStyle(
-                          color: dark ? kCream : kCharcoal,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Text(
-                        s.lastActive,
-                        style: TextStyle(
-                          color: (dark ? kCream : kCharcoal).withValues(
-                            alpha: 0.6,
-                          ),
-                          fontSize: 11,
-                        ),
-                      ),
+                    MemoryDetailRow(
+                      title: s.isCurrent
+                          ? '${s.device} (this device)'
+                          : s.device,
+                      subtitle: s.lastActive,
+                      dark: dark,
                       trailing: s.isCurrent
-                          ? Icon(Icons.check_circle, color: kMint, size: 18)
+                          ? const Icon(
+                              Icons.check_circle,
+                              color: MemoryColors.mint,
+                              size: 18,
+                            )
                           : null,
                     ),
                 ],
               );
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: MemorySpacing.xl),
           MemoryButton(
             label: 'Sign out of all other devices',
             // The button now owns its own in-flight state: it dims and shows a
@@ -327,7 +304,7 @@ class _SecuritySettingsSheetState
             dark: dark,
             variant: MemoryButtonVariant.danger,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: MemorySpacing.md),
           MemoryButton(
             label: 'Close',
             onPressed: () => Navigator.pop(context),

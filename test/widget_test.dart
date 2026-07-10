@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:memory_app/main.dart';
 import 'package:memory_app/features/auth/auth.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 
 void main() {
   testWidgets('Memory app boots and shows loading view', (

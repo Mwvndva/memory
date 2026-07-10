@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/notification/widgets/notification_card.dart';
 import 'package:memory_app/features/notification/notification.dart';
@@ -44,40 +43,29 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(notificationProvider);
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final bg = dark ? kDarkCream : kCream;
+    final bg = dark ? MemoryColors.ink : MemoryColors.cream;
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: dark ? kYellow : kBlack,
-          ),
+      appBar: MemoryAppBar(
+        title: 'Notifications',
+        dark: dark,
+        foreground: dark ? MemoryColors.accent : MemoryColors.ink,
+        leading: MemoryIconButton(
+          icon: Icons.arrow_back_ios_new_rounded,
+          semanticLabel: 'Back',
+          color: dark ? MemoryColors.accent : MemoryColors.ink,
           onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'Notifications',
-          style: TextStyle(
-            color: dark ? kYellow : kBlack,
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-          ),
         ),
         actions: [
           if (state.notifications.any((n) => !n.isRead))
-            TextButton(
+            MemoryButton(
+              label: 'Read All',
+              dark: dark,
+              variant: MemoryButtonVariant.text,
+              size: MemoryButtonSize.compact,
               onPressed: () =>
                   ref.read(notificationProvider.notifier).markAllAsRead(),
-              child: Text(
-                'Read All',
-                style: TextStyle(
-                  color: dark ? kYellow : kBlack,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
             ),
         ],
       ),

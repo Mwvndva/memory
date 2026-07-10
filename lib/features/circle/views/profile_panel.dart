@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/design_system/design_system.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/features/feed/feed.dart';
 
@@ -83,13 +83,15 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
 
     return Container(
       height: MediaQuery.sizeOf(context).height * 0.84,
-      margin: const EdgeInsets.all(14),
+      margin: const EdgeInsets.all(MemorySpacing.xxl),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: dark ? kBlack : Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        color: dark ? MemoryColors.ink : Colors.white,
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         border: Border.all(
-          color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.06),
+          color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
+            alpha: 0.06,
+          ),
         ),
         boxShadow: [
           BoxShadow(
@@ -104,10 +106,12 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
           Container(
             width: 36,
             height: 5,
-            margin: const EdgeInsets.only(bottom: 10),
+            margin: const EdgeInsets.only(bottom: MemorySpacing.lg),
             decoration: BoxDecoration(
-              color: (dark ? Colors.white : kCharcoal).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(999),
+              color: (dark ? Colors.white : MemoryColors.charcoal).withValues(
+                alpha: 0.12,
+              ),
+              borderRadius: BorderRadius.circular(MemoryRadius.pill),
             ),
           ),
           Row(
@@ -117,67 +121,61 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 onTap: () => Navigator.pop(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: MemorySpacing.xl,
+                    vertical: MemorySpacing.md,
                   ),
                   decoration: BoxDecoration(
-                    color: (dark ? Colors.white : kCharcoal).withValues(
-                      alpha: 0.05,
-                    ),
-                    borderRadius: BorderRadius.circular(999),
+                    color: (dark ? Colors.white : MemoryColors.charcoal)
+                        .withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(MemoryRadius.pill),
                   ),
                   child: Text(
                     'Close',
-                    style: TextStyle(
-                      color: dark ? kCream : kCharcoal,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                    style: MemoryTypography.bodyMedium.copyWith(
+                      color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     ),
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+                  horizontal: MemorySpacing.lg,
+                  vertical: MemorySpacing.sm,
                 ),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(
-                    alpha: 0.05,
-                  ),
-                  borderRadius: BorderRadius.circular(999),
+                  color: (dark ? Colors.white : MemoryColors.charcoal)
+                      .withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
                 child: Row(
                   children: [
-                    Text(
-                      flag,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
+                    Text(flag, style: MemoryTypography.button),
+                    const SizedBox(width: MemorySpacing.sm),
                     Text(
                       '#${user.countryRank}',
-                      style: TextStyle(
-                        color: dark ? kCream : kCharcoal,
-                        fontSize: 10,
+                      style: MemoryTypography.buttonCompact.copyWith(
+                        color: dark
+                            ? MemoryColors.cream
+                            : MemoryColors.charcoal,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     if (user.globalRank != null) ...[
-                      const SizedBox(width: 10),
+                      const SizedBox(width: MemorySpacing.lg),
                       Icon(
                         Icons.public_rounded,
-                        color: dark ? kCream : kCharcoal,
+                        color: dark
+                            ? MemoryColors.cream
+                            : MemoryColors.charcoal,
                         size: 13,
                       ),
                       const SizedBox(width: 5),
                       Text(
                         '#${user.globalRank}',
-                        style: TextStyle(
-                          color: dark ? kCream : kCharcoal,
-                          fontSize: 11,
+                        style: MemoryTypography.caption.copyWith(
+                          color: dark
+                              ? MemoryColors.cream
+                              : MemoryColors.charcoal,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -187,7 +185,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: MemorySpacing.xl),
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -195,14 +193,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(MemorySpacing.sheet),
                     decoration: BoxDecoration(
-                      color: dark ? kBlack : Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+                      color: dark ? MemoryColors.ink : Colors.white,
+                      borderRadius: BorderRadius.circular(MemoryRadius.xl),
                       border: Border.all(
-                        color: (dark ? Colors.white : kCharcoal).withValues(
-                          alpha: 0.08,
-                        ),
+                        color: (dark ? Colors.white : MemoryColors.charcoal)
+                            .withValues(alpha: 0.08),
                         width: 1,
                       ),
                       boxShadow: [
@@ -222,59 +219,51 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                           child: Stack(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(4),
+                                padding: const EdgeInsets.all(MemorySpacing.xs),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: dark ? kYellow : kBlack,
+                                  color: dark
+                                      ? MemoryColors.accent
+                                      : MemoryColors.ink,
                                 ),
-                                child: CircleAvatar(
+                                child: MemoryAvatar(
                                   radius: 34,
-                                  backgroundColor: dark ? kBlack : Colors.white,
-                                  backgroundImage: user.avatarBytes != null
-                                      ? MemoryImage(user.avatarBytes!)
-                                      : (user.avatarUrl != null &&
-                                                user.avatarUrl!.isNotEmpty
-                                            ? NetworkImage(
-                                                    formatImageUrl(
-                                                      user.avatarUrl!,
-                                                    ),
-                                                  )
-                                                  as ImageProvider
-                                            : null),
-                                  child:
-                                      (user.avatarBytes == null &&
-                                          (user.avatarUrl == null ||
-                                              user.avatarUrl!.isEmpty))
-                                      ? Text(
-                                          displayFirstName.isNotEmpty
-                                              ? displayFirstName[0]
-                                                    .toUpperCase()
-                                              : '?',
-                                          style: TextStyle(
-                                            color: kYellow,
-                                            fontSize: 26,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        )
-                                      : null,
+                                  dark: dark,
+                                  bytes: user.avatarBytes,
+                                  imageUrl:
+                                      user.avatarUrl == null ||
+                                          user.avatarUrl!.isEmpty
+                                      ? null
+                                      : formatImageUrl(user.avatarUrl!),
+                                  initial: displayFirstName,
+                                  background: dark
+                                      ? MemoryColors.ink
+                                      : Colors.white,
+                                  foreground: MemoryColors.accent,
                                 ),
                               ),
                               Positioned(
                                 right: 0,
                                 bottom: 0,
                                 child: Container(
-                                  padding: const EdgeInsets.all(6),
+                                  padding: const EdgeInsets.all(
+                                    MemorySpacing.sm,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: kBlack,
+                                    color: MemoryColors.ink,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: dark ? kYellow : kBlack,
+                                      color: dark
+                                          ? MemoryColors.accent
+                                          : MemoryColors.ink,
                                       width: 2,
                                     ),
                                   ),
                                   child: Icon(
                                     Icons.camera_alt_rounded,
-                                    color: dark ? kYellow : kBlack,
+                                    color: dark
+                                        ? MemoryColors.accent
+                                        : MemoryColors.ink,
                                     size: 14,
                                   ),
                                 ),
@@ -282,45 +271,48 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: MemorySpacing.xl),
                         Text(
                           '$displayFirstName $displayLastName',
-                          style: TextStyle(
-                            color: dark ? kCream : kCharcoal,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
+                          style: MemoryTypography.headlineLarge.copyWith(
+                            color: dark
+                                ? MemoryColors.cream
+                                : MemoryColors.charcoal,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: MemorySpacing.xs),
                         Text(
                           '@$displayUsername',
-                          style: TextStyle(
-                            color: (dark ? kCream : kCharcoal).withValues(
-                              alpha: 0.66,
-                            ),
-                            fontSize: 12,
+                          style: MemoryTypography.bodySmall.copyWith(
+                            color:
+                                (dark
+                                        ? MemoryColors.cream
+                                        : MemoryColors.charcoal)
+                                    .withValues(alpha: 0.66),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: MemorySpacing.lg),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
+                            horizontal: MemorySpacing.lg,
+                            vertical: MemorySpacing.sm,
                           ),
                           decoration: BoxDecoration(
-                            color: (dark ? Colors.white : kCharcoal).withValues(
-                              alpha: 0.08,
+                            color: (dark ? Colors.white : MemoryColors.charcoal)
+                                .withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(
+                              MemoryRadius.pill,
                             ),
-                            borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             'Tap your photo to update it',
-                            style: TextStyle(
-                              color: (dark ? kCream : kCharcoal).withValues(
-                                alpha: 0.66,
-                              ),
-                              fontSize: 11,
+                            style: MemoryTypography.caption.copyWith(
+                              color:
+                                  (dark
+                                          ? MemoryColors.cream
+                                          : MemoryColors.charcoal)
+                                      .withValues(alpha: 0.66),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -328,9 +320,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: MemorySpacing.xxl),
                   ProfileStatCards(dark: dark),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   MemorySection(
                     title: 'CONTACT',
                     dark: dark,
@@ -349,13 +341,13 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   ProfileAddPersonCard(
                     circleCount: circleMembers.length,
                     dark: dark,
                     onAddPerson: () => showInviteOptions(context, dark),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   MemorySection(
                     title: 'ACCOUNT & PREFERENCES',
                     dark: dark,
@@ -380,7 +372,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   MemorySection(
                     title: 'DATA MANAGEMENT',
                     dark: dark,
@@ -399,7 +391,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: MemorySpacing.xl),
                   MemorySection(
                     title: 'LEGAL & SUPPORT',
                     dark: dark,
@@ -423,7 +415,7 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: MemorySpacing.section),
                   GestureDetector(
                     onTap: () {
                       Navigator.pop(context);
@@ -437,9 +429,9 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: Colors.red,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(MemoryRadius.lg),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
@@ -447,13 +439,11 @@ class _ProfilePanelState extends ConsumerState<ProfilePanel> {
                             color: Colors.white,
                             size: 18,
                           ),
-                          SizedBox(width: 8),
+                          SizedBox(width: MemorySpacing.md),
                           Text(
                             'Log Out',
-                            style: TextStyle(
+                            style: MemoryTypography.bodyMedium.copyWith(
                               color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],

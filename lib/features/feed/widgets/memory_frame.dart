@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/auth/auth.dart';
+import 'package:memory_app/core/error_handler.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class MemoryFrame extends ConsumerWidget {
   final MemoryItem memory;
@@ -38,11 +39,11 @@ class MemoryFrame extends ConsumerWidget {
     return GestureDetector(
       onDoubleTap: () => context.push('/memory/${m.id}'),
       child: Container(
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(MemorySpacing.sm),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(radius),
-          border: Border.all(color: kYellow, width: 3),
+          border: Border.all(color: MemoryColors.accent, width: 3),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(radius - 8),
@@ -69,11 +70,8 @@ class MemoryFrame extends ConsumerWidget {
                       child: Text(
                         m.caption,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: MemoryTypography.mediaCaption.copyWith(
                           color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          height: 1.05,
                         ),
                       ),
                     ),
@@ -97,24 +95,19 @@ class MemoryFrame extends ConsumerWidget {
                             .read(downloadRepositoryProvider)
                             .downloadMemoryVideo(m);
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Video downloaded successfully to: $path',
-                              ),
-                            ),
+                          showAppMessage(
+                            context,
+                            'Video downloaded successfully to: $path',
                           );
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(e.toString())));
+                          showAppError(context, e.toString());
                         }
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(MemorySpacing.md),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.5),
                         shape: BoxShape.circle,

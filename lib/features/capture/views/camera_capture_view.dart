@@ -7,8 +7,8 @@ import 'package:camera/camera.dart';
 import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'package:memory_app/core/theme.dart';
-import 'package:memory_app/core/playful.dart';
+import 'package:memory_app/core/app_providers.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/features/capture/capture.dart';
 import 'package:memory_app/features/feed/feed.dart';
@@ -269,14 +269,13 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
 
   Future<void> _sendToCircle() async {
     final captionText = _captureCaption.text.trim();
-    ref.read(uploadProvider.notifier).startUpload(
-      captionText,
-      const [
-        Color(0xFF8E2DE2),
-        Color(0xFF4A00E0),
-      ], // Beautiful violet/purple gradient for dynamic captures
-      videoPath: _recordedVideoPath,
-    );
+    ref
+        .read(uploadProvider.notifier)
+        .startUpload(
+          captionText,
+          MemoryColors.captureGradient,
+          videoPath: _recordedVideoPath,
+        );
   }
 
   void _showProfileSheet(BuildContext context) {
@@ -341,30 +340,19 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
           _captureCaptionSize = 24;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Memory posted successfully to your Circle!'),
-          ),
-        );
+        showAppMessage(context, 'Memory posted successfully to your Circle!');
 
         ref.read(uploadProvider.notifier).reset();
         context.go('/capture');
       } else if (next.status == UploadStatus.failed) {
         if (next.isRetryable) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Upload failed: ${next.errorMessage}'),
-              backgroundColor: Colors.black,
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'Retry',
-                textColor: kYellow,
-                onPressed: () {
-                  _sendToCircle();
-                },
-              ),
-              duration: const Duration(seconds: 8),
-            ),
+          MemorySnackBar.show(
+            context,
+            'Upload failed: ${next.errorMessage}',
+            tone: MemorySnackTone.error,
+            duration: const Duration(seconds: 8),
+            actionLabel: 'Retry',
+            onAction: _sendToCircle,
           );
         } else {
           showAppError(context, 'Failed to post memory: ${next.errorMessage}');
@@ -395,53 +383,25 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
         canPop: !isUploading,
         onPopInvokedWithResult: (didPop, result) async {
           if (didPop) return;
-          final leave = await showDialog<bool>(
+          final leave = await MemoryDialog.show<bool>(
             context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: dark ? kBlack : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Text(
-                'Upload in Progress',
-                style: TextStyle(
-                  color: dark ? kCream : kCharcoal,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              content: Text(
-                'Your memory is still uploading. Leaving will cancel the upload. Leave anyway?',
-                style: TextStyle(
-                  color: dark
-                      ? kCream.withValues(alpha: 0.8)
-                      : kCharcoal.withValues(alpha: 0.8),
-                  fontSize: 13,
-                ),
-              ),
+            builder: (ctx) => MemoryDialog(
+              title: 'Upload in Progress',
+              dark: dark,
+              message:
+                  'Your memory is still uploading. Leaving will cancel the upload. Leave anyway?',
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(
-                    'Continue Upload',
-                    style: TextStyle(
-                      color: dark ? kYellow : kBlack,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                MemoryDialogAction(
+                  label: 'Continue Upload',
+                  isPrimary: true,
+                  onPressed: () => Navigator.of(ctx).pop(false),
                 ),
-                TextButton(
+                MemoryDialogAction(
+                  label: 'Leave Anyway',
                   onPressed: () {
                     ref.read(uploadProvider.notifier).cancelUpload();
-                    Navigator.of(context).pop(true);
+                    Navigator.of(ctx).pop(true);
                   },
-                  child: Text(
-                    'Leave Anyway',
-                    style: TextStyle(
-                      color: dark
-                          ? kCream.withValues(alpha: 0.6)
-                          : kCharcoal.withValues(alpha: 0.6),
-                    ),
-                  ),
                 ),
               ],
             ),
@@ -473,12 +433,18 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                       Row(
                         children: [
                           const Spacer(),
-                          _overlayProfileSettingsButton(
-                            onTap: () => _showProfileSheet(context),
+                          MemoryIconButton(
+                            icon: Icons.person_rounded,
+                            semanticLabel: 'Profile and settings',
+                            color: Colors.white,
+                            iconSize: 28,
+                            onPressed: () => _showProfileSheet(context),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8), // Move camera frame higher
+                      const SizedBox(
+                        height: MemorySpacing.md,
+                      ), // Move camera frame higher
                       // Camera card preview (not full screen) with taller 3:4.3 ratio
                       Center(
                         child: AspectRatio(
@@ -503,9 +469,12 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                 _cameras.length > 1)
                               Positioned(
                                 left: 8,
-                                child: _overlayIconButton(
+                                child: MemoryIconButton(
                                   icon: Icons.flip_camera_android_rounded,
-                                  onTap: _switchCamera,
+                                  semanticLabel: 'Switch camera',
+                                  color: Colors.white,
+                                  iconSize: 28,
+                                  onPressed: _switchCamera,
                                 ),
                               ),
 
@@ -546,7 +515,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                               alignment: Alignment.center,
                                               decoration: const BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: kYellow,
+                                                color: MemoryColors.accent,
                                               ),
                                               child: Image.asset(
                                                 'assets/images/memory-logo.png',
@@ -619,10 +588,13 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
     return BouncyTap(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: MemorySpacing.xxl,
+          vertical: MemorySpacing.md,
+        ),
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(MemoryRadius.pill),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.15),
             width: 1.2,
@@ -654,10 +626,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                       child: Center(
                         child: Text(
                           f.initial,
-                          style: const TextStyle(
+                          style: MemoryTypography.micro.copyWith(
                             color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -666,27 +636,24 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                 }),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: MemorySpacing.md),
             if (friendsCount > 3) ...[
               Text(
                 '+${friendsCount - 3} ',
-                style: const TextStyle(
-                  color: kYellow,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
+                style: MemoryTypography.buttonCompact.copyWith(
+                  color: MemoryColors.accent,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: MemorySpacing.xs),
             ],
             Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   "Today's Memories",
-                  style: TextStyle(
+                  style: MemoryTypography.caption.copyWith(
                     color: Colors.white,
-                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5,
                   ),
@@ -694,9 +661,8 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                 if (friendsCount > 0)
                   Text(
                     '$friendsCount friends posted',
-                    style: TextStyle(
+                    style: MemoryTypography.micro.copyWith(
                       color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 8,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -709,65 +675,34 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
   }
 
   // Helper for icon buttons overlaid on the camera preview
-  Widget _overlayIconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Icon(icon, color: Colors.white, size: 28),
-    );
-  }
-
-  // Profile settings icon button for top-right (single icon instead of twin user icon)
-  Widget _overlayProfileSettingsButton({required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
-    );
-  }
-
-  // Message icon button for bottom-right with unread badge overlay
+  /// The messages button, with the only count-bearing badge in the app: from
+  /// the camera the user cannot see the inbox, so the number is the signal.
   Widget _overlayCircleMessageButton({
     required VoidCallback onTap,
     required int unreadCount,
   }) {
-    final displayCount = unreadCount > 9 ? '9+' : '$unreadCount';
-    return BouncyTap(
-      onTap: onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          const Icon(
-            Icons.chat_bubble_outline_rounded,
-            color: Colors.white,
-            size: 28,
-          ),
-          if (unreadCount > 0)
-            Positioned(
-              right: -5,
-              top: -5,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: kYellow,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.black, width: 1.2),
-                ),
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                alignment: Alignment.center,
-                child: Text(
-                  displayCount,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        MemoryIconButton(
+          icon: Icons.chat_bubble_outline_rounded,
+          semanticLabel: unreadCount > 0
+              ? 'Messages, $unreadCount unread'
+              : 'Messages',
+          color: Colors.white,
+          iconSize: 28,
+          onPressed: onTap,
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            // The badge already announces itself through the button's label.
+            child: ExcludeSemantics(
+              child: MemoryBadge(dark: true, count: unreadCount),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 
@@ -791,7 +726,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
         height: 76,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: kYellow,
+          color: MemoryColors.accent,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
@@ -805,17 +740,21 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
             ? Stack(
                 alignment: Alignment.center,
                 children: [
-                  CircularProgressIndicator(
+                  MemoryLoading(
+                    size: 36,
                     value: uploadState.status == UploadStatus.uploading
                         ? uploadState.progress
                         : null,
-                    color: kBlack,
-                    strokeWidth: 3,
+                    color: MemoryColors.ink,
                   ),
-                  const Icon(Icons.close_rounded, color: kBlack, size: 20),
+                  const Icon(
+                    Icons.close_rounded,
+                    color: MemoryColors.ink,
+                    size: 20,
+                  ),
                 ],
               )
-            : const Icon(Icons.send_rounded, color: kBlack, size: 32),
+            : const Icon(Icons.send_rounded, color: MemoryColors.ink, size: 32),
       ),
     );
   }
@@ -842,7 +781,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
             ),
           )
         else
-          Container(color: const Color(0xFF151515)),
+          Container(color: MemoryColors.inkRaised),
 
         // Dark overlay and blur filter combo
         BackdropFilter(
@@ -913,17 +852,20 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                             color: Colors.black,
                             child: Center(
                               child: _recordedVideoPath != null
-                                  ? CircularProgressIndicator(
-                                      color: dark ? kYellow : kBlack,
+                                  ? MemoryLoading(
+                                      size: 24,
+                                      color: dark
+                                          ? MemoryColors.accent
+                                          : MemoryColors.ink,
                                     )
-                                  : const Text(
+                                  : Text(
                                       'Mock Video Preview\n(Looping Simulation)',
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: MemoryTypography.titleMedium
+                                          .copyWith(
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                     ),
                             ),
                           )
@@ -952,12 +894,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                               color: Colors.white.withValues(alpha: 0.3),
                               size: 48,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: MemorySpacing.xl),
                             Text(
                               'No camera detected',
-                              style: TextStyle(
+                              style: MemoryTypography.bodyLarge.copyWith(
                                 color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -973,20 +914,17 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(
-                              width: 36,
-                              height: 36,
-                              child: CircularProgressIndicator(
-                                color: dark ? kYellow : kBlack,
-                                strokeWidth: 3,
-                              ),
+                            MemoryLoading(
+                              size: 36,
+                              color: dark
+                                  ? MemoryColors.accent
+                                  : MemoryColors.ink,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: MemorySpacing.gutter),
                             Text(
                               'Starting camera...',
-                              style: TextStyle(
+                              style: MemoryTypography.bodyMedium.copyWith(
                                 color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.5,
                               ),
@@ -1004,21 +942,22 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                       child: Row(
                         children: [
                           const PulseRedDot(),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: MemorySpacing.sm),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: MemorySpacing.sm,
+                              vertical: MemorySpacing.xxs,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.black38,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(
+                                MemoryRadius.xs,
+                              ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'REC',
-                              style: TextStyle(
+                              style: MemoryTypography.buttonCompact.copyWith(
                                 color: Colors.red,
-                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -1039,13 +978,20 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                         child: Center(
                           child: Container(
                             margin: const EdgeInsets.symmetric(horizontal: 24),
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(
+                              MemorySpacing.section,
+                            ),
                             decoration: BoxDecoration(
-                              color: dark ? kBlack : Colors.white,
-                              borderRadius: BorderRadius.circular(20),
+                              color: dark ? MemoryColors.ink : Colors.white,
+                              borderRadius: BorderRadius.circular(
+                                MemoryRadius.xl,
+                              ),
                               border: Border.all(
-                                color: (dark ? Colors.white : kCharcoal)
-                                    .withValues(alpha: 0.12),
+                                color:
+                                    (dark
+                                            ? Colors.white
+                                            : MemoryColors.charcoal)
+                                        .withValues(alpha: 0.12),
                               ),
                               boxShadow: [
                                 BoxShadow(
@@ -1060,39 +1006,33 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                               children: [
                                 Text(
                                   _getUploadStageMessage(uploadState.status),
-                                  style: TextStyle(
-                                    color: dark ? kCream : kCharcoal,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
+                                  style: MemoryTypography.bodyLarge.copyWith(
+                                    color: dark
+                                        ? MemoryColors.cream
+                                        : MemoryColors.charcoal,
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: MemorySpacing.gutter),
                                 if (uploadState.status ==
                                     UploadStatus.uploading) ...[
-                                  LinearProgressIndicator(
+                                  MemoryProgressIndicator(
                                     value: uploadState.progress,
-                                    color: kYellow,
-                                    backgroundColor:
-                                        (dark ? Colors.white : kCharcoal)
-                                            .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
+                                    dark: dark,
                                   ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: MemorySpacing.lg),
                                   Text(
                                     '${(uploadState.progress * 100).toInt()}%',
-                                    style: TextStyle(
-                                      color: dark ? kYellow : kBlack,
-                                      fontSize: 12,
+                                    style: MemoryTypography.bodySmall.copyWith(
+                                      color: dark
+                                          ? MemoryColors.accent
+                                          : MemoryColors.ink,
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
                                 ] else ...[
-                                  LinearProgressIndicator(
-                                    color: kYellow,
-                                    backgroundColor:
-                                        (dark ? Colors.white : kCharcoal)
-                                            .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
+                                  MemoryProgressIndicator(
+                                    value: null,
+                                    dark: dark,
                                   ),
                                 ],
                               ],
@@ -1124,21 +1064,16 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
         }),
         child: SizedBox(
           width: 210,
-          child: TextField(
+          child: MemoryInlineField(
             controller: _captureCaption,
+            hint: 'Add caption',
             autofocus: true,
             maxLines: 2,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            // The caption is pinch-resizable, so its size is state.
+            style: MemoryTypography.mediaCaption.copyWith(
               color: Colors.white,
               fontSize: _captureCaptionSize,
-              fontWeight: FontWeight.w900,
-              height: 1.05,
-            ),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintText: 'Add caption',
-              hintStyle: TextStyle(color: Colors.white70),
             ),
           ),
         ),

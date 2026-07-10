@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/core/countries.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import '../auth_background_painter.dart';
-import 'package:memory_app/shared/widgets/pills.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class CreateAccountView extends ConsumerStatefulWidget {
   const CreateAccountView({super.key});
@@ -206,7 +206,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final fg = dark ? kCream : kCharcoal;
+    final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
 
     return Scaffold(
       body: Stack(
@@ -228,41 +228,44 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                       SizedBox(
                         width: 58,
                         height: 34,
-                        child: pill(
-                          'Back',
-                          () {
+                        child: MemoryButton(
+                          label: 'Back',
+                          onPressed: () {
                             if (_currentStep > 1) {
                               setState(() => _currentStep--);
                             } else {
                               context.pop();
                             }
                           },
-                          dark,
-                          compact: true,
+                          dark: dark,
+                          variant: MemoryButtonVariant.secondary,
+                          size: MemoryButtonSize.compact,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: MemorySpacing.xl),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Step $_currentStep of 3', // Simple step indicator
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: MemoryTypography.caption.copyWith(
                                 fontWeight: FontWeight.w900,
                                 color: fg.withValues(alpha: 0.5),
                                 letterSpacing: 1.0,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: MemorySpacing.xxs),
                             Text(
                               _currentStep == 1
                                   ? 'Identity'
                                   : _currentStep == 2
                                   ? 'Account Details'
                                   : 'Terms & Finish',
-                              style: _headline(fg, 24),
+                              // Smaller than the other auth headlines: this line is two lines long.
+                              style: MemoryTypography.headlineLarge.copyWith(
+                                color: fg,
+                              ),
                             ),
                           ],
                         ),
@@ -270,7 +273,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: MemorySpacing.gutter),
 
                 // Step Forms Container
                 Expanded(
@@ -288,12 +291,14 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
+                            horizontal: MemorySpacing.section,
                             vertical: 24,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(
+                              MemoryRadius.xl,
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.08),
@@ -307,15 +312,13 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                             children: [
                               // Step 1 - Identity
                               if (_currentStep == 1) ...[
-                                const Text(
+                                Text(
                                   'The best memories start with real people.',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
+                                  style: MemoryTypography.bodySmall.copyWith(
                                     color: Colors.grey,
                                   ),
                                 ),
-                                const SizedBox(height: 18),
+                                const SizedBox(height: MemorySpacing.sheet),
                                 Row(
                                   children: [
                                     Expanded(
@@ -326,7 +329,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                         dark,
                                       ),
                                     ),
-                                    const SizedBox(width: 10),
+                                    const SizedBox(width: MemorySpacing.lg),
                                     Expanded(
                                       child: _field(
                                         'Last name',
@@ -337,15 +340,15 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: MemorySpacing.xl),
                                 _field('Username', _username, '', dark),
                                 _status(usernameStatus, usernameOk),
-                                const SizedBox(height: 20),
-                                pill(
-                                  'Continue',
-                                  _goNext,
-                                  dark,
-                                  color: kBlack,
+                                const SizedBox(height: MemorySpacing.section),
+                                MemoryButton(
+                                  label: 'Continue',
+                                  onPressed: _goNext,
+                                  dark: dark,
+                                  background: MemoryColors.ink,
                                   foreground: Colors.white,
                                 ),
                               ],
@@ -359,9 +362,9 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                   dark,
                                   keyboard: TextInputType.emailAddress,
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: MemorySpacing.xl),
                                 _phoneField(dark),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: MemorySpacing.xl),
                                 Row(
                                   children: [
                                     Expanded(
@@ -377,7 +380,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 10),
+                                    const SizedBox(width: MemorySpacing.lg),
                                     Expanded(
                                       child: _field(
                                         'Confirm password',
@@ -393,35 +396,33 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 14),
+                                const SizedBox(height: MemorySpacing.xxl),
                                 // Real-time validation checklist
                                 _passwordRequirements(
                                   _password.text,
                                   _confirmPassword.text,
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: MemorySpacing.md),
                                 _status(passwordStatus, passwordOk),
-                                const SizedBox(height: 20),
-                                pill(
-                                  'Continue',
-                                  _goNext,
-                                  dark,
-                                  color: kBlack,
+                                const SizedBox(height: MemorySpacing.section),
+                                MemoryButton(
+                                  label: 'Continue',
+                                  onPressed: _goNext,
+                                  dark: dark,
+                                  background: MemoryColors.ink,
                                   foreground: Colors.white,
                                 ),
                               ],
 
                               // Step 3 - Finish Consent & Submit
                               if (_currentStep == 3) ...[
-                                const Text(
+                                Text(
                                   'Confirm your registration below to agree and complete registration.',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
+                                  style: MemoryTypography.bodySmall.copyWith(
                                     color: Colors.grey,
                                   ),
                                 ),
-                                const SizedBox(height: 18),
+                                const SizedBox(height: MemorySpacing.sheet),
                                 GestureDetector(
                                   onTap: () => setState(
                                     () => acceptedTerms = !acceptedTerms,
@@ -433,35 +434,37 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                         height: 22,
                                         decoration: BoxDecoration(
                                           color: acceptedTerms
-                                              ? kBlack
-                                              : kCream,
+                                              ? MemoryColors.ink
+                                              : MemoryColors.cream,
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
                                           border: Border.all(
                                             color: acceptedTerms
                                                 ? Colors.transparent
-                                                : kBlack.withValues(alpha: 0.2),
+                                                : MemoryColors.ink.withValues(
+                                                    alpha: 0.2,
+                                                  ),
                                             width: 1.5,
                                           ),
                                         ),
                                         child: acceptedTerms
                                             ? const Icon(
                                                 Icons.check_rounded,
-                                                color: kYellow,
+                                                color: MemoryColors.accent,
                                                 size: 14,
                                               )
                                             : null,
                                       ),
-                                      const SizedBox(width: 12),
+                                      const SizedBox(width: MemorySpacing.xl),
                                       Expanded(
                                         child: RichText(
                                           text: TextSpan(
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
-                                              color: kCharcoal,
-                                            ),
+                                            style: MemoryTypography.bodySmall
+                                                .copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: MemoryColors.charcoal,
+                                                ),
                                             children: [
                                               const TextSpan(
                                                 text: 'I agree to the ',
@@ -474,13 +477,17 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                                     context,
                                                     dark,
                                                   ),
-                                                  child: const Text(
+                                                  child: Text(
                                                     'Terms and Conditions',
-                                                    style: TextStyle(
-                                                      color: kBlack,
-                                                      decoration: TextDecoration
-                                                          .underline,
-                                                    ),
+                                                    style: MemoryTypography
+                                                        .bodyMedium
+                                                        .copyWith(
+                                                          color:
+                                                              MemoryColors.ink,
+                                                          decoration:
+                                                              TextDecoration
+                                                                  .underline,
+                                                        ),
                                                   ),
                                                 ),
                                               ),
@@ -492,16 +499,13 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                pill(
-                                  'Create account',
-                                  _onSubmit,
-                                  dark,
-                                  color: _createLoading
-                                      ? kBlack.withValues(alpha: 0.9)
-                                      : kBlack,
+                                MemoryButton(
+                                  label: 'Create account',
+                                  onPressed: _onSubmit,
+                                  dark: dark,
+                                  background: MemoryColors.ink,
                                   foreground: Colors.white,
                                   isLoading: _createLoading,
-                                  disabled: _createLoading,
                                 ),
                               ],
                             ],
@@ -528,11 +532,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       builder: (_) {
         return Container(
           height: MediaQuery.sizeOf(context).height * 0.8,
-          margin: const EdgeInsets.all(18),
+          margin: const EdgeInsets.all(MemorySpacing.sheet),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           decoration: BoxDecoration(
-            color: dark ? kBlack : Colors.white,
-            borderRadius: BorderRadius.circular(30),
+            color: dark ? MemoryColors.ink : Colors.white,
+            borderRadius: BorderRadius.circular(MemoryRadius.xl),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.15),
@@ -546,12 +550,11 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
               Container(
                 width: 40,
                 height: 5,
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: MemorySpacing.gutter),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(
-                    alpha: 0.15,
-                  ),
-                  borderRadius: BorderRadius.circular(999),
+                  color: (dark ? Colors.white : MemoryColors.charcoal)
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
               ),
               Row(
@@ -559,32 +562,32 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                 children: [
                   Text(
                     'Terms & Conditions',
-                    style: TextStyle(
-                      color: dark ? kCream : kCharcoal,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
+                    style: MemoryTypography.headlineMedium.copyWith(
+                      color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(MemorySpacing.sm),
                       decoration: BoxDecoration(
-                        color: (dark ? kCream : kCharcoal).withValues(
-                          alpha: 0.08,
-                        ),
+                        color:
+                            (dark ? MemoryColors.cream : MemoryColors.charcoal)
+                                .withValues(alpha: 0.08),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.close_rounded,
-                        color: dark ? kCream : kCharcoal,
+                        color: dark
+                            ? MemoryColors.cream
+                            : MemoryColors.charcoal,
                         size: 18,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: MemorySpacing.sheet),
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -593,15 +596,16 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     children: [
                       Text(
                         'Last Updated: June 2026',
-                        style: TextStyle(
-                          color: (dark ? kCream : kCharcoal).withValues(
-                            alpha: 0.6,
-                          ),
-                          fontSize: 11,
+                        style: MemoryTypography.caption.copyWith(
+                          color:
+                              (dark
+                                      ? MemoryColors.cream
+                                      : MemoryColors.charcoal)
+                                  .withValues(alpha: 0.6),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: MemorySpacing.xxl),
                       _termsSection(
                         '1. Welcome to Memory',
                         'Memory ("we", "us", or "our") provides a private daily social sharing platform for intimate circles. By creating an account or using the Memory app, you agree to comply with and be bound by these Terms & Conditions and all applicable laws of the Republic of Kenya.',
@@ -636,7 +640,7 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: MemorySpacing.gutter),
               SizedBox(
                 width: double.infinity,
                 child: GestureDetector(
@@ -645,15 +649,13 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
                     height: 44,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: dark ? kYellow : kBlack,
-                      borderRadius: BorderRadius.circular(999),
+                      color: dark ? MemoryColors.accent : MemoryColors.ink,
+                      borderRadius: BorderRadius.circular(MemoryRadius.pill),
                     ),
-                    child: const Text(
+                    child: Text(
                       'I Understand',
-                      style: TextStyle(
+                      style: MemoryTypography.button.copyWith(
                         color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
@@ -668,26 +670,24 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
 
   Widget _termsSection(String heading, String body, bool dark) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: MemorySpacing.sheet),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             heading,
-            style: const TextStyle(
-              color: kBlack,
-              fontSize: 13,
+            style: MemoryTypography.bodyMedium.copyWith(
+              color: MemoryColors.ink,
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: MemorySpacing.sm),
           Text(
             body,
-            style: TextStyle(
+            style: MemoryTypography.bodySmall.copyWith(
               color: dark
-                  ? kCream.withValues(alpha: 0.8)
-                  : kCharcoal.withValues(alpha: 0.8),
-              fontSize: 12.5,
+                  ? MemoryColors.cream.withValues(alpha: 0.8)
+                  : MemoryColors.charcoal.withValues(alpha: 0.8),
               height: 1.45,
             ),
           ),
@@ -702,9 +702,8 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
       children: [
         Text(
           'Phone number',
-          style: TextStyle(
-            color: dark ? kCream : kCharcoal,
-            fontSize: 11,
+          style: MemoryTypography.caption.copyWith(
+            color: dark ? MemoryColors.cream : MemoryColors.charcoal,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -713,107 +712,60 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
           children: [
             SizedBox(
               width: 96,
-              child: DropdownButtonFormField<CountryInfo>(
-                initialValue: selectedCountry,
-                dropdownColor: dark ? kBlack : kYellow,
-                borderRadius: BorderRadius.circular(16),
-                icon: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
+              child: MemoryDropdown<CountryInfo>(
+                value: selectedCountry,
+                options: kCountries,
+                dark: dark,
+                onChanged: (v) => setState(() => selectedCountry = v),
+                itemBuilder: (c) => Row(
+                  children: [
+                    Text(c.flag, style: MemoryTypography.emoji(18)),
+                    const SizedBox(width: MemorySpacing.md),
+                    Text(
+                      c.code,
+                      style: MemoryTypography.onSurface(
+                        MemoryTypography.bodyMedium,
+                        dark,
+                      ),
+                    ),
+                    const SizedBox(width: MemorySpacing.sm),
+                    Text(
+                      c.dialCode,
+                      style: MemoryTypography.mutedOnSurface(
+                        MemoryTypography.caption,
+                        dark,
+                        alpha: 0.6,
+                      ),
+                    ),
+                  ],
                 ),
-                iconSize: 20,
-                isDense: true,
-                isExpanded: true,
-                menuMaxHeight: 350,
-                items: kCountries
-                    .map(
-                      (c) => DropdownMenuItem<CountryInfo>(
-                        value: c,
-                        child: Row(
-                          children: [
-                            Text(c.flag, style: const TextStyle(fontSize: 18)),
-                            const SizedBox(width: 8),
-                            Text(
-                              c.code,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: dark ? kCream : kCharcoal,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              c.dialCode,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: (dark ? kCream : kCharcoal).withValues(
-                                  alpha: 0.6,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                // Collapsed, the box is 96dp wide: the dial code will not fit,
+                // and the flag already says which country this is.
+                selectedBuilder: (c) => Row(
+                  children: [
+                    Text(c.flag, style: MemoryTypography.emoji(18)),
+                    const SizedBox(width: MemorySpacing.sm),
+                    Text(
+                      c.code,
+                      style: MemoryTypography.onSurface(
+                        MemoryTypography.button,
+                        dark,
                       ),
-                    )
-                    .toList(),
-                selectedItemBuilder: (context) => kCountries
-                    .map(
-                      (c) => Row(
-                        children: [
-                          Text(c.flag, style: const TextStyle(fontSize: 18)),
-                          const SizedBox(width: 6),
-                          Text(
-                            c.code,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              color: dark ? kCream : kCharcoal,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) =>
-                    setState(() => selectedCountry = v ?? kCountries[0]),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: dark ? kDarkCream : kCream,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 14,
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: MemorySpacing.md),
             Expanded(
-              child: TextField(
+              child: MemoryTextField(
                 controller: _phone,
+                hint: '',
+                dark: dark,
                 keyboardType: TextInputType.phone,
+                background: MemoryColors.ink,
+                foreground: Colors.white,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-                decoration: InputDecoration(
-                  hintText: '',
-                  filled: true,
-                  fillColor: Colors.black,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 14,
-                  ),
-                ),
               ),
             ),
           ],
@@ -823,8 +775,6 @@ class _CreateAccountViewState extends ConsumerState<CreateAccountView> {
   }
 }
 
-TextStyle _headline(Color color, double size) =>
-    headlineStyle(color).copyWith(fontSize: size);
 Widget _status(String text, bool ok) => authStatusIndicator(text, ok);
 Widget _field(
   String label,

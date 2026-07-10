@@ -23,6 +23,9 @@ abstract final class MemoryDurations {
 
   /// 900ms — one half-cycle of the skeleton shimmer.
   static const Duration shimmer = Duration(milliseconds: 900);
+
+  /// 1000ms — one half-cycle of the recording pulse.
+  static const Duration pulse = Duration(milliseconds: 1000);
 }
 
 /// Curves paired with [MemoryDurations].

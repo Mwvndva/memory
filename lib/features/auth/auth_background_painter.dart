@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:memory_app/design_system/design_system.dart';
 
 class AuthBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // 1. Draw base Memory Yellow
-    final basePaint = Paint()..color = const Color(0xFFFADA5E);
+    final basePaint = Paint()..color = MemoryColors.accentWarm;
     canvas.drawRect(Offset.zero & size, basePaint);
 
     // 2. Draw soft radial gradient for premium visual depth
@@ -38,9 +39,10 @@ class AuthBackgroundPainter extends CustomPainter {
         final textPainter = TextPainter(
           text: TextSpan(
             text: 'M',
-            style: TextStyle(
+            // A decorative glyph that grows with the canvas, so its size is
+            // computed rather than picked from the scale.
+            style: MemoryTypography.displayLarge.copyWith(
               fontSize: scale,
-              fontWeight: FontWeight.w900,
               color: Colors.black.withValues(alpha: opacity),
             ),
           ),

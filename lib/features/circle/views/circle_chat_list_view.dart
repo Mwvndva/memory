@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/design_system/design_system.dart';
 import '../circle_state_manager.dart';
 import '../widgets/circle_list_tiles.dart';
@@ -35,22 +35,20 @@ class CircleChatListView extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                    MemoryIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      semanticLabel: 'Back',
+                      color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                       onPressed: () => context.go('/capture'),
-                      color: dark ? kCream : kCharcoal,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
                     ),
                     Expanded(
                       child: Center(
                         child: Text(
                           'Your circle',
-                          style: TextStyle(
-                            color: dark ? kCream : kCharcoal,
-                            fontSize: 30,
-                            height: 1.05,
-                            fontWeight: FontWeight.w900,
+                          style: MemoryTypography.displayLarge.copyWith(
+                            color: dark
+                                ? MemoryColors.cream
+                                : MemoryColors.charcoal,
                           ),
                         ),
                       ),
@@ -58,7 +56,7 @@ class CircleChatListView extends ConsumerWidget {
                     const SizedBox(width: 40),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: MemorySpacing.gutter),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
@@ -67,17 +65,16 @@ class CircleChatListView extends ConsumerWidget {
                       if (pendingRequests.isNotEmpty) ...[
                         Padding(
                           padding: const EdgeInsets.only(
-                            left: 4,
-                            bottom: 8,
-                            top: 4,
+                            left: MemorySpacing.xs,
+                            bottom: MemorySpacing.md,
+                            top: MemorySpacing.xs,
                           ),
                           child: Text(
                             'SHARE REQUESTS',
-                            style: TextStyle(
+                            style: MemoryTypography.caption.copyWith(
                               color: dark
-                                  ? const Color(0xFFC9B8AA)
-                                  : const Color(0xFF776B62),
-                              fontSize: 11,
+                                  ? MemoryColors.mutedOnDark
+                                  : MemoryColors.mutedOnLight,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.0,
                             ),
@@ -93,7 +90,7 @@ class CircleChatListView extends ConsumerWidget {
                             child: RequestRow(req: req, dark: dark),
                           ),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: MemorySpacing.sheet),
                       ],
                       if (circleMembers.isEmpty && pendingRequests.isEmpty)
                         Padding(
@@ -126,8 +123,8 @@ class CircleChatListView extends ConsumerWidget {
   BoxDecoration _softBackground(bool dark) => BoxDecoration(
     gradient: LinearGradient(
       colors: dark
-          ? const [kDarkCream, Color(0xFF171717)]
-          : const [kYellow, kYellow],
+          ? const [MemoryColors.ink, MemoryColors.inkRaisedAlt]
+          : const [MemoryColors.accent, MemoryColors.accent],
       begin: Alignment.topRight,
       end: Alignment.bottomLeft,
     ),

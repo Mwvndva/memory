@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
+import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/auth/auth.dart';
+import 'package:memory_app/core/error_handler.dart';
 
 class MemoryDetailScreen extends ConsumerStatefulWidget {
   final String memoryId;
@@ -43,28 +45,23 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
   }
 
   void _confirmDelete() {
-    showDialog(
+    final dark = ref.read(isDarkProvider);
+    MemoryDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: kCharcoal,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Delete Memory',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'Are you sure you want to permanently delete this memory? This cannot be undone.',
-          style: TextStyle(color: Colors.white70),
-        ),
+      builder: (ctx) => MemoryDialog(
+        title: 'Delete Memory',
+        dark: dark,
+        isDestructive: true,
+        message:
+            'Are you sure you want to permanently delete this memory? This cannot be undone.',
         actions: [
-          TextButton(
+          MemoryDialogAction(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.white38),
-            ),
           ),
-          TextButton(
+          MemoryDialogAction(
+            label: 'Delete',
+            isDestructive: true,
             onPressed: () async {
               Navigator.pop(ctx);
               final success = await ref
@@ -74,13 +71,6 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 context.pop();
               }
             },
-            child: const Text(
-              'Delete',
-              style: TextStyle(
-                color: Colors.redAccent,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ),
         ],
       ),
@@ -96,7 +86,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         detailState.memory == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: kYellow)),
+        body: MemoryLoading.block(),
       );
     }
 
@@ -113,24 +103,24 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 color: Colors.redAccent,
                 size: 64,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: MemorySpacing.gutter),
               Text(
                 detailState.errorMessage ?? 'An error occurred',
-                style: const TextStyle(color: Colors.white70, fontSize: 16),
+                style: MemoryTypography.titleMedium.copyWith(
+                  color: Colors.white70,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
+              const SizedBox(height: MemorySpacing.gutter),
+              MemoryButton(
+                label: 'Retry',
+                dark: true,
+                width: 160,
                 onPressed: () {
                   ref
                       .read(memoryDetailProvider(widget.memoryId).notifier)
                       .loadMemory();
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: kYellow),
-                child: const Text(
-                  'Retry',
-                  style: TextStyle(color: Colors.black),
-                ),
               ),
             ],
           ),
@@ -140,72 +130,68 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
 
     final m = detailState.memory!;
 
+    // Editing and deleting a memory are the owner's alone. The backend
+    // enforces this too, but a control the user cannot use should never be
+    // on screen: offering it and then refusing is worse than not offering it.
+    final isOwner = m.username == ref.watch(sessionProvider).user.username;
+
     return Scaffold(
-      backgroundColor: dark ? kBlack : const Color(0xFFFADA5E),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: dark ? Colors.white : kCharcoal,
-          ),
+      backgroundColor: dark ? MemoryColors.ink : MemoryColors.accentWarm,
+      appBar: MemoryAppBar(
+        title: '',
+        dark: dark,
+        leading: MemoryIconButton(
+          icon: Icons.arrow_back_ios_new_rounded,
+          semanticLabel: 'Back',
+          color: dark ? Colors.white : MemoryColors.charcoal,
           onPressed: () => context.pop(),
         ),
         actions: [
-          if (m.username == ref.watch(sessionProvider).user.username)
-            IconButton(
-              icon: Icon(
-                Icons.download_rounded,
-                color: dark ? Colors.white : kCharcoal,
-              ),
+          if (isOwner) ...[
+            MemoryIconButton(
+              icon: Icons.download_rounded,
+              semanticLabel: 'Download video',
+              color: dark ? Colors.white : MemoryColors.charcoal,
               onPressed: () async {
                 try {
                   final path = await ref
                       .read(downloadRepositoryProvider)
                       .downloadMemoryVideo(m);
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Video downloaded successfully to: $path',
-                        ),
-                      ),
+                    showAppMessage(
+                      context,
+                      'Video downloaded successfully to: $path',
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(e.toString())));
+                    showAppError(context, e.toString());
                   }
                 }
               },
             ),
-          // Deletion and Editing permissions: only owner can edit/delete
-          IconButton(
-            icon: Icon(
-              Icons.edit_rounded,
-              color: dark ? Colors.white : kCharcoal,
+            MemoryIconButton(
+              icon: Icons.edit_rounded,
+              semanticLabel: 'Edit caption',
+              color: dark ? Colors.white : MemoryColors.charcoal,
+              onPressed: () {
+                ref
+                    .read(memoryDetailProvider(widget.memoryId).notifier)
+                    .setDraftCaption(m.caption);
+                _editCaptionController.text = m.caption;
+                // Toggle edit mode via public notifier method
+                ref
+                    .read(memoryDetailProvider(widget.memoryId).notifier)
+                    .setEditing(!detailState.isEditing);
+              },
             ),
-            onPressed: () {
-              ref
-                  .read(memoryDetailProvider(widget.memoryId).notifier)
-                  .setDraftCaption(m.caption);
-              _editCaptionController.text = m.caption;
-              // Toggle edit mode via public notifier method
-              ref
-                  .read(memoryDetailProvider(widget.memoryId).notifier)
-                  .setEditing(!detailState.isEditing);
-            },
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.delete_outline_rounded,
-              color: Colors.redAccent,
+            MemoryIconButton(
+              icon: Icons.delete_outline_rounded,
+              semanticLabel: 'Delete memory',
+              color: MemoryColors.danger,
+              onPressed: _confirmDelete,
             ),
-            onPressed: _confirmDelete,
-          ),
+          ],
         ],
       ),
       body: SafeArea(
@@ -213,45 +199,30 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
           children: [
             // Memory Card View Frame
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MemorySpacing.gutter,
+              ),
               child: AspectRatio(
                 aspectRatio: 3 / 2.2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    gradient: LinearGradient(
-                      colors: m.colors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
+                child: MemoryGradientSurface(
+                  colors: m.colors,
+                  borderRadius: BorderRadius.circular(MemoryRadius.xl),
+                  shadows: MemoryShadows.raised(dark),
                   child: Stack(
                     children: [
                       if (detailState.isEditing)
                         Positioned.fill(
                           child: Container(
                             color: Colors.black.withValues(alpha: 0.7),
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(MemorySpacing.gutter),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                TextField(
+                                MemoryInlineField(
                                   controller: _editCaptionController,
-                                  style: const TextStyle(
+                                  hint: 'Edit caption...',
+                                  style: MemoryTypography.titleLarge.copyWith(
                                     color: Colors.white,
-                                    fontSize: 18,
-                                  ),
-                                  decoration: const InputDecoration(
-                                    hintText: 'Edit caption...',
-                                    hintStyle: TextStyle(color: Colors.white38),
-                                    border: InputBorder.none,
                                   ),
                                   maxLines: 2,
                                   onChanged: (val) {
@@ -267,7 +238,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    TextButton(
+                                    MemoryButton(
+                                      label: 'Cancel',
+                                      dark: true,
+                                      variant: MemoryButtonVariant.text,
+                                      size: MemoryButtonSize.compact,
                                       onPressed: () {
                                         ref
                                             .read(
@@ -277,13 +252,14 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                             )
                                             .setEditing(false);
                                       },
-                                      child: const Text(
-                                        'Cancel',
-                                        style: TextStyle(color: Colors.white38),
-                                      ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
+                                    const SizedBox(width: MemorySpacing.md),
+                                    MemoryButton(
+                                      label: 'Save',
+                                      dark: true,
+                                      width: 96,
+                                      size: MemoryButtonSize.compact,
+                                      isLoading: detailState.isSavingEdit,
                                       onPressed: () {
                                         ref
                                             .read(
@@ -293,24 +269,6 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                             )
                                             .saveCaptionEdit();
                                       },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: kYellow,
-                                      ),
-                                      child: detailState.isSavingEdit
-                                          ? const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.black,
-                                              ),
-                                            )
-                                          : const Text(
-                                              'Save',
-                                              style: TextStyle(
-                                                color: Colors.black,
-                                              ),
-                                            ),
                                     ),
                                   ],
                                 ),
@@ -327,10 +285,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                             child: Text(
                               m.caption,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              style: MemoryTypography.headlineLarge.copyWith(
                                 color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
                               ),
                             ),
                           ),
@@ -354,21 +310,22 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                 },
                                 child: Container(
                                   margin: const EdgeInsets.symmetric(
-                                    horizontal: 4,
+                                    horizontal: MemorySpacing.xs,
                                   ),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: MemorySpacing.md,
+                                    vertical: MemorySpacing.xs,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.black.withValues(alpha: 0.4),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(
+                                      MemoryRadius.md,
+                                    ),
                                   ),
                                   child: Text(
                                     count > 0 ? '$emoji $count' : emoji,
-                                    style: const TextStyle(
+                                    style: MemoryTypography.bodySmall.copyWith(
                                       color: Colors.white,
-                                      fontSize: 12,
                                     ),
                                   ),
                                 ),
@@ -382,77 +339,73 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: MemorySpacing.gutter),
             // Comments Section Title
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MemorySpacing.section,
+              ),
               child: Row(
                 children: [
                   Text(
                     'Comments',
-                    style: TextStyle(
-                      color: dark ? Colors.white : kCharcoal,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    style: MemoryTypography.titleLarge.copyWith(
+                      color: dark ? Colors.white : MemoryColors.charcoal,
                     ),
                   ),
                   const Spacer(),
                   if (detailState.isCommentsLoading)
-                    const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: kYellow,
-                      ),
-                    ),
+                    const MemoryLoading(size: 14),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: MemorySpacing.md),
             // List of Comments
             Expanded(
               child: detailState.comments.isEmpty
                   ? Center(
                       child: Text(
                         'No comments yet. Be the first!',
-                        style: TextStyle(
+                        style: MemoryTypography.bodyMedium.copyWith(
                           color: dark
                               ? Colors.white38
-                              : kCharcoal.withValues(alpha: 0.4),
+                              : MemoryColors.charcoal.withValues(alpha: 0.4),
                         ),
                       ),
                     )
                   : ListView.builder(
                       controller: _commentScrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: MemorySpacing.gutter,
+                      ),
                       itemCount:
                           detailState.comments.length +
                           (detailState.hasMoreComments ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == detailState.comments.length) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(12.0),
-                              child: CircularProgressIndicator(color: kYellow),
-                            ),
-                          );
+                          return const MemoryLoading.block();
                         }
                         final c = detailState.comments[index];
                         final isOptimistic = c.id.startsWith('local-comment-');
                         return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.symmetric(
+                            vertical: MemorySpacing.sm,
+                          ),
+                          padding: const EdgeInsets.all(MemorySpacing.xl),
                           decoration: BoxDecoration(
                             color: isOptimistic
                                 ? Colors.white.withValues(alpha: 0.05)
                                 : (dark
                                       ? Colors.white.withValues(alpha: 0.07)
                                       : Colors.white.withValues(alpha: 0.5)),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(
+                              MemoryRadius.lg,
+                            ),
                             border: isOptimistic
                                 ? Border.all(
-                                    color: kYellow.withValues(alpha: 0.3),
+                                    color: MemoryColors.accent.withValues(
+                                      alpha: 0.3,
+                                    ),
                                     width: 1,
                                   )
                                 : null,
@@ -460,30 +413,17 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CircleAvatar(
+                              MemoryAvatar(
                                 radius: 16,
-                                backgroundColor: kYellow,
-                                backgroundImage:
-                                    c.avatarUrl != null &&
-                                        c.avatarUrl!.isNotEmpty
-                                    ? NetworkImage(c.avatarUrl!)
-                                          as ImageProvider
-                                    : null,
-                                child:
+                                dark: dark,
+                                imageUrl:
                                     c.avatarUrl == null || c.avatarUrl!.isEmpty
-                                    ? Text(
-                                        c.person.isNotEmpty
-                                            ? c.person[0].toUpperCase()
-                                            : '?',
-                                        style: const TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      )
-                                    : null,
+                                    ? null
+                                    : c.avatarUrl,
+                                initial: c.person,
+                                background: MemoryColors.accent,
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: MemorySpacing.lg),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,37 +432,38 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                       children: [
                                         Text(
                                           c.person,
-                                          style: TextStyle(
-                                            color: dark
-                                                ? Colors.white
-                                                : kCharcoal,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
+                                          style: MemoryTypography.bodySmall
+                                              .copyWith(
+                                                color: dark
+                                                    ? Colors.white
+                                                    : MemoryColors.charcoal,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
-                                        const SizedBox(width: 6),
+                                        const SizedBox(width: MemorySpacing.sm),
                                         Text(
                                           '@${c.username}',
-                                          style: TextStyle(
-                                            color: dark
-                                                ? Colors.white38
-                                                : kCharcoal.withValues(
-                                                    alpha: 0.5,
-                                                  ),
-                                            fontSize: 10,
-                                          ),
+                                          style: MemoryTypography.overline
+                                              .copyWith(
+                                                color: dark
+                                                    ? Colors.white38
+                                                    : MemoryColors.charcoal
+                                                          .withValues(
+                                                            alpha: 0.5,
+                                                          ),
+                                              ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: MemorySpacing.xs),
                                     Text(
                                       c.text,
-                                      style: TextStyle(
-                                        color: dark
-                                            ? Colors.white70
-                                            : kCharcoal,
-                                        fontSize: 13,
-                                      ),
+                                      style: MemoryTypography.bodyMedium
+                                          .copyWith(
+                                            color: dark
+                                                ? Colors.white70
+                                                : MemoryColors.charcoal,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -539,20 +480,25 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                 color: Colors.redAccent,
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 16,
+                  vertical: MemorySpacing.md,
+                  horizontal: MemorySpacing.gutter,
                 ),
                 child: Text(
                   detailState.errorMessage!,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  style: MemoryTypography.bodySmall.copyWith(
+                    color: Colors.white,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
             // Comment input bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MemorySpacing.gutter,
+                vertical: MemorySpacing.md,
+              ),
               decoration: BoxDecoration(
-                color: dark ? kBlack : Colors.white,
+                color: dark ? MemoryColors.ink : Colors.white,
                 border: Border(
                   top: BorderSide(
                     color: dark ? Colors.white12 : Colors.black12,
@@ -562,18 +508,18 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: MemoryInlineField(
                       controller: _commentController,
-                      style: TextStyle(color: dark ? Colors.white : kCharcoal),
-                      decoration: const InputDecoration(
-                        hintText: 'Write a comment...',
-                        hintStyle: TextStyle(color: Colors.grey),
-                        border: InputBorder.none,
+                      hint: 'Write a comment...',
+                      style: MemoryTypography.bodyMedium.copyWith(
+                        color: dark ? Colors.white : MemoryColors.charcoal,
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.send_rounded, color: kYellow),
+                  MemoryIconButton(
+                    icon: Icons.send_rounded,
+                    semanticLabel: 'Send comment',
+                    color: MemoryColors.accent,
                     onPressed: () {
                       final text = _commentController.text.trim();
                       if (text.isNotEmpty) {

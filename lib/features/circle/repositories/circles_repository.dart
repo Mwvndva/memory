@@ -8,7 +8,7 @@ import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/features/feed/feed.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/core/router.dart';
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/realtime/realtime_event.dart';

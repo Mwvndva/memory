@@ -28,7 +28,7 @@ class MemorySectionHeader extends StatelessWidget {
       child: Text(
         title.toUpperCase(),
         style: MemoryTypography.mutedOnSurface(
-          MemoryTypography.sectionLabel,
+          MemoryTypography.overline,
           dark,
           alpha: 0.76,
         ),

@@ -63,10 +63,10 @@ class MemoryDialog extends StatelessWidget {
 
     return AlertDialog(
       backgroundColor: MemoryColors.surface(dark),
-      shape: const RoundedRectangleBorder(borderRadius: MemoryRadius.allLg),
+      shape: const RoundedRectangleBorder(borderRadius: MemoryRadius.allXl),
       title: Text(
         title,
-        style: MemoryTypography.subtitle.copyWith(
+        style: MemoryTypography.titleMedium.copyWith(
           color: titleColor,
           fontWeight: FontWeight.w900,
         ),
@@ -77,7 +77,7 @@ class MemoryDialog extends StatelessWidget {
               ? null
               : Text(
                   message!,
-                  style: MemoryTypography.body.copyWith(
+                  style: MemoryTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w500,
                     color: isDestructive
                         ? MemoryColors.danger
@@ -96,7 +96,7 @@ class MemoryDialog extends StatelessWidget {
             onPressed: action.onPressed,
             child: Text(
               action.label,
-              style: MemoryTypography.body.copyWith(
+              style: MemoryTypography.bodyMedium.copyWith(
                 color: action.isDestructive
                     ? MemoryColors.danger
                     : action.isPrimary

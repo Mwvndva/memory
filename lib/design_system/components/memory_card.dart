@@ -19,7 +19,7 @@ class MemoryCard extends StatelessWidget {
       horizontal: MemorySpacing.xxl,
       vertical: MemorySpacing.xxs,
     ),
-    this.radius = MemoryRadius.card,
+    this.radius = MemoryRadius.xl,
     this.shadow,
     this.showEdge = true,
   });

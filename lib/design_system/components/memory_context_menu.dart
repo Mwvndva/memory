@@ -46,7 +46,7 @@ class MemoryContextMenu<T> extends StatelessWidget {
       tooltip: tooltip ?? '',
       onSelected: onSelected,
       color: MemoryColors.surface(dark),
-      shape: const RoundedRectangleBorder(borderRadius: MemoryRadius.allMd),
+      shape: const RoundedRectangleBorder(borderRadius: MemoryRadius.allLg),
       itemBuilder: (context) => [
         for (final item in items)
           PopupMenuItem<T>(

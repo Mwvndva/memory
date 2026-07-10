@@ -17,7 +17,7 @@ class MemorySkeleton extends StatefulWidget {
     required this.dark,
     this.width,
     this.height = 14,
-    this.radius = MemoryRadius.sm,
+    this.radius = MemoryRadius.md,
   });
 
   final bool dark;
@@ -100,7 +100,7 @@ class MemoryErrorState extends StatelessWidget {
             title,
             textAlign: TextAlign.center,
             style: MemoryTypography.onSurface(
-              MemoryTypography.emptyTitle,
+              MemoryTypography.titleMedium,
               dark,
             ),
           ),

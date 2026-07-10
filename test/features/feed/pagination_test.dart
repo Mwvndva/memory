@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/features/feed/feed.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 /// A fully-mocked [MemoryRepository] that never hits the network.
 /// - fetchFeed(cursor: null) returns page 1 + a nextCursor token.
@@ -26,8 +26,8 @@ class MockMemoryRepository extends MemoryRepository {
             initial: 'A',
             time: '1 hour ago',
             caption: 'Morning run',
-            avatar: kMint,
-            colors: [kMint, kSky],
+            avatar: MemoryColors.mint,
+            colors: [MemoryColors.mint, MemoryColors.sky],
             ageHours: 1,
           ),
         ],
@@ -45,8 +45,8 @@ class MockMemoryRepository extends MemoryRepository {
             initial: 'Z',
             time: 'Yesterday',
             caption: 'Stretching after run',
-            avatar: kYellow,
-            colors: [kYellow, kMint],
+            avatar: MemoryColors.accent,
+            colors: [MemoryColors.accent, MemoryColors.mint],
             ageHours: 26,
           ),
         ],

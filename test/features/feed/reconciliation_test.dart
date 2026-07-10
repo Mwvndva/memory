@@ -1,11 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/features/feed/feed.dart';
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import 'package:memory_app/features/auth/auth.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 // ---------------------------------------------------------------------------
 // Shared test fixtures
@@ -18,8 +19,8 @@ const _alice = MemoryItem(
   initial: 'A',
   time: '1h ago',
   caption: 'Morning run',
-  avatar: kMint,
-  colors: [kMint, kSky],
+  avatar: MemoryColors.mint,
+  colors: [MemoryColors.mint, MemoryColors.sky],
   ageHours: 1,
 );
 
@@ -30,8 +31,8 @@ const _bob = MemoryItem(
   initial: 'B',
   time: '2h ago',
   caption: 'Lunch break walk',
-  avatar: kYellow,
-  colors: [kYellow, kAmber],
+  avatar: MemoryColors.accent,
+  colors: [MemoryColors.accent, MemoryColors.amber],
   ageHours: 2,
 );
 
@@ -42,8 +43,8 @@ const _carol = MemoryItem(
   initial: 'C',
   time: '3h ago',
   caption: 'Sunset view',
-  avatar: kLavender,
-  colors: [kLavender, kMint],
+  avatar: MemoryColors.lavender,
+  colors: [MemoryColors.lavender, MemoryColors.mint],
   ageHours: 3,
 );
 

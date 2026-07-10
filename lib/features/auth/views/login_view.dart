@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import '../auth_background_painter.dart';
-import 'package:memory_app/shared/widgets/pills.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
@@ -122,7 +122,7 @@ class _LoginViewState extends ConsumerState<LoginView>
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final fg = dark ? kCream : kCharcoal;
+    final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
     return Scaffold(
@@ -142,7 +142,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 18),
+                    const SizedBox(height: MemorySpacing.sheet),
                     // Breathing & Blinking Animated Mascot
                     ScaleTransition(
                       scale: _breathingAnimation,
@@ -174,16 +174,19 @@ class _LoginViewState extends ConsumerState<LoginView>
                       ),
                     ),
                     const SizedBox(height: 24), // Increased spacing
-                    Text('Memory', style: _headline(fg, 36)),
-                    const SizedBox(height: 10), // Increased spacing
+                    // The wordmark, the one place the brand name is set larger than
+                    // any other type in the app.
+                    Text(
+                      'Memory',
+                      style: MemoryTypography.wordmark.copyWith(color: fg),
+                    ),
+                    const SizedBox(
+                      height: MemorySpacing.lg,
+                    ), // Increased spacing
                     Text(
                       'Share memories with your circle', // Canonical tagline
-                      style: TextStyle(
-                        color: fg.withValues(
-                          alpha: .55,
-                        ), // Softer tagline color
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                      style: MemoryTypography.bodyMedium.copyWith(
+                        color: fg.withValues(alpha: .55),
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -193,12 +196,12 @@ class _LoginViewState extends ConsumerState<LoginView>
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
+                        horizontal: MemorySpacing.section,
                         vertical: 24,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(MemoryRadius.xl),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.08),
@@ -212,7 +215,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _field('Email or username', _loginId, '', dark),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: MemorySpacing.xxl),
                           _field(
                             'Password',
                             _loginPassword,
@@ -223,34 +226,31 @@ class _LoginViewState extends ConsumerState<LoginView>
                                 setState(() => _loginObscure = !_loginObscure),
                           ),
                           if (_errorMessage.isNotEmpty) ...[
-                            const SizedBox(height: 12),
+                            const SizedBox(height: MemorySpacing.xl),
                             Text(
                               _errorMessage,
-                              style: TextStyle(
+                              style: MemoryTypography.caption.copyWith(
                                 color: Colors.redAccent.shade700,
-                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
-                          const SizedBox(height: 20),
-                          pill(
-                            'Continue',
-                            _onLogin,
-                            dark,
-                            color: _loginLoading
-                                ? kBlack.withValues(alpha: 0.9)
-                                : kBlack,
+                          const SizedBox(height: MemorySpacing.section),
+                          MemoryButton(
+                            label: 'Continue',
+                            onPressed: _onLogin,
+                            dark: dark,
+                            background: MemoryColors.ink,
                             foreground: Colors.white,
                             isLoading: _loginLoading,
                           ),
-                          const SizedBox(height: 12),
-                          pill(
-                            'Create account',
-                            () => context.push('/create'),
-                            dark,
-                            color: kCream,
-                            foreground: kCharcoal,
+                          const SizedBox(height: MemorySpacing.xl),
+                          MemoryButton(
+                            label: 'Create account',
+                            onPressed: () => context.push('/create'),
+                            dark: dark,
+                            background: MemoryColors.cream,
+                            foreground: MemoryColors.charcoal,
                           ),
                         ],
                       ),
@@ -266,8 +266,6 @@ class _LoginViewState extends ConsumerState<LoginView>
   }
 }
 
-TextStyle _headline(Color color, double size) =>
-    headlineStyle(color).copyWith(fontSize: size);
 Widget _field(
   String label,
   TextEditingController controller,

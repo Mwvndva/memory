@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'milestone_card_widget.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class CircleMemberWithMemories {
   final String id;
@@ -132,20 +132,14 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              child: CircleAvatar(
+              child: MemoryAvatar(
                 radius: size / 2,
-                backgroundColor: index == 0 ? kBlack : kLavender,
-                backgroundImage: avatarProvider,
-                child: avatarProvider == null
-                    ? Text(
-                        initial,
-                        style: TextStyle(
-                          fontSize: (size * 0.4).clamp(7.0, 24.0),
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      )
-                    : null,
+                dark: false,
+                image: avatarProvider,
+                initial: initial,
+                background: index == 0
+                    ? MemoryColors.ink
+                    : MemoryColors.lavender,
               ),
             ),
           );
@@ -160,7 +154,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
       width: 310,
       height: 420,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -170,7 +164,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         child: Stack(
           children: [
             // Procedurally painted background pattern
@@ -181,7 +175,7 @@ class CircleMilestoneCardWidget extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 22.0,
-                vertical: 14.0,
+                vertical: MemorySpacing.xxl,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -189,12 +183,12 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                   // Top Milestone Banner
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
+                      horizontal: MemorySpacing.gutter,
+                      vertical: MemorySpacing.sm,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(MemoryRadius.pill),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.2),
                         width: 1,
@@ -202,10 +196,8 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                     ),
                     child: Text(
                       '$milestone-USER CIRCLE!',
-                      style: const TextStyle(
+                      style: MemoryTypography.button.copyWith(
                         color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
                         letterSpacing: 2.0,
                       ),
                     ),
@@ -217,13 +209,13 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                   // Bottom Translucent Congratulatory bubble
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: MemorySpacing.gutter,
+                      vertical: MemorySpacing.xl,
                     ),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(MemoryRadius.xl),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.25),
                         width: 1.5,
@@ -234,19 +226,16 @@ class CircleMilestoneCardWidget extends StatelessWidget {
                       children: [
                         Text(
                           '@$circleOwnerUsername\'s Circle',
-                          style: const TextStyle(
+                          style: MemoryTypography.button.copyWith(
                             color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: MemorySpacing.xs),
                         Text(
                           message,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: MemoryTypography.bodySmall.copyWith(
                             color: Colors.white,
-                            fontSize: 12,
                             height: 1.35,
                             fontWeight: FontWeight.w700,
                             shadows: [

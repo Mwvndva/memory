@@ -63,7 +63,7 @@ class _TermsSheet extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: MemoryColors.surface(dark),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         boxShadow: MemoryShadows.overlay(dark),
       ),
       child: Column(
@@ -84,7 +84,7 @@ class _TermsSheet extends StatelessWidget {
               Text(
                 'Terms & Conditions',
                 style: MemoryTypography.onSurface(
-                  MemoryTypography.display.copyWith(fontSize: 20, height: 1.0),
+                  MemoryTypography.headlineMedium.copyWith(height: 1.0),
                   dark,
                 ),
               ),
@@ -159,7 +159,7 @@ class _TermsItem extends StatelessWidget {
         children: [
           Text(
             heading,
-            style: MemoryTypography.body.copyWith(
+            style: MemoryTypography.bodyMedium.copyWith(
               fontWeight: FontWeight.w800,
               color: dark ? MemoryColors.accent : MemoryColors.ink,
             ),
@@ -196,7 +196,7 @@ void showPolicyDialog(
       content: SingleChildScrollView(
         child: Text(
           content,
-          style: MemoryTypography.body.copyWith(
+          style: MemoryTypography.bodyMedium.copyWith(
             fontWeight: FontWeight.w500,
             color: MemoryColors.foregroundOn(
               dark,

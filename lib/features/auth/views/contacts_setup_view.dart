@@ -6,13 +6,13 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import '../../circle/circle_state_manager.dart';
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/shared/widgets/pills.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 class ContactsSetupView extends ConsumerStatefulWidget {
   const ContactsSetupView({super.key});
@@ -122,7 +122,7 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
         return Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            color: dark ? kBlack : kYellow,
+            color: dark ? MemoryColors.ink : MemoryColors.accent,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
             boxShadow: [
               BoxShadow(
@@ -138,33 +138,32 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               Container(
                 width: 40,
                 height: 5,
-                margin: const EdgeInsets.only(bottom: 18),
+                margin: const EdgeInsets.only(bottom: MemorySpacing.sheet),
                 decoration: BoxDecoration(
-                  color: (dark ? Colors.white : kCharcoal).withValues(
-                    alpha: 0.15,
-                  ),
-                  borderRadius: BorderRadius.circular(999),
+                  color: (dark ? Colors.white : MemoryColors.charcoal)
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
               ),
               const Text(
                 'No contacts on Memory yet',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                style: MemoryTypography.titleLarge,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: MemorySpacing.sm),
               Text(
                 'Invite your friends to keep your circle alive! ⚡',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: (dark ? kCream : kCharcoal).withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w600,
+                style: MemoryTypography.bodySmall.copyWith(
+                  color: (dark ? MemoryColors.cream : MemoryColors.charcoal)
+                      .withValues(alpha: 0.6),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: MemorySpacing.section),
               Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
+                    child: MemoryShareButton(
+                      brand: MemoryShareBrand.instagram,
+                      onPressed: () async {
                         Navigator.pop(context);
                         await SharePlus.instance.share(
                           ShareParams(
@@ -172,54 +171,13 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                           ),
                         );
                       },
-                      child: Container(
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFFF058A0),
-                              Color(0xFFBD3EFF),
-                              Color(0xFFFF6B00),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFFF058A0,
-                              ).withValues(alpha: 0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.camera_alt_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Instagram',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: MemorySpacing.lg),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
+                    child: MemoryShareButton(
+                      brand: MemoryShareBrand.whatsApp,
+                      onPressed: () async {
                         Navigator.pop(context);
                         await SharePlus.instance.share(
                           ShareParams(
@@ -227,89 +185,50 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                           ),
                         );
                       },
-                      child: Container(
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF25D366), Color(0xFF128C7E)],
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF25D366,
-                              ).withValues(alpha: 0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'WhatsApp',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: MemorySpacing.xl),
               GestureDetector(
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: inviteLink));
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Invite link copied!')),
-                  );
+                  showAppMessage(context, 'Invite link copied!');
                 },
                 child: Container(
                   width: double.infinity,
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: (dark ? Colors.white : kCharcoal).withValues(
-                      alpha: 0.08,
-                    ),
-                    borderRadius: BorderRadius.circular(999),
+                    color: (dark ? Colors.white : MemoryColors.charcoal)
+                        .withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(MemoryRadius.pill),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.copy_rounded,
-                        color: dark ? kCream : kCharcoal,
+                        color: dark
+                            ? MemoryColors.cream
+                            : MemoryColors.charcoal,
                         size: 16,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: MemorySpacing.md),
                       Text(
                         'Copy invite link',
-                        style: TextStyle(
-                          color: dark ? kCream : kCharcoal,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
+                        style: MemoryTypography.button.copyWith(
+                          color: dark
+                              ? MemoryColors.cream
+                              : MemoryColors.charcoal,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: MemorySpacing.xl),
             ],
           ),
         );
@@ -330,20 +249,22 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final bg = dark ? kCharcoal : kCream;
-    final fg = dark ? kCream : kCharcoal;
+    final bg = dark ? MemoryColors.charcoal : MemoryColors.cream;
+    final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
 
     final List<Widget> listItems = [];
 
     if (_permissionGranted && _matchedUsers.isNotEmpty) {
       listItems.add(
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          padding: const EdgeInsets.symmetric(
+            vertical: MemorySpacing.lg,
+            horizontal: MemorySpacing.xs,
+          ),
           child: Text(
             'Contacts already on Memory',
-            style: TextStyle(
-              color: kBlack,
-              fontSize: 12,
+            style: MemoryTypography.bodySmall.copyWith(
+              color: MemoryColors.ink,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -362,7 +283,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
             initial: initial,
             name: displayName,
             subtitle: '@${matchedUser.username}',
-            color: (dark ? kYellow : kBlack).withValues(alpha: 0.6),
+            color: (dark ? MemoryColors.accent : MemoryColors.ink).withValues(
+              alpha: 0.6,
+            ),
             fg: fg,
             dark: dark,
             isMock: kUseMockBackend,
@@ -374,14 +297,15 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     } else if (_permissionGranted && _matchedUsers.isEmpty && !_isLoading) {
       listItems.add(
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+          padding: const EdgeInsets.symmetric(
+            vertical: MemorySpacing.section,
+            horizontal: MemorySpacing.md,
+          ),
           child: Text(
             'None of your contacts are on Memory yet. Invite them below!',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: MemoryTypography.bodySmall.copyWith(
               color: fg.withValues(alpha: .5),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -389,9 +313,9 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     } else if (_isLoading) {
       listItems.add(
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Center(
-            child: CircularProgressIndicator(color: dark ? kYellow : kBlack),
+          padding: const EdgeInsets.symmetric(vertical: MemorySpacing.section),
+          child: MemoryLoading.block(
+            color: dark ? MemoryColors.accent : MemoryColors.ink,
           ),
         ),
       );
@@ -405,32 +329,32 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Build your circle', style: _headline(fg, 32)),
-              const SizedBox(height: 8),
+              Text('Build your circle', style: headlineStyle(fg)),
+              const SizedBox(height: MemorySpacing.md),
               Text(
                 'People from your contacts already on Memory.',
-                style: _small(fg.withValues(alpha: .68)),
+                style: smallStyle(fg.withValues(alpha: .68)),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: MemorySpacing.sheet),
               Expanded(
                 child: ListView(
                   padding: EdgeInsets.zero,
                   children: [
                     ...listItems,
-                    const SizedBox(height: 14),
+                    const SizedBox(height: MemorySpacing.xxl),
                     _inviteCard(),
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
-              pill(
-                'Start using Memory',
-                () {
+              const SizedBox(height: MemorySpacing.xxl),
+              MemoryButton(
+                label: 'Start using Memory',
+                onPressed: () {
                   ref.read(sessionProvider.notifier).authenticate();
                   context.go('/feed');
                 },
-                dark,
-                color: dark ? kYellow : kBlack,
+                dark: dark,
+                background: dark ? MemoryColors.accent : MemoryColors.ink,
                 foreground: Colors.white,
               ),
             ],
@@ -453,48 +377,42 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
   }) {
     final isAdded = _addedToCircle.contains(userKey);
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: MemorySpacing.md),
       padding: const EdgeInsets.all(9),
       decoration: BoxDecoration(
         color: fg.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: color,
-            backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                ? NetworkImage(formatImageUrl(avatarUrl)) as ImageProvider
-                : null,
-            child: (avatarUrl == null || avatarUrl.isEmpty)
-                ? Text(
-                    initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  )
-                : null,
+          MemoryAvatar(
+            radius: 20,
+            dark: dark,
+            imageUrl: (avatarUrl == null || avatarUrl.isEmpty)
+                ? null
+                : formatImageUrl(avatarUrl),
+            initial: initial,
+            background: color,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: MemorySpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   name,
-                  style: TextStyle(color: fg, fontWeight: FontWeight.w900),
+                  style: MemoryTypography.bodyLarge.copyWith(color: fg),
                 ),
-                Text(subtitle, style: _small(fg.withValues(alpha: .58))),
+                Text(subtitle, style: smallStyle(fg.withValues(alpha: .58))),
               ],
             ),
           ),
           SizedBox(
             width: 110,
             height: 34,
-            child: pill(
-              isAdded ? 'Requested' : 'Add to circle',
-              () async {
+            child: MemoryButton(
+              label: isAdded ? 'Requested' : 'Add to circle',
+              onPressed: () async {
                 if (isAdded) return;
                 if (isMock) {
                   _toggleAdded(userKey);
@@ -522,11 +440,11 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
                   }
                 }
               },
-              dark,
-              compact: true,
-              color: isAdded
+              dark: dark,
+              size: MemoryButtonSize.compact,
+              background: isAdded
                   ? Colors.grey.withValues(alpha: 0.5)
-                  : (dark ? kYellow : kBlack),
+                  : (dark ? MemoryColors.accent : MemoryColors.ink),
               foreground: Colors.white,
             ),
           ),
@@ -537,34 +455,32 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
 
   Widget _inviteCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(MemorySpacing.gutter),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [ref.watch(isDarkProvider) ? kYellow : kBlack, kAmber],
+          colors: [
+            ref.watch(isDarkProvider) ? MemoryColors.accent : MemoryColors.ink,
+            MemoryColors.amber,
+          ],
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Invite to circle',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
+            style: MemoryTypography.titleLarge.copyWith(color: Colors.white),
           ),
-          const SizedBox(height: 6),
-          const Text(
+          const SizedBox(height: MemorySpacing.sm),
+          Text(
             'Bring in someone who should see the real version of your life.',
-            style: TextStyle(
+            style: MemoryTypography.bodySmall.copyWith(
               color: Colors.white,
-              fontSize: 12,
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: MemorySpacing.lg),
           GestureDetector(
             onTap: () async {
               await SharePlus.instance.share(
@@ -579,18 +495,17 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(MemoryRadius.pill),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.share_rounded, color: kBlack, size: 16),
-                  SizedBox(width: 8),
+                  Icon(Icons.share_rounded, color: MemoryColors.ink, size: 16),
+                  SizedBox(width: MemorySpacing.md),
                   Text(
                     'Invite a Friend',
-                    style: TextStyle(
-                      color: kBlack,
-                      fontSize: 12,
+                    style: MemoryTypography.bodySmall.copyWith(
+                      color: MemoryColors.ink,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -603,7 +518,3 @@ class _ContactsSetupViewState extends ConsumerState<ContactsSetupView> {
     );
   }
 }
-
-TextStyle _headline(Color color, double size) =>
-    headlineStyle(color).copyWith(fontSize: size);
-TextStyle _small(Color color) => smallStyle(color);

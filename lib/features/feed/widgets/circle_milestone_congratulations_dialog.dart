@@ -6,11 +6,11 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:memory_app/core/theme.dart';
-import 'package:memory_app/core/playful.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 import 'circle_milestone_card_widget.dart';
 import 'milestone_card_widget.dart';
+import 'package:memory_app/core/error_handler.dart';
 
 const _circle7Messages = [
   "Your circle has reached 7 members! A perfect crew for sharing moments. 👥✨",
@@ -103,9 +103,7 @@ class _CircleMilestoneCongratulationsDialogState
     } catch (e) {
       debugPrint('Error sharing milestone card: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not generate shareable card: $e')),
-        );
+        showAppError(context, 'Could not generate shareable card: $e');
       }
     } finally {
       if (mounted) {
@@ -143,10 +141,10 @@ class _CircleMilestoneCongratulationsDialogState
               // Sharing Actions Box
               Container(
                 width: 310,
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(MemorySpacing.sheet),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(MemoryRadius.xl),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.15),
                     width: 1.5,
@@ -155,15 +153,13 @@ class _CircleMilestoneCongratulationsDialogState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'Share circle milestone!',
-                      style: TextStyle(
+                      style: MemoryTypography.bodyLarge.copyWith(
                         color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: MemorySpacing.xxl),
                     // Single native OS Share button
                     GestureDetector(
                       onTap: () => _shareCard('System'),
@@ -173,39 +169,35 @@ class _CircleMilestoneCongratulationsDialogState
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(
+                            MemoryRadius.pill,
+                          ),
                         ),
                         child: _isSharing
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  color: kBlack,
-                                  strokeWidth: 2,
-                                ),
+                            ? const MemoryLoading(
+                                size: 16,
+                                color: MemoryColors.ink,
                               )
-                            : const Row(
+                            : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.share_rounded,
-                                    color: kBlack,
+                                    color: MemoryColors.ink,
                                     size: 16,
                                   ),
-                                  SizedBox(width: 8),
+                                  SizedBox(width: MemorySpacing.md),
                                   Text(
                                     'Share Card',
-                                    style: TextStyle(
-                                      color: kBlack,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w900,
+                                    style: MemoryTypography.button.copyWith(
+                                      color: MemoryColors.ink,
                                     ),
                                   ),
                                 ],
                               ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: MemorySpacing.lg),
                     // Close button
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
@@ -215,13 +207,14 @@ class _CircleMilestoneCongratulationsDialogState
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(
+                            MemoryRadius.pill,
+                          ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Keep Sharing! 👥✨',
-                          style: TextStyle(
+                          style: MemoryTypography.bodySmall.copyWith(
                             color: Colors.white,
-                            fontSize: 12,
                             fontWeight: FontWeight.w900,
                           ),
                         ),

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/core/secure_storage.dart';
-import 'package:memory_app/core/theme.dart'; // contains sharedPreferencesProvider
+import 'package:memory_app/core/app_providers.dart'; // contains sharedPreferencesProvider
 import 'package:memory_app/features/circle/circle.dart';
 
 class SessionRepository {

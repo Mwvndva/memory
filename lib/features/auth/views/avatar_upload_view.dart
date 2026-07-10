@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:memory_app/core/theme.dart';
+import 'package:memory_app/core/app_providers.dart';
 import 'package:memory_app/features/auth/auth.dart';
 import 'package:memory_app/core/error_handler.dart';
 import 'package:memory_app/design_system/design_system.dart';
@@ -72,8 +72,8 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
   @override
   Widget build(BuildContext context) {
     final dark = ref.watch(isDarkProvider);
-    final bg = dark ? kCharcoal : kCream;
-    final fg = dark ? kCream : kCharcoal;
+    final bg = dark ? MemoryColors.charcoal : MemoryColors.cream;
+    final fg = dark ? MemoryColors.cream : MemoryColors.charcoal;
     final user = ref.watch(authProvider);
 
     final initialText = user.firstName.isNotEmpty
@@ -90,9 +90,9 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
               Text(
                 'Add your face',
                 textAlign: TextAlign.center,
-                style: headlineStyle(fg).copyWith(fontSize: 34),
+                style: headlineStyle(fg),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: MemorySpacing.md),
               Text(
                 'This helps your circle recognize your memories.',
                 textAlign: TextAlign.center,
@@ -101,55 +101,35 @@ class _AvatarUploadViewState extends ConsumerState<AvatarUploadView> {
               const SizedBox(height: 26),
               InkWell(
                 onTap: _pickAvatar,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(MemoryRadius.xl),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: fg.withValues(alpha: .08),
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(MemoryRadius.xl),
                   ),
                   child: Column(
                     children: [
                       if (_uploading) ...[
-                        const SizedBox(height: 12),
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.amber,
-                          ),
-                        ),
+                        const SizedBox(height: MemorySpacing.xl),
+                        const MemoryLoading(size: 20),
                       ],
-                      CircleAvatar(
+                      MemoryAvatar(
                         radius: 54,
-                        backgroundColor: kAmber,
-                        backgroundImage: _avatarBytes == null
-                            ? null
-                            : MemoryImage(_avatarBytes!),
-                        child: _avatarBytes == null
-                            ? Text(
-                                initialText,
-                                style: const TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : null,
+                        dark: dark,
+                        bytes: _avatarBytes,
+                        initial: initialText,
+                        background: MemoryColors.amber,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: MemorySpacing.xl),
                       Text(
                         _uploading
                             ? 'Uploading picture...'
                             : 'Upload profile picture',
-                        style: TextStyle(
-                          color: fg,
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: MemoryTypography.bodyLarge.copyWith(color: fg),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: MemorySpacing.xs),
                       Text(
                         'You can update it later from your profile.',
                         style: smallStyle(fg.withValues(alpha: .62)),

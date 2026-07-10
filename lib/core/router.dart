@@ -9,8 +9,7 @@ import 'package:memory_app/features/capture/capture.dart';
 import 'package:memory_app/features/circle/circle.dart';
 import '../features/dev/views/dev_diagnostics.dart';
 import 'package:memory_app/features/notification/notification.dart';
-import 'package:memory_app/shared/widgets/main_app_scaffold.dart';
-import 'theme.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 // Key to hold state across routes
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -102,7 +101,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         navigatorKey: shellNavigatorKey,
         builder: (context, state, child) {
-          return MainAppScaffold(child: child);
+          // The shell adds no chrome of its own; the child is the screen.
+          return child;
         },
         routes: [
           GoRoute(
@@ -182,21 +182,21 @@ void showGlobalNotification({
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: MemorySpacing.gutter,
+                  vertical: MemorySpacing.xl,
                 ),
                 decoration: BoxDecoration(
-                  color: dark ? kBlack : kYellow,
-                  borderRadius: BorderRadius.circular(20),
+                  color: dark ? MemoryColors.ink : MemoryColors.accent,
+                  borderRadius: BorderRadius.circular(MemoryRadius.xl),
                   boxShadow: [
                     BoxShadow(
-                      color: kBlack.withValues(alpha: 0.12),
+                      color: MemoryColors.ink.withValues(alpha: 0.12),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
                   ],
                   border: Border.all(
-                    color: kBlack.withValues(alpha: 0.15),
+                    color: MemoryColors.ink.withValues(alpha: 0.15),
                     width: 1.5,
                   ),
                 ),
@@ -206,16 +206,16 @@ void showGlobalNotification({
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: dark ? kYellow : kBlack,
+                        color: dark ? MemoryColors.accent : MemoryColors.ink,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.notifications_active_rounded,
-                        color: dark ? kBlack : kYellow,
+                        color: dark ? MemoryColors.ink : MemoryColors.accent,
                         size: 20,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: MemorySpacing.xl),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,20 +223,21 @@ void showGlobalNotification({
                         children: [
                           Text(
                             title,
-                            style: TextStyle(
-                              color: dark ? kYellow : kBlack,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
+                            style: MemoryTypography.button.copyWith(
+                              color: dark
+                                  ? MemoryColors.accent
+                                  : MemoryColors.ink,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: MemorySpacing.xxs),
                           Text(
                             body,
-                            style: TextStyle(
-                              color: (dark ? kYellow : kBlack).withValues(
-                                alpha: 0.7,
-                              ),
-                              fontSize: 12,
+                            style: MemoryTypography.bodySmall.copyWith(
+                              color:
+                                  (dark
+                                          ? MemoryColors.accent
+                                          : MemoryColors.ink)
+                                      .withValues(alpha: 0.7),
                               fontWeight: FontWeight.w500,
                             ),
                           ),

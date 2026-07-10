@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:memory_app/core/playful.dart';
+import '../foundation/memory_interactions.dart';
 import '../foundation/memory_colors.dart';
 import '../foundation/memory_radius.dart';
 

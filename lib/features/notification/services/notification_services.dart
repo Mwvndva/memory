@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memory_app/features/notification/notification.dart';
-import 'package:memory_app/core/theme.dart'; // contains sharedPreferencesProvider
+import 'package:memory_app/core/app_providers.dart'; // contains sharedPreferencesProvider
 
 // Event Bus Events
 abstract class NotificationEvent {}

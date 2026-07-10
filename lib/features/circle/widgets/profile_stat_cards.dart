@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:memory_app/core/theme.dart';
 import 'package:memory_app/features/auth/repositories/auth_repository.dart';
-import 'package:memory_app/shared/widgets/social_marks.dart';
+import 'package:memory_app/design_system/design_system.dart';
 
 import '../views/profile_share_card.dart';
 
@@ -23,16 +22,16 @@ class ProfileStatCards extends ConsumerWidget {
           child: _StatCard(
             title: 'Memories',
             value: '${user.streakDays} days',
-            colors: const [kYellow, kAmber],
+            colors: const [MemoryColors.accent, MemoryColors.amber],
             dark: dark,
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: MemorySpacing.lg),
         Expanded(
           child: _StatCard(
             title: 'Circle Pulse',
             value: '${user.circlePulseDays} days',
-            colors: const [kMint, kSky],
+            colors: const [MemoryColors.mint, MemoryColors.sky],
             dark: dark,
           ),
         ),
@@ -61,12 +60,12 @@ class _StatCard extends StatelessWidget {
     final accent = colors.first;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(MemorySpacing.xxl),
       decoration: BoxDecoration(
         color: dark
-            ? kBlack
+            ? MemoryColors.ink
             : Color.alphaBlend(accent.withValues(alpha: 0.08), Colors.white),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(MemoryRadius.xl),
         border: Border.all(color: accent.withValues(alpha: 0.18), width: 1),
         boxShadow: [
           BoxShadow(
@@ -89,48 +88,48 @@ class _StatCard extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: MemorySpacing.md,
+                  vertical: MemorySpacing.xs,
+                ),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(MemoryRadius.pill),
                 ),
                 child: Text(
                   subtitle,
-                  style: TextStyle(
-                    color: dark ? kCream : kCharcoal,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w800,
+                  style: MemoryTypography.micro.copyWith(
+                    color: dark ? MemoryColors.cream : MemoryColors.charcoal,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: MemorySpacing.md),
           Text(
             value,
-            style: TextStyle(
-              color: dark ? kCream : kCharcoal,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
+            style: MemoryTypography.headlineLarge.copyWith(
+              color: dark ? MemoryColors.cream : MemoryColors.charcoal,
               height: 1,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: MemorySpacing.xxs),
           Text(
             title,
-            style: TextStyle(
-              color: dark ? const Color(0xFFC9B8AA) : const Color(0xFF776B62),
-              fontSize: 10,
+            style: MemoryTypography.buttonCompact.copyWith(
+              color: dark
+                  ? MemoryColors.mutedOnDark
+                  : MemoryColors.mutedOnLight,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: MemorySpacing.lg),
           Row(
             children: [
               Expanded(
                 child: _SharePill(
                   logo: const InstagramMark(color: Colors.white),
-                  bg: const Color(0xFFE1306C),
+                  bg: MemoryColors.instagram,
                   onTap: () => showShareCard(
                     context,
                     title: title,
@@ -140,11 +139,11 @@ class _StatCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: MemorySpacing.sm),
               Expanded(
                 child: _SharePill(
                   logo: const WhatsAppMark(color: Colors.white),
-                  bg: const Color(0xFF25D366),
+                  bg: MemoryColors.whatsApp,
                   onTap: () => showShareCard(
                     context,
                     title: title,
@@ -178,7 +177,7 @@ class _SharePill extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(MemoryRadius.pill),
           boxShadow: [
             BoxShadow(
               color: bg.withValues(alpha: 0.4),
@@ -207,7 +206,7 @@ class _ShareIcon extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(MemoryRadius.md),
       ),
       child: Icon(icon, color: accent, size: 16),
     );
