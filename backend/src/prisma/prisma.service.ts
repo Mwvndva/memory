@@ -1,4 +1,9 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -199,6 +204,7 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   private extendedClient!: Record<string | symbol, unknown>;
+  private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
     const pool = new Pool({
@@ -301,6 +307,44 @@ export class PrismaService
 
   async onModuleInit() {
     await this.$connect();
+    // $connect() with the pg driver adapter is lazy — it does not open a socket
+    // or prove the database is reachable, so the app would happily "start" and
+    // then 500 every request until Postgres appeared. Force a real round-trip
+    // and wait for it, so boot is gated on a database that actually answers.
+    await this.waitForDatabase();
+  }
+
+  /**
+   * Blocks startup until the database answers a trivial query, retrying while
+   * it is still coming up (e.g. the Postgres container started after the API).
+   * If it never becomes reachable within the budget, throw so the process exits
+   * and its supervisor (pm2) restarts it, rather than serving traffic against a
+   * dead database.
+   */
+  private async waitForDatabase(): Promise<void> {
+    const maxAttempts = 30;
+    const delayMs = 2000;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await this.$queryRaw`SELECT 1`;
+        if (attempt > 1) {
+          this.logger.log(`Database reachable after ${attempt} attempts.`);
+        }
+        return;
+      } catch (err) {
+        if (attempt === maxAttempts) {
+          this.logger.error(
+            `Database unreachable after ${maxAttempts} attempts; exiting so the process can restart.`,
+          );
+          throw err;
+        }
+        this.logger.warn(
+          `Database not ready (attempt ${attempt}/${maxAttempts}); retrying in ${delayMs / 1000}s.`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
   }
 
   async onModuleDestroy() {

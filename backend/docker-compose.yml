@@ -13,6 +13,15 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: always
+    # Lets `docker compose up -d --wait` block until Postgres actually accepts
+    # connections, so the API can be started after the DB is truly ready rather
+    # than merely after the container exists.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d memory_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 volumes:
   pgdata:
