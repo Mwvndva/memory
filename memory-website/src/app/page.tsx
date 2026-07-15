@@ -363,7 +363,7 @@ export default function Page() {
           {/* Text */}
           <div className="hero-text">
             <div className="_r" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <Ghost size={52} fill="#000" eyeFill="#F4C430" />
+              <img src="/logo.png" alt="Memory ghost logo" width={56} height={56} style={{ objectFit: "contain" }} />
             </div>
 
             <h1 className="h1 _r _d1" style={{ color: "#000", maxWidth: "560px" }}>
@@ -393,14 +393,14 @@ export default function Page() {
           {/* Phone mockup */}
           <div className="_r _d2" style={{ display: "flex", justifyContent: "center", alignItems: "flex-end" }}>
             <img
-              src="/mockup.jpg"
+              src="/mockup.png"
               alt="Memory app — login screen showing the yellow interface with ghost logo and Memory branding"
               className="mockup-img"
               style={{
                 maxHeight: "680px",
                 width: "auto",
                 objectFit: "contain",
-                filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.2))",
+                filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.18))",
               }}
               width={480}
               height={640}
