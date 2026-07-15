@@ -135,16 +135,46 @@ export default function Page() {
     const onScroll = () => setScrolled(window.scrollY > 32);
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    // Scroll reveal
+    // Scroll reveal — progressive enhancement.
+    // Elements are visible by default; we only hide + animate those below the fold.
+    const vh = window.innerHeight;
+    const allReveal = Array.from(document.querySelectorAll("._r"));
+
+    allReveal.forEach((el) => {
+      const rect = (el as HTMLElement).getBoundingClientRect();
+      if (rect.top > vh + 40) {
+        el.classList.add("_hide"); // hide only if truly off-screen
+      } else {
+        el.classList.add("_v");   // immediately visible if in/near viewport
+      }
+    });
+
     const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("_v")),
-      { threshold: 0.07, rootMargin: "0px 0px -36px 0px" }
+      (entries) =>
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.remove("_hide");
+            e.target.classList.add("_v");
+            io.unobserve(e.target);
+          }
+        }),
+      { threshold: 0.05, rootMargin: "0px 0px -20px 0px" }
     );
-    document.querySelectorAll("._r").forEach((el) => io.observe(el));
+    allReveal.forEach((el) => io.observe(el));
+
+    // Safety fallback: force-reveal everything after 2 seconds
+    // in case the observer doesn't fire (e.g. old mobile browsers)
+    const fallback = setTimeout(() => {
+      document.querySelectorAll("._r").forEach((el) => {
+        el.classList.remove("_hide");
+        el.classList.add("_v");
+      });
+    }, 2000);
 
     return () => {
       window.removeEventListener("scroll", onScroll);
       io.disconnect();
+      clearTimeout(fallback);
     };
   }, []);
 
@@ -169,11 +199,14 @@ export default function Page() {
         img { max-width: 100%; display: block; }
         a { text-decoration: none; }
 
-        /* Reveal */
+        /* Reveal — elements visible by default, JS enhances */
         ._r {
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        /* Added by JS only for elements below the fold */
+        ._hide {
           opacity: 0;
-          transform: translateY(22px);
-          transition: opacity 0.7s ease, transform 0.7s ease;
+          transform: translateY(20px);
         }
         ._v { opacity: 1 !important; transform: translateY(0) !important; }
         ._d1 { transition-delay: 0.10s; }
