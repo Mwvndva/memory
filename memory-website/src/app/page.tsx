@@ -341,7 +341,7 @@ export default function Page() {
       <nav className={`mem-nav ${scrolled ? "scrolled" : ""}`}>
         <div className="nav-in">
           <a href="#hero" className="nav-brand">
-            <Ghost size={24} fill="#000" eyeFill="#F4C430" />
+            <img src="/logo.png" alt="Memory" width={28} height={28} style={{ objectFit: "contain" }} />
             Memory
           </a>
           <ul className="nav-links">
@@ -350,9 +350,6 @@ export default function Page() {
             <li><a href="#why">Why Memory</a></li>
             <li><a href="#faq">FAQ</a></li>
           </ul>
-          <a href="#cta" className="btn-black" style={{ padding: "10px 20px", fontSize: "13px" }}>
-            Download
-          </a>
         </div>
       </nav>
 
@@ -375,18 +372,11 @@ export default function Page() {
             </p>
 
             <div className="hero-btns _r _d3" style={{ display: "flex", gap: "12px", flexWrap: "wrap", paddingTop: "8px" }}>
-              <a href="#cta" className="btn-black">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="5" y="2" width="14" height="20" rx="2" />
-                  <line x1="12" y1="18" x2="12" y2="18.01" />
-                </svg>
-                Download for Android
-              </a>
-              <a href="#how" className="btn-white">Learn how it works</a>
+              <a href="#how" className="btn-black">Learn how it works</a>
             </div>
 
             <p className="_r _d4" style={{ fontSize: "13px", color: "rgba(0,0,0,0.38)", fontWeight: 500 }}>
-              Free · No ads · Private by default
+              Private by default · No ads · No algorithms
             </p>
           </div>
 
@@ -397,13 +387,14 @@ export default function Page() {
               alt="Memory app — login screen showing the yellow interface with ghost logo and Memory branding"
               className="mockup-img"
               style={{
-                maxHeight: "680px",
-                width: "auto",
+                maxHeight: "820px",
+                width: "100%",
+                maxWidth: "540px",
                 objectFit: "contain",
-                filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.18))",
+                filter: "drop-shadow(0 24px 48px rgba(0,0,0,0.2))",
               }}
-              width={480}
-              height={640}
+              width={540}
+              height={820}
             />
           </div>
 
@@ -519,7 +510,7 @@ export default function Page() {
       <section id="cta">
         <div className="cta-in">
           <div className="_r">
-            <Ghost size={60} fill="#F4C430" eyeFill="#000" />
+            <img src="/logo.png" alt="Memory" width={64} height={64} style={{ objectFit: "contain" }} />
           </div>
 
           <h2 className="h1 _r _d1" style={{ color: "#fff" }}>
@@ -530,12 +521,8 @@ export default function Page() {
             Start sharing life&apos;s best moments with the people who were actually there.
           </p>
 
-          <a href="#" className="btn-white-cta _r _d3">
-            Download for Android
-          </a>
-
-          <p className="_r _d4" style={{ fontSize: "13px", color: "rgba(255,255,255,0.28)", fontWeight: 500 }}>
-            Free to download · iOS coming soon
+          <p className="_r _d3" style={{ fontSize: "14px", color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: "0.5px" }}>
+            Coming soon on Android &amp; iOS
           </p>
         </div>
       </section>
@@ -545,17 +532,19 @@ export default function Page() {
         <div className="foot-in">
           <div className="foot-top">
             <a href="#hero" className="foot-brand">
-              <Ghost size={20} fill="#000" eyeFill="#F4C430" />
+              <img src="/logo.png" alt="Memory" width={22} height={22} style={{ objectFit: "contain" }} />
               Memory
             </a>
             <div className="foot-links">
-              {["Privacy Policy", "Terms", "Instagram", "TikTok"].map((l) => (
-                <a key={l} href="#">{l}</a>
-              ))}
+              <a href="/privacy">Privacy Policy</a>
+              <a href="/terms">Terms</a>
+              <a href="https://www.instagram.com/mymemoriestoday/" target="_blank" rel="noopener noreferrer">Instagram</a>
+              <a href="https://www.tiktok.com/@memoryapp" target="_blank" rel="noopener noreferrer">TikTok</a>
             </div>
           </div>
-          <div className="foot-bottom">
-            &copy; {new Date().getFullYear()} Memory App. All rights reserved.
+          <div className="foot-bottom" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+            <span>&copy; {new Date().getFullYear()} Memory App. All rights reserved.</span>
+            <span style={{ opacity: 0.5 }}>Powered by <a href="#" style={{ color: "inherit", fontWeight: 700 }}>Evolve</a></span>
           </div>
         </div>
       </footer>
