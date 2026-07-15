@@ -2,714 +2,512 @@
 
 import React, { useState, useEffect } from "react";
 
-// ── Brand constants ──────────────────────────────────────────────────────────
-const Y = "#F4C430"; // Memory Yellow
-const B = "#000000"; // Pure Black
-const W = "#FFFFFF"; // White
+// ─── Ghost Logo SVG ──────────────────────────────────────────────────────────
+function Ghost({ size = 32, fill = "#000", eyeFill = "#fff" }: { size?: number; fill?: string; eyeFill?: string }) {
+  return (
+    <svg
+      width={size}
+      height={Math.round(size * 1.08)}
+      viewBox="0 0 80 90"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M40 4C20 4 8 18 8 36V84L16.5 76L25 84L33.5 76L40 82L46.5 76L55 84L63.5 76L72 84V36C72 18 60 4 40 4Z"
+        fill={fill}
+      />
+      <ellipse cx="30" cy="37" rx="7" ry="8.5" fill={eyeFill} />
+      <ellipse cx="50" cy="37" rx="7" ry="8.5" fill={eyeFill} />
+      <path d="M34 53Q40 60 46 53" stroke={eyeFill} strokeWidth="3.5" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
 
-// ── Logo ─────────────────────────────────────────────────────────────────────
-const LogoMark = ({ size = 24, color = B }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true">
-    <circle cx="50" cy="50" r="38" stroke={color} strokeWidth="10" />
-    <circle cx="50" cy="50" r="18" fill={color} />
-    <circle cx="50" cy="18" r="8" fill={color} />
-  </svg>
-);
+// ─── How It Works icons ───────────────────────────────────────────────────────
+function IconRecord() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 10l4.553-2.069A1 1 0 0121 8.845v6.31a1 1 0 01-1.447.894L15 14" />
+      <rect x="3" y="6" width="12" height="12" rx="2" />
+    </svg>
+  );
+}
+function IconCircle() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="3" />
+      <path d="M6.168 18.849A4 4 0 0110 16h4a4 4 0 013.834 2.855" />
+      <circle cx="18" cy="8" r="2.5" />
+      <circle cx="6" cy="8" r="2.5" />
+    </svg>
+  );
+}
+function IconShare() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+      <polyline points="16 6 12 2 8 6" />
+      <line x1="12" y1="2" x2="12" y2="15" />
+    </svg>
+  );
+}
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-const PHILOSOPHY = [
+// ─── Data ─────────────────────────────────────────────────────────────────────
+const STEPS = [
   {
-    headline: "Not every moment needs an audience.",
-    body: "The best experiences in your life don't need to be broadcast. They need to be held.",
+    num: "01",
+    icon: <IconRecord />,
+    title: "Record",
+    body: "Capture authentic short videos as life happens. No pressure. No performance. Just real moments.",
   },
   {
-    headline: "People matter more than followers.",
-    body: "A hundred strangers seeing your video means less than one person who was actually there.",
+    num: "02",
+    icon: <IconCircle />,
+    title: "Choose Your Circle",
+    body: "Select the friends or family who were part of that experience. Your memories stay within your Circle — no one else.",
   },
   {
-    headline: "The best memories are shared, not performed.",
-    body: "When you stop recording for an audience, you start recording the truth.",
-  },
-  {
-    headline: "Some moments belong in your circle, not your feed.",
-    body: "Authenticity lives in privacy.",
+    num: "03",
+    icon: <IconShare />,
+    title: "Share",
+    body: "Your Circle receives the memory privately. No public audience. No strangers. No chasing likes.",
   },
 ];
 
-const COMPARISON = [
-  { social: "Followers",       memory: "Circle"        },
-  { social: "Likes",           memory: "People"        },
-  { social: "Algorithms",      memory: "Real Moments"  },
-  { social: "Performance",     memory: "Private"       },
-  { social: "Public",          memory: "Belonging"     },
-  { social: "Endless Scroll",  memory: "Kept Close"    },
-];
-
-const MOMENTS = [
-  "Friends laughing",
-  "Family dinner",
-  "Road trip",
-  "Airport goodbye",
-  "Camping",
-  "Birthday",
-  "Playing football",
-  "Late-night conversations",
-  "Sunset together",
-];
-
-const QUOTES = [
-  "I forgot what it felt like to record something without thinking about likes.",
-  "This reminds me why I started recording memories.",
-  "The people make the memory.",
+const WHY = [
+  {
+    title: "Real moments.\nNot performances.",
+    body: "Record life as it actually happens — not a highlight reel designed for strangers.",
+  },
+  {
+    title: "Your Circle.\nNot your followers.",
+    body: "The people who matter to you, not a number on a profile. Quality over quantity.",
+  },
+  {
+    title: "Private by design.\nNot public by default.",
+    body: "Every memory starts private. Nothing is ever made public unless you decide.",
+  },
+  {
+    title: "Share experiences.\nNot attention.",
+    body: "Memory isn't built around likes, views, or reach. It's built around connection.",
+  },
 ];
 
 const FAQS = [
   {
-    q: "What makes Memory different?",
-    a: "Memory isn't about public followers or metrics. It's a private space where short videos are shared only with the specific people who experienced the moment.",
-  },
-  {
-    q: "Who can see my memories?",
-    a: "Only members of the circle you choose when capturing the memory. No global feed. No public discovery. No strangers.",
-  },
-  {
-    q: "Can I create multiple circles?",
-    a: "Yes. A circle for family, another for your closest friends, another for a specific trip. Each memory stays exactly where it belongs.",
-  },
-  {
-    q: "Are memories public?",
-    a: "Never. Memories are fully enclosed within their circles. They cannot be shared externally or exposed.",
-  },
-  {
     q: "Is Memory free?",
-    a: "Yes. Memory's core features are completely free.",
+    a: "Yes. Memory is completely free to download and use. No hidden fees, no paid tiers to share memories with your Circle.",
+  },
+  {
+    q: "Can anyone see my memories?",
+    a: "Only the people you choose. When you share a memory, you select exactly who receives it. Nobody else can view it — not the public, not strangers.",
+  },
+  {
+    q: "Can I share photos?",
+    a: "No. Memory is built specifically around short videos. We believe video captures the real emotion of a moment in a way photos can't.",
+  },
+  {
+    q: "Why Circles?",
+    a: "Because not every memory belongs on a public feed. A Circle lets you share exactly with the right people — family for a birthday, friends for a road trip, teammates for a win.",
+  },
+  {
+    q: "When is Memory available?",
+    a: "Memory is currently available for Android. iOS is coming soon.",
   },
 ];
 
-// ── Page Component ────────────────────────────────────────────────────────────
-export default function Home() {
-  const [isScrolled, setIsScrolled]   = useState(false);
-  const [activeSection, setActive]    = useState("hero");
-  const [faqOpen, setFaqOpen]         = useState<number | null>(null);
-  const [mounted, setMounted]         = useState(false);
+// ─── Page ─────────────────────────────────────────────────────────────────────
+export default function Page() {
+  const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-
-    const onScroll = () => {
-      setIsScrolled(window.scrollY > 64);
-
-      const ids = ["hero", "philosophy", "how", "difference", "moments", "quotes", "faq", "cta"];
-      const pos = window.scrollY + 200;
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el && pos >= el.offsetTop && pos < el.offsetTop + el.offsetHeight) {
-          setActive(id);
-          break;
-        }
-      }
-    };
-
+    // Navbar scroll
+    const onScroll = () => setScrolled(window.scrollY > 32);
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    // Scroll-reveal observer
-    const obs = new IntersectionObserver(
-      (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("_rv")),
-      { threshold: 0.08, rootMargin: "0px 0px -48px 0px" }
+    // Scroll reveal
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("_v")),
+      { threshold: 0.07, rootMargin: "0px 0px -36px 0px" }
     );
-    document.querySelectorAll("._r").forEach((el) => obs.observe(el));
+    document.querySelectorAll("._r").forEach((el) => io.observe(el));
 
     return () => {
       window.removeEventListener("scroll", onScroll);
-      obs.disconnect();
+      io.disconnect();
     };
   }, []);
 
   const toggleFaq = (i: number) => setFaqOpen(faqOpen === i ? null : i);
 
-  if (!mounted) return null;
-
   return (
     <>
-      {/* ─── Global Styles ──────────────────────────────────────────────────── */}
+      {/* ─── Styles ──────────────────────────────────────────────────────── */}
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        html {
-          scroll-behavior: smooth;
-          background: ${Y};
-          color: ${B};
-          font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        html { scroll-behavior: smooth; font-size: 16px; }
+
+        body {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          background: #F4C430;
+          color: #000;
           -webkit-font-smoothing: antialiased;
           overflow-x: hidden;
         }
 
-        body { background: ${Y}; overflow-x: hidden; }
+        img { max-width: 100%; display: block; }
+        a { text-decoration: none; }
 
-        /* Scroll-reveal */
+        /* Reveal */
         ._r {
           opacity: 0;
-          transform: translateY(28px);
-          transition: opacity 0.9s cubic-bezier(0.16,1,0.3,1),
-                      transform 0.9s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(22px);
+          transition: opacity 0.7s ease, transform 0.7s ease;
         }
-        ._rv { opacity: 1; transform: translateY(0); }
-        ._d1 { transition-delay: 80ms; }
-        ._d2 { transition-delay: 160ms; }
-        ._d3 { transition-delay: 240ms; }
-        ._d4 { transition-delay: 320ms; }
+        ._v { opacity: 1 !important; transform: translateY(0) !important; }
+        ._d1 { transition-delay: 0.10s; }
+        ._d2 { transition-delay: 0.18s; }
+        ._d3 { transition-delay: 0.26s; }
+        ._d4 { transition-delay: 0.34s; }
 
         /* Buttons */
         .btn-black {
-          display: inline-flex; align-items: center; justify-content: center;
-          background: ${B}; color: ${W};
-          border: 2px solid ${B};
-          padding: 15px 36px;
-          font-size: 15px; font-weight: 700; letter-spacing: -0.2px;
-          text-decoration: none;
-          transition: background 0.18s, color 0.18s;
-          cursor: pointer; white-space: nowrap;
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          background: #000; color: #fff; border: 2px solid #000;
+          padding: 14px 26px; font-size: 15px; font-weight: 700;
+          border-radius: 8px; cursor: pointer; white-space: nowrap;
+          transition: background 0.15s;
         }
-        .btn-black:hover { background: ${W}; color: ${B}; }
+        .btn-black:hover { background: #1a1a1a; }
 
-        .btn-outline-white {
-          display: inline-flex; align-items: center; justify-content: center;
-          background: transparent; color: ${W};
-          border: 2px solid rgba(255,255,255,0.45);
-          padding: 15px 36px;
-          font-size: 15px; font-weight: 700; letter-spacing: -0.2px;
-          text-decoration: none;
-          transition: border-color 0.18s, background 0.18s;
-          cursor: pointer; white-space: nowrap;
+        .btn-white {
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          background: #fff; color: #000; border: 2px solid #000;
+          padding: 14px 26px; font-size: 15px; font-weight: 700;
+          border-radius: 8px; cursor: pointer; white-space: nowrap;
+          transition: background 0.15s;
         }
-        .btn-outline-white:hover { border-color: ${W}; background: rgba(255,255,255,0.08); }
+        .btn-white:hover { background: #f5f5f5; }
 
-        .btn-outline-black {
+        .btn-white-cta {
           display: inline-flex; align-items: center; justify-content: center;
-          background: transparent; color: ${B};
-          border: 2px solid rgba(0,0,0,0.25);
-          padding: 15px 36px;
-          font-size: 15px; font-weight: 700; letter-spacing: -0.2px;
-          text-decoration: none;
-          transition: border-color 0.18s;
-          cursor: pointer; white-space: nowrap;
+          background: #fff; color: #000; border: 2px solid #fff;
+          padding: 16px 36px; font-size: 16px; font-weight: 700;
+          border-radius: 8px; cursor: pointer; white-space: nowrap;
+          transition: background 0.15s;
         }
-        .btn-outline-black:hover { border-color: ${B}; }
+        .btn-white-cta:hover { background: #f0f0f0; }
 
-        /* Nav links */
-        .nl {
+        /* Nav */
+        .mem-nav {
+          position: sticky; top: 0; z-index: 100;
+          background: #F4C430;
+          height: 64px; padding: 0 24px;
+          display: flex; align-items: center;
+          transition: border-bottom 0.2s, box-shadow 0.2s;
+        }
+        .mem-nav.scrolled {
+          border-bottom: 1.5px solid rgba(0,0,0,0.1);
+          box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .nav-in {
+          max-width: 1160px; width: 100%; margin: 0 auto;
+          display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand {
+          display: flex; align-items: center; gap: 10px;
+          color: #000; font-size: 18px; font-weight: 800; letter-spacing: -0.4px;
+        }
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
           font-size: 14px; font-weight: 500;
-          text-decoration: none; color: ${B};
-          opacity: 0.45;
-          transition: opacity 0.18s;
+          color: rgba(0,0,0,0.5); transition: color 0.15s;
         }
-        .nl:hover, .nl.active { opacity: 1; }
+        .nav-links a:hover { color: #000; }
 
-        /* FAQ accordion */
+        /* Layout */
+        .wrap { max-width: 1160px; margin: 0 auto; }
+        .sec { padding: 100px 24px; }
+
+        /* Hero */
+        #hero { background: #F4C430; padding: 80px 24px 0; min-height: calc(100vh - 64px); display: flex; align-items: center; }
+        .hero-grid {
+          display: grid; grid-template-columns: 1fr 1fr;
+          gap: 64px; align-items: center;
+          padding-bottom: 80px;
+        }
+        .hero-text { display: flex; flex-direction: column; gap: 22px; }
+
+        /* What is Memory */
+        #what { background: #fff; }
+        .what-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+        .quote-block {
+          border-left: 4px solid #F4C430; padding: 18px 22px;
+          margin-bottom: 8px;
+        }
+        .quote-block.alt { border-left-color: #000; }
+        .quote-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.4; margin-bottom: 6px; }
+        .quote-txt { font-size: clamp(19px, 2.3vw, 25px); font-weight: 800; letter-spacing: -0.4px; line-height: 1.3; color: #000; }
+
+        /* How it works */
+        #how { background: #F4C430; }
+        .how-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+        .how-card {
+          background: #fff; border-radius: 14px; padding: 36px 28px;
+          display: flex; flex-direction: column; gap: 18px;
+        }
+        .how-icon {
+          width: 50px; height: 50px; background: #F4C430;
+          border-radius: 11px; display: flex; align-items: center; justify-content: center;
+        }
+        .step-lbl { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(0,0,0,0.3); margin-bottom: 2px; }
+
+        /* Why Memory */
+        #why { background: #000; }
+        .why-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .why-card { background: #F4C430; border-radius: 14px; padding: 36px 32px; display: flex; flex-direction: column; gap: 10px; }
+        .why-title { font-size: clamp(19px, 2.2vw, 24px); font-weight: 800; letter-spacing: -0.4px; color: #000; white-space: pre-line; line-height: 1.2; }
+        .why-body { font-size: 15px; line-height: 1.65; color: rgba(0,0,0,0.58); }
+
+        /* FAQ */
+        #faq { background: #F4C430; }
+        .faq-list { max-width: 700px; }
+        .faq-item { border-top: 1.5px solid rgba(0,0,0,0.13); }
+        .faq-item:last-child { border-bottom: 1.5px solid rgba(0,0,0,0.13); }
         .faq-btn {
-          width: 100%; display: flex; justify-content: space-between;
-          align-items: flex-start; gap: 24px;
-          background: transparent; border: none;
-          cursor: pointer; padding: 32px 0; text-align: left;
-          color: ${B};
+          width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 24px;
+          background: transparent; border: none; cursor: pointer; padding: 24px 0; text-align: left;
         }
-        .faq-body {
-          overflow: hidden; max-height: 0;
-          transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1),
-                      padding 0.4s cubic-bezier(0.16,1,0.3,1);
+        .faq-q { font-size: clamp(15px, 1.8vw, 18px); font-weight: 700; letter-spacing: -0.2px; line-height: 1.4; color: #000; }
+        .faq-plus {
+          font-size: 26px; font-weight: 300; opacity: 0.35; flex-shrink: 0;
+          line-height: 1; transition: transform 0.28s ease;
+          display: inline-block; color: #000;
         }
-        .faq-body.open { max-height: 300px; padding-bottom: 28px; }
+        .faq-plus.open { transform: rotate(45deg); opacity: 0.6; }
+        .faq-body { overflow: hidden; max-height: 0; transition: max-height 0.35s ease, padding-bottom 0.35s ease; }
+        .faq-body.open { max-height: 250px; padding-bottom: 22px; }
+        .faq-body p { font-size: 15px; line-height: 1.75; color: rgba(0,0,0,0.58); max-width: 560px; }
+
+        /* CTA */
+        #cta { background: #000; padding: 120px 24px; text-align: center; }
+        .cta-in { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+
+        /* Footer */
+        footer { background: #F4C430; border-top: 1.5px solid rgba(0,0,0,0.1); padding: 44px 24px; }
+        .foot-in { max-width: 1160px; margin: 0 auto; }
+        .foot-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 32px; }
+        .foot-brand { display: flex; align-items: center; gap: 10px; color: #000; font-size: 16px; font-weight: 800; }
+        .foot-links { display: flex; gap: 24px; flex-wrap: wrap; }
+        .foot-links a { font-size: 14px; font-weight: 500; color: rgba(0,0,0,0.45); transition: color 0.15s; }
+        .foot-links a:hover { color: #000; }
+        .foot-bottom { border-top: 1px solid rgba(0,0,0,0.1); padding-top: 22px; font-size: 13px; color: rgba(0,0,0,0.38); }
+
+        /* Typography helpers */
+        .label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.4; margin-bottom: 12px; }
+        .h1 { font-size: clamp(38px, 7vw, 70px); font-weight: 900; letter-spacing: -2.5px; line-height: 1.0; }
+        .h2 { font-size: clamp(30px, 5.5vw, 54px); font-weight: 800; letter-spacing: -1.8px; line-height: 1.08; }
+        .h3 { font-size: clamp(19px, 2.5vw, 26px); font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; }
+        .body { font-size: 16px; line-height: 1.7; color: rgba(0,0,0,0.58); }
+        .body-lg { font-size: clamp(15px, 1.8vw, 18px); line-height: 1.75; color: rgba(0,0,0,0.58); }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: ${Y}; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #F4C430; }
         ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 99px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.4); }
 
-        /* Responsive helpers */
-        @media (max-width: 768px) {
-          .hide-sm { display: none !important; }
-          .moments-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .comp-row { grid-template-columns: 1fr 1fr !important; }
-          .flex-col-sm { flex-direction: column !important; }
+        /* Responsive */
+        @media (max-width: 900px) {
+          .hero-grid { grid-template-columns: 1fr; text-align: center; gap: 48px; padding-bottom: 60px; }
+          .hero-text { align-items: center; }
+          .hero-btns { justify-content: center; }
+          .what-grid { grid-template-columns: 1fr; gap: 48px; }
+          .how-cards { grid-template-columns: 1fr; }
+          .why-cards { grid-template-columns: 1fr; }
+          .nav-links { display: none; }
+          .mockup-img { max-height: 460px; }
+        }
+        @media (max-width: 600px) {
+          .sec { padding: 72px 20px; }
+          .hero-btns { flex-direction: column; width: 100%; }
+          .btn-black, .btn-white, .btn-white-cta { width: 100%; }
         }
       `}</style>
 
-      {/* ─── NAVBAR ─────────────────────────────────────────────────────────── */}
-      <header
-        id="nav"
-        style={{
-          position: "fixed", top: 0, left: 0, width: "100%", zIndex: 1000,
-          height: "68px",
-          display: "flex", alignItems: "center",
-          padding: "0 24px",
-          backgroundColor: isScrolled ? Y : "transparent",
-          borderBottom: isScrolled ? `1px solid rgba(0,0,0,0.1)` : "1px solid transparent",
-          transition: "background-color 0.35s, border-bottom 0.35s",
-        }}
-      >
-        <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          {/* Logo */}
-          <a href="#hero" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", color: B }}>
-            <LogoMark size={22} color={B} />
-            <span style={{ fontWeight: 800, fontSize: "17px", letterSpacing: "-0.4px" }}>Memory</span>
+      {/* ─── NAV ────────────────────────────────────────────────────────── */}
+      <nav className={`mem-nav ${scrolled ? "scrolled" : ""}`}>
+        <div className="nav-in">
+          <a href="#hero" className="nav-brand">
+            <Ghost size={24} fill="#000" eyeFill="#F4C430" />
+            Memory
           </a>
-
-          {/* Nav links */}
-          <nav className="hide-sm" style={{ display: "flex", gap: "36px" }}>
-            {[
-              { id: "philosophy", label: "Philosophy" },
-              { id: "how",        label: "How It Works" },
-              { id: "difference", label: "The Difference" },
-              { id: "moments",    label: "Moments" },
-              { id: "faq",        label: "FAQ" },
-            ].map((l) => (
-              <a key={l.id} href={`#${l.id}`} className={`nl ${activeSection === l.id ? "active" : ""}`}>
-                {l.label}
-              </a>
-            ))}
-          </nav>
-
-          {/* CTA */}
+          <ul className="nav-links">
+            <li><a href="#what">What is Memory</a></li>
+            <li><a href="#how">How it works</a></li>
+            <li><a href="#why">Why Memory</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
           <a href="#cta" className="btn-black" style={{ padding: "10px 20px", fontSize: "13px" }}>
             Download
           </a>
         </div>
-      </header>
+      </nav>
 
-      {/* ─── HERO ───────────────────────────────────────────────────────────── */}
-      <section
-        id="hero"
-        style={{
-          position: "relative", width: "100%", minHeight: "100svh",
-          backgroundColor: B,
-          display: "flex", alignItems: "flex-end",
-          overflow: "hidden",
-        }}
-      >
-        {/* Background video */}
-        <video
-          autoPlay muted loop playsInline
-          aria-hidden="true"
-          style={{
-            position: "absolute", inset: 0,
-            width: "100%", height: "100%", objectFit: "cover",
-            opacity: 0.65,
-          }}
-        >
-          <source src="/assets/hero.mp4" type="video/mp4" />
-        </video>
+      {/* ─── HERO ───────────────────────────────────────────────────────── */}
+      <section id="hero">
+        <div className="wrap hero-grid">
 
-        {/* Gradient overlay */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.05) 100%)",
-        }} />
+          {/* Text */}
+          <div className="hero-text">
+            <div className="_r" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <Ghost size={52} fill="#000" eyeFill="#F4C430" />
+            </div>
 
-        {/* Content */}
-        <div style={{
-          position: "relative", zIndex: 2,
-          maxWidth: "1200px", margin: "0 auto", width: "100%",
-          padding: "clamp(100px,14vw,140px) 24px 72px",
-        }}>
-          {/* Eyebrow */}
-          <div
-            className="_r"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: "8px",
-              backgroundColor: Y, color: B,
-              padding: "5px 14px",
-              fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              marginBottom: "28px",
-            }}
-          >
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: B, display: "inline-block" }} />
-            Private · Authentic · For your circle
-          </div>
+            <h1 className="h1 _r _d1" style={{ color: "#000", maxWidth: "560px" }}>
+              Share memories with the people who made them.
+            </h1>
 
-          {/* Headline */}
-          <h1
-            className="_r _d1"
-            style={{
-              fontSize: "clamp(52px, 10vw, 96px)",
-              fontWeight: 800,
-              letterSpacing: "clamp(-2px, -0.04em, -4px)",
-              lineHeight: 1.0,
-              color: W,
-              marginBottom: "32px",
-              maxWidth: "800px",
-            }}
-          >
-            For the people<br />who were there.
-          </h1>
+            <p className="_r _d2 body-lg" style={{ maxWidth: "440px" }}>
+              Memory is a private short-video app where life&apos;s best moments stay with the people who actually experienced them.
+            </p>
 
-          {/* Sub-copy — emotional first */}
-          <p
-            className="_r _d2"
-            style={{
-              fontSize: "clamp(17px, 2.5vw, 22px)",
-              color: "rgba(255,255,255,0.75)",
-              maxWidth: "520px",
-              lineHeight: 1.6,
-              marginBottom: "4px",
-              fontWeight: 400,
-            }}
-          >
-            Some moments aren't meant for everyone.
-          </p>
-          <p
-            className="_r _d2"
-            style={{
-              fontSize: "clamp(17px, 2.5vw, 22px)",
-              color: "rgba(255,255,255,0.55)",
-              maxWidth: "520px",
-              lineHeight: 1.6,
-              marginBottom: "20px",
-              fontWeight: 400,
-            }}
-          >
-            They're shared with the people who made them unforgettable.
-          </p>
-          <p
-            className="_r _d3"
-            style={{
-              fontSize: "15px",
-              color: "rgba(255,255,255,0.38)",
-              maxWidth: "460px",
-              lineHeight: 1.7,
-              marginBottom: "52px",
-              fontWeight: 400,
-            }}
-          >
-            Memory is a private short-video app where life's best moments stay with the people who lived them.
-          </p>
+            <div className="hero-btns _r _d3" style={{ display: "flex", gap: "12px", flexWrap: "wrap", paddingTop: "8px" }}>
+              <a href="#cta" className="btn-black">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="5" y="2" width="14" height="20" rx="2" />
+                  <line x1="12" y1="18" x2="12" y2="18.01" />
+                </svg>
+                Download for Android
+              </a>
+              <a href="#how" className="btn-white">Learn how it works</a>
+            </div>
 
-          {/* Buttons */}
-          <div className="_r _d4 flex-col-sm" style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
-            <a href="#cta" className="btn-black" style={{ backgroundColor: W, color: B, borderColor: W }}>
-              Download Memory
-            </a>
-            <a href="#how" className="btn-outline-white">
-              Watch a Memory
-            </a>
-          </div>
-        </div>
-
-        {/* Scroll line */}
-        <div
-          style={{
-            position: "absolute", bottom: "36px", right: "32px", zIndex: 2,
-            display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
-            opacity: 0.35,
-          }}
-        >
-          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: W }}>Scroll</span>
-          <div style={{ width: "1px", height: "48px", backgroundColor: W }} />
-        </div>
-      </section>
-
-      {/* ─── PHILOSOPHY ─────────────────────────────────────────────────────── */}
-      <section id="philosophy" style={{ backgroundColor: Y }}>
-        {/* Section label row */}
-        <div style={{ borderTop: `1px solid rgba(0,0,0,0.1)`, padding: "72px 24px 0" }}>
-          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-            <p
-              className="_r"
-              style={{
-                fontSize: "11px", fontWeight: 700, letterSpacing: "2px",
-                textTransform: "uppercase", opacity: 0.35,
-              }}
-            >
-              What we believe
+            <p className="_r _d4" style={{ fontSize: "13px", color: "rgba(0,0,0,0.38)", fontWeight: 500 }}>
+              Free · No ads · Private by default
             </p>
           </div>
-        </div>
 
-        {/* Philosophy statements — alternating bg */}
-        {PHILOSOPHY.map((s, i) => (
-          <div
-            key={i}
-            style={{
-              borderTop: `1px solid ${i % 2 === 0 ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)"}`,
-              padding: "72px 24px",
-              backgroundColor: i % 2 === 1 ? B : Y,
-              color: i % 2 === 1 ? W : B,
-            }}
-          >
-            <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", gap: "32px", alignItems: "flex-start" }}>
-              <span
-                style={{
-                  fontSize: "13px", fontWeight: 700, letterSpacing: "1px",
-                  opacity: 0.25, paddingTop: "6px", minWidth: "36px",
-                  flexShrink: 0,
-                }}
-              >
-                0{i + 1}
-              </span>
-              <div>
-                <h2
-                  className={`_r _d${(i % 3) + 1}`}
-                  style={{
-                    fontSize: "clamp(28px, 5vw, 60px)",
-                    fontWeight: 800,
-                    letterSpacing: "clamp(-1px, -0.03em, -2.5px)",
-                    lineHeight: 1.08,
-                    marginBottom: "20px",
-                    maxWidth: "900px",
-                  }}
-                >
-                  {s.headline}
-                </h2>
-                <p
-                  className={`_r _d${(i % 3) + 2}`}
-                  style={{
-                    fontSize: "clamp(16px, 2vw, 19px)",
-                    opacity: 0.55,
-                    maxWidth: "540px",
-                    lineHeight: 1.75,
-                    fontWeight: 400,
-                  }}
-                >
-                  {s.body}
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* ─── HOW IT WORKS ───────────────────────────────────────────────────── */}
-      <section
-        id="how"
-        style={{
-          backgroundColor: Y,
-          padding: "120px 24px",
-          borderTop: `1px solid rgba(0,0,0,0.1)`,
-        }}
-      >
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <p className="_r" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", opacity: 0.35, marginBottom: "16px" }}>
-            Simple by design
-          </p>
-          <h2
-            className="_r _d1"
-            style={{
-              fontSize: "clamp(36px, 6vw, 68px)",
-              fontWeight: 800,
-              letterSpacing: "clamp(-1.5px, -0.03em, -3px)",
-              lineHeight: 1.05,
-              marginBottom: "96px",
-              maxWidth: "560px",
-            }}
-          >
-            Three steps.<br />That's all.
-          </h2>
-
-          {/* Steps */}
-          {[
-            {
-              n: "01",
-              title: "Record",
-              body: "Capture authentic short videos. Not edited posts — just real moments as they happen, from your phone.",
-            },
-            {
-              n: "02",
-              title: "Choose Your Circle",
-              body: "Share only with the people who were part of the moment. No followers. No strangers. No algorithm.",
-            },
-            {
-              n: "03",
-              title: "Keep It Close",
-              body: "Your memories stay with the people who lived them. Private. Permanent. Yours forever.",
-            },
-          ].map((step, i) => (
-            <div
-              key={i}
-              className={`_r _d${i + 1}`}
+          {/* Phone mockup */}
+          <div className="_r _d2" style={{ display: "flex", justifyContent: "center", alignItems: "flex-end" }}>
+            <img
+              src="/mockup.jpg"
+              alt="Memory app — login screen showing the yellow interface with ghost logo and Memory branding"
+              className="mockup-img"
               style={{
-                borderTop: `1px solid rgba(0,0,0,0.1)`,
-                padding: "60px 0",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "clamp(24px, 4vw, 64px)",
+                maxHeight: "680px",
+                width: "auto",
+                objectFit: "contain",
+                filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.2))",
               }}
-            >
-              <span
-                style={{
-                  fontSize: "clamp(40px, 8vw, 80px)",
-                  fontWeight: 800,
-                  letterSpacing: "-3px",
-                  color: "rgba(0,0,0,0.1)",
-                  lineHeight: 1,
-                  flexShrink: 0,
-                  minWidth: "clamp(80px, 12vw, 120px)",
-                }}
-              >
-                {step.n}
-              </span>
-              <div>
-                <h3
-                  style={{
-                    fontSize: "clamp(22px, 3.5vw, 40px)",
-                    fontWeight: 800,
-                    letterSpacing: "-0.8px",
-                    marginBottom: "14px",
-                  }}
-                >
-                  {step.title}
-                </h3>
-                <p style={{ fontSize: "clamp(15px, 1.8vw, 18px)", lineHeight: 1.75, opacity: 0.55, maxWidth: "480px" }}>
-                  {step.body}
-                </p>
-              </div>
-            </div>
-          ))}
-          <div style={{ borderTop: `1px solid rgba(0,0,0,0.1)` }} />
+              width={480}
+              height={640}
+            />
+          </div>
+
         </div>
       </section>
 
-      {/* ─── THE DIFFERENCE ─────────────────────────────────────────────────── */}
-      <section
-        id="difference"
-        style={{
-          backgroundColor: B,
-          color: W,
-          padding: "120px 24px",
-        }}
-      >
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <p className="_r" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: Y, opacity: 0.8, marginBottom: "16px" }}>
-            A different philosophy
-          </p>
-          <h2
-            className="_r _d1"
-            style={{
-              fontSize: "clamp(36px, 6vw, 68px)",
-              fontWeight: 800,
-              letterSpacing: "clamp(-1.5px, -0.03em, -3px)",
-              lineHeight: 1.05,
-              marginBottom: "80px",
-              maxWidth: "640px",
-            }}
-          >
-            Not another<br />social platform.
-          </h2>
+      {/* ─── WHAT IS MEMORY ─────────────────────────────────────────────── */}
+      <section id="what" className="sec">
+        <div className="wrap what-grid">
 
-          {/* Column headers */}
-          <div
-            style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr",
-              borderBottom: `1px solid rgba(255,255,255,0.1)`,
-              paddingBottom: "16px",
-            }}
-          >
-            <div style={{ paddingLeft: "20px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", opacity: 0.3 }}>
-                Traditional Social
-              </span>
+          {/* Left: contrast question */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <p className="label _r">The difference</p>
+            <div className="quote-block _r _d1">
+              <div className="quote-lbl">Most social media asks:</div>
+              <div className="quote-txt">&ldquo;Who should see this?&rdquo;</div>
             </div>
-            <div style={{ paddingLeft: "20px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: Y }}>
-                Memory
-              </span>
+            <div className="quote-block alt _r _d2">
+              <div className="quote-lbl">Memory asks:</div>
+              <div className="quote-txt">&ldquo;Who was actually there?&rdquo;</div>
             </div>
           </div>
 
-          {COMPARISON.map((row, i) => (
-            <div
-              key={i}
-              className={`_r _d${(i % 4) + 1} comp-row`}
-              style={{
-                display: "grid", gridTemplateColumns: "1fr 1fr",
-                borderBottom: `1px solid rgba(255,255,255,0.07)`,
-              }}
-            >
-              <div style={{ padding: "24px 20px", borderRight: `1px solid rgba(255,255,255,0.07)` }}>
-                <span style={{ fontSize: "clamp(17px, 2.5vw, 22px)", fontWeight: 600, opacity: 0.3, letterSpacing: "-0.4px" }}>
-                  {row.social}
-                </span>
-              </div>
-              <div style={{ padding: "24px 20px" }}>
-                <span style={{ fontSize: "clamp(17px, 2.5vw, 22px)", fontWeight: 700, color: Y, letterSpacing: "-0.4px" }}>
-                  {row.memory}
-                </span>
-              </div>
-            </div>
-          ))}
+          {/* Right: answer */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <h2 className="h2 _r">What is Memory?</h2>
+            <p className="body-lg _r _d1">
+              Instead of posting to everyone, share your short videos only with the people who lived that moment with you.
+            </p>
+            <p className="body-lg _r _d2">
+              No followers. No public feed. No strangers. Just your Circle — the real people who were actually there.
+            </p>
+            <p className="body-lg _r _d3">
+              Memory isn&apos;t about going viral.<br />
+              Memory is about staying connected to the moments that actually matter.
+            </p>
+          </div>
+
         </div>
       </section>
 
-      {/* ─── MOMENTS GRID ───────────────────────────────────────────────────── */}
-      <section
-        id="moments"
-        style={{
-          backgroundColor: Y,
-          padding: "120px 24px",
-          borderTop: `1px solid rgba(0,0,0,0.1)`,
-        }}
-      >
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <p className="_r" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", opacity: 0.35, marginBottom: "16px" }}>
-            Real moments
-          </p>
-          <h2
-            className="_r _d1"
-            style={{
-              fontSize: "clamp(36px, 6vw, 68px)",
-              fontWeight: 800,
-              letterSpacing: "clamp(-1.5px, -0.03em, -3px)",
-              lineHeight: 1.05,
-              marginBottom: "64px",
-              maxWidth: "560px",
-            }}
-          >
-            This is what<br />Memory looks like.
+      {/* ─── HOW IT WORKS ───────────────────────────────────────────────── */}
+      <section id="how" className="sec">
+        <div className="wrap">
+          <p className="label _r">Simple by design</p>
+          <h2 className="h2 _r _d1" style={{ marginBottom: "52px", maxWidth: "480px" }}>
+            How Memory works
           </h2>
 
-          <div
-            className="moments-grid"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "12px",
-            }}
-          >
-            {MOMENTS.map((label, i) => (
-              <div
-                key={i}
-                className={`_r _d${(i % 3) + 1}`}
-                style={{
-                  aspectRatio: "9/16",
-                  backgroundColor: B,
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                {/* Autoplay muted video — drop files into /public/assets/moments/ */}
-                <video
-                  autoPlay muted loop playsInline
-                  aria-label={label}
-                  style={{
-                    position: "absolute", inset: 0,
-                    width: "100%", height: "100%", objectFit: "cover",
-                  }}
-                >
-                  <source src={`/assets/moments/moment-${i + 1}.mp4`} type="video/mp4" />
-                </video>
+          <div className="how-cards">
+            {STEPS.map((s, i) => (
+              <div key={i} className={`how-card _r _d${i + 1}`}>
+                <div>
+                  <div className="step-lbl">Step {s.num}</div>
+                  <div className="how-icon" style={{ marginTop: "8px" }}>{s.icon}</div>
+                </div>
+                <h3 className="h3">{s.title}</h3>
+                <p className="body">{s.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-                {/* Label overlay */}
-                <div
-                  style={{
-                    position: "absolute", inset: 0,
-                    background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)",
-                    display: "flex", alignItems: "flex-end",
-                    padding: "16px",
-                  }}
+      {/* ─── WHY MEMORY ─────────────────────────────────────────────────── */}
+      <section id="why" className="sec">
+        <div className="wrap">
+          <p className="label _r" style={{ color: "#F4C430", opacity: 1 }}>Built differently</p>
+          <h2 className="h2 _r _d1" style={{ color: "#fff", marginBottom: "52px" }}>
+            Why Memory?
+          </h2>
+
+          <div className="why-cards">
+            {WHY.map((w, i) => (
+              <div key={i} className={`why-card _r _d${i + 1}`}>
+                <div className="why-title">{w.title}</div>
+                <p className="why-body">{w.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FAQ ────────────────────────────────────────────────────────── */}
+      <section id="faq" className="sec">
+        <div className="wrap">
+          <p className="label _r">Common questions</p>
+          <h2 className="h2 _r _d1" style={{ marginBottom: "52px" }}>
+            Frequently asked questions
+          </h2>
+
+          <div className="faq-list">
+            {FAQS.map((item, i) => (
+              <div key={i} className="faq-item">
+                <button
+                  className="faq-btn _r"
+                  onClick={() => toggleFaq(i)}
+                  aria-expanded={faqOpen === i}
                 >
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: "0.3px" }}>
-                    {label}
-                  </span>
+                  <span className="faq-q">{item.q}</span>
+                  <span className={`faq-plus ${faqOpen === i ? "open" : ""}`} aria-hidden="true">+</span>
+                </button>
+                <div className={`faq-body ${faqOpen === i ? "open" : ""}`}>
+                  <p>{item.a}</p>
                 </div>
               </div>
             ))}
@@ -717,245 +515,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── QUOTES ─────────────────────────────────────────────────────────── */}
-      <section
-        id="quotes"
-        style={{
-          backgroundColor: B,
-          color: W,
-          padding: "120px 24px",
-        }}
-      >
-        <div style={{ maxWidth: "880px", margin: "0 auto" }}>
-          {QUOTES.map((q, i) => (
-            <div
-              key={i}
-              className={`_r _d${i + 1}`}
-              style={{
-                borderTop: `1px solid rgba(255,255,255,0.09)`,
-                padding: "72px 0",
-              }}
-            >
-              <p
-                style={{
-                  fontSize: "clamp(22px, 4vw, 38px)",
-                  fontWeight: 400,
-                  lineHeight: 1.45,
-                  letterSpacing: "-0.5px",
-                  fontStyle: "italic",
-                  opacity: 0.88,
-                }}
-              >
-                &ldquo;{q}&rdquo;
-              </p>
-            </div>
-          ))}
-          <div style={{ borderTop: `1px solid rgba(255,255,255,0.09)` }} />
-        </div>
-      </section>
-
-      {/* ─── FAQ ────────────────────────────────────────────────────────────── */}
-      <section
-        id="faq"
-        style={{
-          backgroundColor: Y,
-          padding: "120px 24px",
-          borderTop: `1px solid rgba(0,0,0,0.1)`,
-        }}
-      >
-        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-          <p className="_r" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", opacity: 0.35, marginBottom: "16px" }}>
-            Questions
-          </p>
-          <h2
-            className="_r _d1"
-            style={{
-              fontSize: "clamp(36px, 6vw, 60px)",
-              fontWeight: 800,
-              letterSpacing: "clamp(-1.5px, -0.03em, -2.5px)",
-              lineHeight: 1.05,
-              marginBottom: "80px",
-            }}
-          >
-            Everything you<br />need to know.
-          </h2>
-
-          {FAQS.map((item, i) => (
-            <div key={i} style={{ borderTop: `1px solid rgba(0,0,0,0.1)` }}>
-              <button
-                className={`faq-btn _r _d${(i % 3) + 1}`}
-                onClick={() => toggleFaq(i)}
-                aria-expanded={faqOpen === i}
-              >
-                <span
-                  style={{
-                    fontSize: "clamp(17px, 2.5vw, 22px)",
-                    fontWeight: 700,
-                    letterSpacing: "-0.4px",
-                    lineHeight: 1.3,
-                    flex: 1,
-                  }}
-                >
-                  {item.q}
-                </span>
-                <span
-                  style={{
-                    fontSize: "28px",
-                    fontWeight: 300,
-                    opacity: 0.35,
-                    flexShrink: 0,
-                    lineHeight: 1,
-                    marginTop: "2px",
-                    transition: "transform 0.3s",
-                    transform: faqOpen === i ? "rotate(45deg)" : "rotate(0deg)",
-                    display: "inline-block",
-                  }}
-                >
-                  +
-                </span>
-              </button>
-              <div className={`faq-body ${faqOpen === i ? "open" : ""}`}>
-                <p style={{ fontSize: "clamp(15px, 1.8vw, 17px)", lineHeight: 1.8, opacity: 0.6, maxWidth: "600px" }}>
-                  {item.a}
-                </p>
-              </div>
-            </div>
-          ))}
-          <div style={{ borderTop: `1px solid rgba(0,0,0,0.1)` }} />
-        </div>
-      </section>
-
-      {/* ─── FINAL CTA ──────────────────────────────────────────────────────── */}
-      <section
-        id="cta"
-        style={{
-          position: "relative",
-          backgroundColor: B,
-          color: W,
-          padding: "160px 24px",
-          overflow: "hidden",
-          textAlign: "center",
-        }}
-      >
-        {/* Background video */}
-        <video
-          autoPlay muted loop playsInline
-          aria-hidden="true"
-          style={{
-            position: "absolute", inset: 0,
-            width: "100%", height: "100%", objectFit: "cover",
-            opacity: 0.2,
-          }}
-        >
-          <source src="/assets/cta.mp4" type="video/mp4" />
-        </video>
-
-        <div style={{ position: "relative", zIndex: 2, maxWidth: "720px", margin: "0 auto" }}>
-          {/* Badge */}
-          <div
-            className="_r"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: "8px",
-              border: `1px solid rgba(255,255,255,0.18)`,
-              padding: "5px 14px",
-              fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              color: "rgba(255,255,255,0.4)",
-              marginBottom: "40px",
-            }}
-          >
-            Coming soon on iOS & Android
+      {/* ─── FINAL CTA ──────────────────────────────────────────────────── */}
+      <section id="cta">
+        <div className="cta-in">
+          <div className="_r">
+            <Ghost size={60} fill="#F4C430" eyeFill="#000" />
           </div>
 
-          <h2
-            className="_r _d1"
-            style={{
-              fontSize: "clamp(52px, 10vw, 96px)",
-              fontWeight: 800,
-              letterSpacing: "clamp(-2px, -0.04em, -4px)",
-              lineHeight: 1.0,
-              marginBottom: "28px",
-            }}
-          >
+          <h2 className="h1 _r _d1" style={{ color: "#fff" }}>
             Keep it<br />between us.
           </h2>
 
-          <p
-            className="_r _d2"
-            style={{
-              fontSize: "clamp(16px, 2vw, 20px)",
-              color: "rgba(255,255,255,0.55)",
-              maxWidth: "440px",
-              lineHeight: 1.65,
-              margin: "0 auto 52px",
-            }}
-          >
-            Start sharing memories with the people who matter most.
+          <p className="_r _d2" style={{ fontSize: "clamp(16px,2vw,19px)", color: "rgba(255,255,255,0.48)", lineHeight: 1.65, maxWidth: "400px" }}>
+            Start sharing life&apos;s best moments with the people who were actually there.
           </p>
 
-          <div className="_r _d3 flex-col-sm" style={{ display: "flex", gap: "14px", justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="#" className="btn-black" style={{ backgroundColor: W, color: B, borderColor: W }}>
-              Download Memory
-            </a>
-          </div>
+          <a href="#" className="btn-white-cta _r _d3">
+            Download for Android
+          </a>
+
+          <p className="_r _d4" style={{ fontSize: "13px", color: "rgba(255,255,255,0.28)", fontWeight: 500 }}>
+            Free to download · iOS coming soon
+          </p>
         </div>
       </section>
 
-      {/* ─── FOOTER ─────────────────────────────────────────────────────────── */}
-      <footer
-        style={{
-          backgroundColor: Y,
-          padding: "56px 24px",
-          borderTop: `1px solid rgba(0,0,0,0.1)`,
-        }}
-      >
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          {/* Top row */}
-          <div
-            style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              flexWrap: "wrap", gap: "24px", marginBottom: "48px",
-            }}
-          >
-            {/* Brand */}
-            <a href="#hero" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", color: B }}>
-              <LogoMark size={20} color={B} />
-              <span style={{ fontWeight: 800, fontSize: "15px", letterSpacing: "-0.4px" }}>Memory</span>
+      {/* ─── FOOTER ─────────────────────────────────────────────────────── */}
+      <footer>
+        <div className="foot-in">
+          <div className="foot-top">
+            <a href="#hero" className="foot-brand">
+              <Ghost size={20} fill="#000" eyeFill="#F4C430" />
+              Memory
             </a>
-
-            {/* Links */}
-            <div style={{ display: "flex", gap: "28px", flexWrap: "wrap" }}>
-              {["Privacy", "Terms", "Instagram", "TikTok"].map((l) => (
-                <a
-                  key={l}
-                  href="#"
-                  style={{
-                    textDecoration: "none", color: B, fontSize: "14px", fontWeight: 500,
-                    opacity: 0.5, transition: "opacity 0.18s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
-                >
-                  {l}
-                </a>
+            <div className="foot-links">
+              {["Privacy Policy", "Terms", "Instagram", "TikTok"].map((l) => (
+                <a key={l} href="#">{l}</a>
               ))}
             </div>
           </div>
-
-          {/* Bottom row */}
-          <div
-            style={{
-              borderTop: `1px solid rgba(0,0,0,0.1)`, paddingTop: "28px",
-              display: "flex", justifyContent: "space-between",
-              flexWrap: "wrap", gap: "12px",
-            }}
-          >
-            <span style={{ fontSize: "13px", opacity: 0.35 }}>
-              © {new Date().getFullYear()} Memory App. All rights reserved.
-            </span>
-            <span style={{ fontSize: "13px", opacity: 0.35 }}>
-              Life is better remembered together.
-            </span>
+          <div className="foot-bottom">
+            &copy; {new Date().getFullYear()} Memory App. All rights reserved.
           </div>
         </div>
       </footer>

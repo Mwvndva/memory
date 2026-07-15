@@ -36,6 +36,11 @@ extensions.configure<ApplicationExtension> {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // R8 shrinking obfuscates androidx.room/androidx.work classes that
+            // WorkManager (via home_widget) instantiates by name at startup,
+            // which crashes the app before Flutter loads. Disable shrinking.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
