@@ -13,17 +13,17 @@ export default function PrivacyPolicy() {
     <div style={{ background: "#F4C430", minHeight: "100vh", fontFamily: "'Inter', -apple-system, sans-serif" }}>
       {/* Nav */}
       <nav style={{ borderBottom: "1.5px solid rgba(0,0,0,0.1)", padding: "0 24px", height: "64px", display: "flex", alignItems: "center", position: "sticky", top: 0, background: "#F4C430", zIndex: 100 }}>
-        <div style={{ maxWidth: "860px", width: "100%", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", color: "#000", fontWeight: 800, fontSize: "17px", letterSpacing: "-0.4px" }}>
+        <div style={{ maxWidth: "860px", width: "100%", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", color: "#000", fontWeight: 800, fontSize: "clamp(15px, 4vw, 17px)", letterSpacing: "-0.4px", flexShrink: 0 }}>
             <img src="/logo.png" alt="Memory" width={24} height={24} style={{ objectFit: "contain" }} />
             Memory
           </Link>
-          <Link href="/" style={{ fontSize: "14px", fontWeight: 600, color: "rgba(0,0,0,0.55)", textDecoration: "none" }}>← Back to Home</Link>
+          <Link href="/" style={{ fontSize: "clamp(12px, 3.5vw, 14px)", fontWeight: 600, color: "rgba(0,0,0,0.55)", textDecoration: "none", whiteSpace: "nowrap" }}>← Back to Home</Link>
         </div>
       </nav>
 
       {/* Content */}
-      <main style={{ maxWidth: "860px", margin: "0 auto", padding: "64px 24px 100px" }}>
+      <main style={{ maxWidth: "860px", margin: "0 auto", padding: "clamp(32px, 8vw, 64px) clamp(16px, 5vw, 24px) clamp(60px, 12vw, 100px)" }}>
         {/* Header */}
         <div style={{ marginBottom: "56px" }}>
           <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", opacity: 0.4, marginBottom: "12px" }}>Legal</p>

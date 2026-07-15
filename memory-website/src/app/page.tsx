@@ -121,6 +121,14 @@ const FAQS = [
 export default function Page() {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close menu on resize to desktop
+  useEffect(() => {
+    const onResize = () => { if (window.innerWidth > 768) setMenuOpen(false); };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     // Navbar scroll
@@ -319,39 +327,176 @@ export default function Page() {
         ::-webkit-scrollbar-track { background: #F4C430; }
         ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 99px; }
 
-        /* Responsive */
-        @media (max-width: 900px) {
-          .hero-grid { grid-template-columns: 1fr; text-align: center; gap: 48px; padding-bottom: 60px; }
+        /* ─── Mobile menu overlay ───────────────────────────────────────── */
+        .mobile-menu-btn {
+          display: none;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          padding: 6px;
+          flex-direction: column;
+          gap: 5px;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .mobile-menu-btn span {
+          display: block;
+          width: 22px;
+          height: 2.5px;
+          background: #000;
+          border-radius: 99px;
+          transition: transform 0.25s ease, opacity 0.2s ease;
+        }
+        .mobile-menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+        .mobile-menu-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .mobile-menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+        .mobile-nav {
+          display: none;
+          position: fixed;
+          top: 64px; left: 0; right: 0; bottom: 0;
+          background: #F4C430;
+          z-index: 99;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 0;
+          overflow-y: auto;
+        }
+        .mobile-nav.open { display: flex; }
+        .mobile-nav a {
+          font-size: clamp(28px, 8vw, 40px);
+          font-weight: 800;
+          color: #000;
+          letter-spacing: -1px;
+          text-decoration: none;
+          padding: 18px 24px;
+          width: 100%;
+          text-align: center;
+          border-bottom: 1px solid rgba(0,0,0,0.08);
+          transition: background 0.15s;
+        }
+        .mobile-nav a:first-child { border-top: 1px solid rgba(0,0,0,0.08); }
+        .mobile-nav a:hover { background: rgba(0,0,0,0.04); }
+
+        /* ─── Responsive — 4 breakpoints ──────────────────────────────────── */
+
+        /* Tablet landscape: ≤1100px */
+        @media (max-width: 1100px) {
+          .hero-grid { gap: 40px; }
+          .how-cards { grid-template-columns: repeat(2, 1fr); }
+          .how-cards > *:last-child { grid-column: 1 / -1; max-width: 480px; margin: 0 auto; width: 100%; }
+        }
+
+        /* Tablet portrait: ≤768px */
+        @media (max-width: 768px) {
+          /* Nav */
+          .nav-links { display: none; }
+          .mobile-menu-btn { display: flex; }
+
+          /* Hero */
+          #hero {
+            padding: 40px 20px 0;
+            min-height: auto;
+            align-items: flex-start;
+          }
+          .hero-grid {
+            grid-template-columns: 1fr;
+            text-align: center;
+            gap: 36px;
+            padding-bottom: 56px;
+            padding-top: 0;
+          }
+          /* Mockup appears first on mobile for visual impact */
+          .hero-mockup-col { order: -1; }
           .hero-text { align-items: center; }
           .hero-btns { justify-content: center; }
-          .what-grid { grid-template-columns: 1fr; gap: 48px; }
-          .how-cards { grid-template-columns: 1fr; }
-          .why-cards { grid-template-columns: 1fr; }
-          .nav-links { display: none; }
-          .mockup-img { max-height: 460px; }
-        }
-        @media (max-width: 600px) {
+          .mockup-img { max-height: 480px !important; width: auto !important; max-width: 85% !important; margin: 0 auto; }
+
+          /* Sections */
           .sec { padding: 72px 20px; }
-          .hero-btns { flex-direction: column; width: 100%; }
-          .btn-black, .btn-white, .btn-white-cta { width: 100%; }
+          .what-grid { grid-template-columns: 1fr; gap: 40px; }
+          .how-cards { grid-template-columns: 1fr; }
+          .how-cards > *:last-child { grid-column: auto; max-width: 100%; }
+          .why-cards { grid-template-columns: 1fr; }
+
+          /* FAQ */
+          .faq-list { max-width: 100%; }
+
+          /* CTA */
+          #cta { padding: 88px 20px; }
+
+          /* Footer */
+          .foot-top { flex-direction: column; align-items: flex-start; gap: 20px; }
+          .foot-bottom { flex-direction: column !important; align-items: flex-start; gap: 6px; }
+        }
+
+        /* Phone landscape / small: ≤540px */
+        @media (max-width: 540px) {
+          .sec { padding: 60px 16px; }
+          #hero { padding: 28px 16px 0; }
+          #cta { padding: 72px 16px; }
+
+          .hero-grid { gap: 28px; padding-bottom: 48px; }
+          .mockup-img { max-height: 380px !important; max-width: 90% !important; }
+
+          .how-card { padding: 28px 22px; }
+          .why-card { padding: 28px 22px; }
+
+          .btn-black, .btn-white, .btn-white-cta { width: 100%; justify-content: center; }
+          .hero-btns { flex-direction: column; width: 100%; align-items: center; }
+
+          .foot-links { gap: 14px; flex-wrap: wrap; }
+          .what-grid { gap: 32px; }
+        }
+
+        /* Small phone: ≤380px */
+        @media (max-width: 380px) {
+          .sec { padding: 48px 14px; }
+          #hero { padding: 20px 14px 0; }
+          #cta { padding: 60px 14px; }
+          .hero-grid { gap: 24px; padding-bottom: 40px; }
+          .mockup-img { max-height: 320px !important; }
+          .how-card, .why-card { padding: 24px 18px; }
+          .foot-links { gap: 12px; }
         }
       `}</style>
 
       {/* ─── NAV ────────────────────────────────────────────────────────── */}
       <nav className={`mem-nav ${scrolled ? "scrolled" : ""}`}>
         <div className="nav-in">
-          <a href="#hero" className="nav-brand">
+          <a href="#hero" className="nav-brand" onClick={() => setMenuOpen(false)}>
             <img src="/logo.png" alt="Memory" width={28} height={28} style={{ objectFit: "contain" }} />
             Memory
           </a>
+          {/* Desktop links */}
           <ul className="nav-links">
             <li><a href="#what">What is Memory</a></li>
             <li><a href="#how">How it works</a></li>
             <li><a href="#why">Why Memory</a></li>
             <li><a href="#faq">FAQ</a></li>
           </ul>
+          {/* Hamburger button (mobile only) */}
+          <button
+            className={`mobile-menu-btn ${menuOpen ? "open" : ""}`}
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+          >
+            <span /><span /><span />
+          </button>
         </div>
       </nav>
+
+      {/* Mobile full-screen menu */}
+      <div className={`mobile-nav ${menuOpen ? "open" : ""}`} role="navigation" aria-label="Mobile menu">
+        {["#what", "#how", "#why", "#faq"].map((href, i) => (
+          <a key={i} href={href} onClick={() => setMenuOpen(false)}>
+            {["What is Memory", "How it works", "Why Memory", "FAQ"][i]}
+          </a>
+        ))}
+      </div>
 
       {/* ─── HERO ───────────────────────────────────────────────────────── */}
       <section id="hero">
@@ -381,7 +526,7 @@ export default function Page() {
           </div>
 
           {/* Phone mockup */}
-          <div className="_r _d2" style={{ display: "flex", justifyContent: "center", alignItems: "flex-end" }}>
+          <div className="_r _d2 hero-mockup-col" style={{ display: "flex", justifyContent: "center", alignItems: "flex-end" }}>
             <img
               src="/mockup.png"
               alt="Memory app — login screen showing the yellow interface with ghost logo and Memory branding"
