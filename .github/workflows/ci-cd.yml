@@ -24,26 +24,26 @@ jobs:
 
       - name: Install Dependencies
         run: npm ci
-        working-directory: backend
+        working-directory: memory-backend
 
       - name: Run Linter
         run: npm run lint
-        working-directory: backend
+        working-directory: memory-backend
 
       - name: Run Prisma Client Generation
         run: npx prisma generate
-        working-directory: backend
+        working-directory: memory-backend
 
       # Every *.spec.ts directly under test/ — an explicit file list let suites
       # rot unnoticed once they stopped compiling. test/e2e/ is excluded: it
       # needs a live SQLite database and Redis.
       - name: Run Unit Tests
         run: npx jest --rootDir=. --testPathPatterns='test/[^/]+\.spec\.ts$'
-        working-directory: backend
+        working-directory: memory-backend
 
       - name: Build Application
         run: npm run build
-        working-directory: backend
+        working-directory: memory-backend
 
   flutter:
     name: Flutter Client
@@ -68,19 +68,24 @@ jobs:
 
       - name: Install Dependencies
         run: flutter pub get
+        working-directory: memory
 
       # --fatal-infos keeps the tree at zero diagnostics, not just zero errors.
       - name: Analyze
         run: flutter analyze --fatal-infos --fatal-warnings
+        working-directory: memory
 
       - name: Verify Formatting
         run: dart format --output=none --set-exit-if-changed lib test
+        working-directory: memory
 
       - name: Run Tests
         run: flutter test
+        working-directory: memory
 
       - name: Build Debug APK
         run: flutter build apk --debug
+        working-directory: memory
 
   cd:
     name: Continuous Deployment
@@ -103,7 +108,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t memory-backend:latest ./backend
+          docker build -t memory-backend:latest ./memory-backend
 
       # Example deployment steps (GCP Cloud Run deployment configuration):
       # - name: Authenticate to Cloud Provider

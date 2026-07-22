@@ -30,9 +30,7 @@ abstract final class MemorySnackBar {
       behavior: SnackBarBehavior.floating,
       duration:
           d ??
-          (isError
-              ? const Duration(seconds: 4)
-              : const Duration(seconds: 3)),
+          (isError ? const Duration(seconds: 4) : const Duration(seconds: 3)),
       margin: const EdgeInsets.symmetric(
         horizontal: MemorySpacing.sheet,
         vertical: MemorySpacing.md,
