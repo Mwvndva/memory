@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -6,6 +6,10 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  themeColor: "#F4C430",
+};
 
 export const metadata: Metadata = {
   title: "Memory — Share memories with your Circle",
@@ -30,7 +34,6 @@ export const metadata: Metadata = {
       { rel: "manifest", url: "/site.webmanifest" },
     ],
   },
-  themeColor: "#F4C430",
 };
 
 export default function RootLayout({
