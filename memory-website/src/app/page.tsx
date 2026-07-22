@@ -445,8 +445,8 @@ export default function Page() {
           .hero-mockup-col { order: -1; }
           .hero-text { align-items: center; }
           .hero-btns { justify-content: center; }
-          .mockup-container { gap: 8px !important; }
-          .mockup-img { max-height: 440px !important; height: 440px !important; width: auto !important; max-width: 48% !important; margin: 0; }
+          .mockup-container { gap: 12px !important; }
+          .mockup-img { height: 440px !important; width: auto !important; max-width: 48% !important; margin: 0; }
 
           /* Sections */
           .sec { padding: 72px 20px; }
@@ -473,7 +473,7 @@ export default function Page() {
           #cta { padding: 72px 16px; }
 
           .hero-grid { gap: 28px; padding-bottom: 48px; }
-          .mockup-img { max-height: 340px !important; height: 340px !important; max-width: 48% !important; }
+          .mockup-img { height: 340px !important; max-width: 48% !important; }
 
           .how-card { padding: 28px 22px; }
           .why-card { padding: 28px 22px; }
@@ -491,8 +491,8 @@ export default function Page() {
           #hero { padding: 20px 14px 0; }
           #cta { padding: 60px 14px; }
           .hero-grid { gap: 24px; padding-bottom: 40px; }
-          .mockup-container { gap: -30px !important; }
-          .mockup-img { max-height: 280px !important; height: 280px !important; }
+          .mockup-container { gap: 8px !important; }
+          .mockup-img { height: 280px !important; }
           .how-card, .why-card { padding: 24px 18px; }
           .foot-links { gap: 12px; }
         }
@@ -539,10 +539,6 @@ export default function Page() {
 
           {/* Text */}
           <div className="hero-text">
-            <div className="_r" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <img src="/logo.png" alt="Memory ghost logo" width={56} height={56} style={{ objectFit: "contain" }} />
-            </div>
-
             <h1 className="h1 _r _d1" style={{ color: "#000", maxWidth: "560px" }}>
               Share memories with the people who made them.
             </h1>
@@ -561,38 +557,34 @@ export default function Page() {
           </div>
 
           {/* Phone mockup */}
-          <div className="_r _d2 hero-mockup-col" style={{ display: "flex", justifyContent: "center", alignItems: "flex-end" }}>
-            <div className="mockup-container" style={{ display: "flex", gap: "8px", justifyContent: "center", alignItems: "flex-end", width: "100%" }}>
-              <img
-                src="/mockup.png"
-                alt="Memory app login screen mockup"
-                className="mockup-img"
-                style={{
-                  height: "640px",
-                  maxHeight: "640px",
-                  width: "auto",
-                  maxWidth: "260px",
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.15))",
-                }}
-                width={260}
-                height={640}
-              />
-              <img
-                src="/mockup2.png"
-                alt="Memory app feed screen mockup"
-                className="mockup-img"
-                style={{
-                  height: "640px",
-                  maxHeight: "640px",
-                  width: "auto",
-                  maxWidth: "260px",
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.15))",
-                }}
-                width={260}
-                height={640}
-              />
+          <div className="_r _d2 hero-mockup-col" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <div className="mockup-container" style={{ display: "flex", gap: "16px", justifyContent: "center", alignItems: "center", width: "100%" }}>
+              <div style={{ height: "520px", display: "flex", alignItems: "center" }}>
+                <img
+                  src="/mockup.png"
+                  alt="Memory app login screen mockup"
+                  className="mockup-img"
+                  style={{
+                    height: "100%",
+                    width: "auto",
+                    objectFit: "contain",
+                    filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.15))",
+                  }}
+                />
+              </div>
+              <div style={{ height: "520px", display: "flex", alignItems: "center" }}>
+                <img
+                  src="/mockup2.png"
+                  alt="Memory app feed screen mockup"
+                  className="mockup-img"
+                  style={{
+                    height: "100%",
+                    width: "auto",
+                    objectFit: "contain",
+                    filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.15))",
+                  }}
+                />
+              </div>
             </div>
           </div>
 
