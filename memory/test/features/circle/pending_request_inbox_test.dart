@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:memory_app/features/circle/circle.dart';
 
@@ -34,6 +35,7 @@ void main() {
   testWidgets('pending request locks composer and accept reveals composer', (
     tester,
   ) async {
+    FlutterSecureStorage.setMockInitialValues({});
     final container = ProviderContainer(
       overrides: [
         pendingRequestsProvider.overrideWith(
