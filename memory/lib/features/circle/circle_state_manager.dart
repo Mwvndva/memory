@@ -32,12 +32,17 @@ class CircleState {
 class CircleStateManager extends StateNotifier<CircleState> {
   CircleStateManager(this._ref)
     : super(const CircleState(circles: [], pendingRequests: [])) {
+    // fireImmediately delivers the CURRENT value on subscribe. Without it, if
+    // circlesProvider already finished fetching before this manager is first
+    // read (it auto-fetches on auth and is touched by other flows), the manager
+    // would miss that already-loaded list and render an empty circle even
+    // though members exist.
     _ref.listen(circlesProvider, (previous, next) {
       state = state.copyWith(circles: next);
-    });
+    }, fireImmediately: true);
     _ref.listen(pendingRequestsProvider, (previous, next) {
       state = state.copyWith(pendingRequests: next);
-    });
+    }, fireImmediately: true);
   }
 
   final Ref _ref;

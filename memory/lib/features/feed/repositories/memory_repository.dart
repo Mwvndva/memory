@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -1122,17 +1123,18 @@ class UploadCoordinator extends StateNotifier<UploadState> {
         },
       );
 
-      state = state.copyWith(
-        status: UploadStatus.waitingForResponse,
-        progress: 0.95,
-      );
+      // The upload POST has returned; mark success immediately so the UI
+      // confirms without waiting on the follow-up refreshes below. Previously
+      // these two awaited network round-trips ran BEFORE 'succeeded', adding
+      // seconds of perceived send time.
+      state = state.copyWith(status: UploadStatus.succeeded, progress: 1.0);
 
       if (!kUseMockBackend) {
-        await _ref.read(sessionProvider.notifier).fetchProfile();
-        await _ref.read(feedProvider.notifier).fetchFeed();
+        // Refresh profile (streak) and feed in the background so the new memory
+        // is present when the user opens the feed, without blocking the tick.
+        unawaited(_ref.read(sessionProvider.notifier).fetchProfile());
+        unawaited(_ref.read(feedProvider.notifier).fetchFeed(force: true));
       }
-
-      state = state.copyWith(status: UploadStatus.succeeded, progress: 1.0);
     } on DioException catch (e, stack) {
       if (e.type == DioExceptionType.cancel) {
         return;

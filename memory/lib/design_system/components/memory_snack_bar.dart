@@ -21,32 +21,73 @@ abstract final class MemorySnackBar {
     String? actionLabel,
     VoidCallback? onAction,
   ) {
+    final isError = tone == MemorySnackTone.error;
     return SnackBar(
-      action: (actionLabel == null || onAction == null)
-          ? null
-          : SnackBarAction(
-              label: actionLabel,
-              textColor: MemoryColors.accent,
-              onPressed: onAction,
-            ),
-      content: Text(
-        message,
-        style: MemoryTypography.bodySmall.copyWith(color: MemoryColors.cream),
-      ),
-      backgroundColor: tone == MemorySnackTone.error
-          ? MemoryColors.ink
-          : MemoryColors.charcoal,
+      // The visual is fully custom below, so strip the default SnackBar chrome.
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      padding: EdgeInsets.zero,
       behavior: SnackBarBehavior.floating,
       duration:
           d ??
-          (tone == MemorySnackTone.error
+          (isError
               ? const Duration(seconds: 4)
               : const Duration(seconds: 3)),
       margin: const EdgeInsets.symmetric(
         horizontal: MemorySpacing.sheet,
         vertical: MemorySpacing.md,
       ),
-      shape: const RoundedRectangleBorder(borderRadius: MemoryRadius.allMd),
+      content: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: MemorySpacing.xl,
+          vertical: MemorySpacing.lg,
+        ),
+        decoration: BoxDecoration(
+          color: MemoryColors.ink,
+          borderRadius: MemoryRadius.allLg,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.28),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isError
+                  ? Icons.error_outline_rounded
+                  : Icons.check_circle_rounded,
+              color: isError ? MemoryColors.danger : MemoryColors.accent,
+              size: 20,
+            ),
+            const SizedBox(width: MemorySpacing.md),
+            Expanded(
+              child: Text(
+                message,
+                style: MemoryTypography.bodySmall.copyWith(
+                  color: MemoryColors.cream,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(width: MemorySpacing.lg),
+              GestureDetector(
+                onTap: onAction,
+                child: Text(
+                  actionLabel,
+                  style: MemoryTypography.bodySmall.copyWith(
+                    color: MemoryColors.accent,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
       animation: null, // let the framework drive it; timing is below
     );
   }
@@ -62,8 +103,16 @@ abstract final class MemorySnackBar {
     VoidCallback? onAction,
   }) {
     final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    // Dismiss the snack when its action is taken, then run the callback.
+    VoidCallback? wrappedAction;
+    if (onAction != null) {
+      wrappedAction = () {
+        messenger.hideCurrentSnackBar();
+        onAction();
+      };
+    }
     messenger.showSnackBar(
-      _build(message, tone, duration, actionLabel, onAction),
+      _build(message, tone, duration, actionLabel, wrappedAction),
     );
   }
 

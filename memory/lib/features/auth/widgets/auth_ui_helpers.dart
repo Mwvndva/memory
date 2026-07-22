@@ -29,10 +29,10 @@ Widget authInputField(
   TextInputType? keyboard,
   VoidCallback? onToggleObscure,
 }) {
-  // The auth surfaces invert: a solid slab behind bright text, rather than the
-  // translucent well a field sits in everywhere else.
-  final fill = dark ? MemoryColors.accent : MemoryColors.ink;
-  final ink = dark ? MemoryColors.ink : Colors.white;
+  // In light mode the fields are a solid white slab with dark text; in dark
+  // mode they stay the bright accent slab.
+  final fill = dark ? MemoryColors.accent : Colors.white;
+  final ink = dark ? MemoryColors.ink : MemoryColors.charcoal;
 
   return MemoryTextField(
     controller: controller,

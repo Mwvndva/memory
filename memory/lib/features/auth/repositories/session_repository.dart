@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memory_app/core/secure_storage.dart';
@@ -20,11 +21,17 @@ class SessionRepository {
   static const String _phoneKey = 'user_phone';
   static const String _avatarUrlKey = 'user_avatar_url';
 
+  // Secure-storage reads can hang indefinitely on some devices when the
+  // keystore is in a bad state (e.g. after repeated reinstalls). A read that
+  // never returns would trap the app on the splash screen, so every read is
+  // bounded — on timeout we treat it as "no token" and fall through to login.
+  static const Duration _storageTimeout = Duration(seconds: 5);
+
   /// Reads cached access token from secure storage.
   Future<String?> getAccessToken() async {
     try {
       final storage = _ref.read(secureStorageProvider);
-      return await storage.read(key: _tokenKey);
+      return await storage.read(key: _tokenKey).timeout(_storageTimeout);
     } catch (e) {
       debugPrint('Failed to read access token from secure storage: $e');
       return null;
@@ -35,7 +42,7 @@ class SessionRepository {
   Future<String?> getRefreshToken() async {
     try {
       final storage = _ref.read(secureStorageProvider);
-      return await storage.read(key: _refreshTokenKey);
+      return await storage.read(key: _refreshTokenKey).timeout(_storageTimeout);
     } catch (e) {
       debugPrint('Failed to read refresh token from secure storage: $e');
       return null;

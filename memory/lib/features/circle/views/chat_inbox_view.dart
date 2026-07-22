@@ -218,14 +218,6 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: ChatPatternPainter(
-                          patternColor: (dark ? Colors.white : MemoryColors.ink)
-                              .withValues(alpha: 0.04),
-                        ),
-                      ),
-                    ),
                     if (_loadingHistory)
                       MemoryLoading.block(
                         color: dark ? MemoryColors.accent : MemoryColors.ink,
@@ -525,7 +517,7 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
           right: MemorySpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: MemoryColors.ink,
+          color: dark ? MemoryColors.ink : Colors.white,
           borderRadius: BorderRadius.circular(MemoryRadius.pill),
           boxShadow: [
             BoxShadow(
@@ -541,7 +533,9 @@ class _ChatInboxViewState extends ConsumerState<ChatInboxView> {
               child: MemoryInlineField(
                 controller: _messageController,
                 hint: 'Message ${widget.contactName}',
-                style: MemoryTypography.bodyLarge.copyWith(color: Colors.white),
+                style: MemoryTypography.bodyLarge.copyWith(
+                  color: dark ? Colors.white : MemoryColors.charcoal,
+                ),
                 onSubmitted: (_) => _sendMessage(),
               ),
             ),

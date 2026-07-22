@@ -56,7 +56,7 @@ export class JobsService implements OnApplicationBootstrap {
       'recalculate-stats',
       { userId },
       {
-        jobId: `recalculate-stats:${userId}`,
+        jobId: `recalculate-stats-${userId}`,
         delay: 5000,
         removeOnComplete: true,
         removeOnFail: true,

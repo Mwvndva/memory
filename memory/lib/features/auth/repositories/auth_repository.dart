@@ -82,7 +82,9 @@ class SessionManager extends StateNotifier<SessionState> {
         // Validate the session with a fresh profile request
         try {
           final authService = _ref.read(authServiceProvider);
-          final validatedUser = await authService.fetchProfile();
+          final validatedUser = await authService.fetchProfile().timeout(
+            const Duration(seconds: 15),
+          );
 
           if (!mounted) return;
 
@@ -98,7 +100,9 @@ class SessionManager extends StateNotifier<SessionState> {
           // If validation fails, attempt to refresh the session immediately
           try {
             final authService = _ref.read(authServiceProvider);
-            final tokenDto = await authService.refreshTokens();
+            final tokenDto = await authService.refreshTokens().timeout(
+              const Duration(seconds: 15),
+            );
 
             if (!mounted) return;
 
@@ -108,7 +112,9 @@ class SessionManager extends StateNotifier<SessionState> {
             );
             updateTokens(tokenDto.accessToken, tokenDto.refreshToken);
 
-            final validatedUser = await authService.fetchProfile();
+            final validatedUser = await authService.fetchProfile().timeout(
+              const Duration(seconds: 15),
+            );
 
             if (!mounted) return;
 

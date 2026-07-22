@@ -75,7 +75,9 @@ class CompressionService {
 
     const steps = 10;
     for (int i = 1; i <= steps; i++) {
-      await Future.delayed(const Duration(milliseconds: 100));
+      // This is a simulated compression (a plain copy below), so keep the
+      // artificial per-step delay minimal — it was ~1s of pure wasted latency.
+      await Future.delayed(const Duration(milliseconds: 15));
       if (onProgress != null) {
         onProgress(i / steps);
       }

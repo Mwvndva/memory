@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -8,9 +9,9 @@ import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:memory_app/core/app_providers.dart';
+import 'package:memory_app/core/api_config.dart';
 import 'package:memory_app/design_system/design_system.dart';
 import 'package:memory_app/core/error_handler.dart';
-import 'package:memory_app/features/capture/capture.dart';
 import 'package:memory_app/features/feed/feed.dart';
 import 'package:memory_app/features/circle/circle.dart';
 
@@ -50,6 +51,19 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
   int _selectedCameraIndex = 0;
   bool _isInitializing = false;
   int _lastInitMs = 0;
+
+  // Recording elapsed-time counter and hard cap.
+  Timer? _recordTimer;
+  int _recordSeconds = 0;
+  static const int _maxRecordSeconds = 30;
+
+  // Hold-to-record race guards: the finger can lift before startVideoRecording
+  // resolves, so a stop requested mid-start is deferred until start completes.
+  bool _startingRecording = false;
+  bool _stopAfterStart = false;
+
+  // Brief success checkmark shown after a memory finishes posting.
+  bool _showSuccessTick = false;
 
   @override
   void initState() {
@@ -161,6 +175,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _recordTimer?.cancel();
     _captureCaption.dispose();
     // best-effort dispose; we don't await here because dispose() cannot be async
     try {
@@ -197,74 +212,133 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
     }
   }
 
-  Future<void> _toggleRecording() async {
-    if (_isRecording) {
-      // Stop recording
-      try {
-        final XFile? file;
-        if (_isCameraInitialized && _cameraController != null) {
-          file = await _cameraController!.stopVideoRecording();
-        } else {
-          file = null;
-        }
-
-        String? finalPath;
-        if (file != null) {
-          final tempDir = await getTemporaryDirectory();
-          finalPath =
-              '${tempDir.path}/video_${DateTime.now().millisecondsSinceEpoch}.mp4';
-          await file.saveTo(finalPath);
-        }
-
-        if (mounted) {
-          setState(() {
-            _isRecording = false;
-            _hasRecording = true;
-            _captureCaptionOpen = true;
-            _recordedVideoPath = finalPath;
-          });
-
-          if (finalPath != null) {
-            final controller = VideoPlayerController.file(File(finalPath));
-            _videoPlayerController = controller;
-            try {
-              await controller.initialize();
-              if (mounted && _videoPlayerController == controller) {
-                await controller.setLooping(true);
-                await controller.play();
-                setState(() {});
-              } else {
-                controller.dispose();
-              }
-            } catch (e) {
-              debugPrint('Error playing preview video: $e');
-              controller.dispose();
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('Error stopping video recording: $e');
-        if (mounted) {
-          setState(() {
-            _isRecording = false;
-          });
-        }
+  void _startRecordTimer() {
+    _recordTimer?.cancel();
+    _recordTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted || !_isRecording) {
+        t.cancel();
+        return;
       }
-    } else {
-      // Start recording
-      try {
-        if (_isCameraInitialized && _cameraController != null) {
-          await _cameraController!.startVideoRecording();
-        }
-        if (mounted) {
-          setState(() {
-            _isRecording = true;
-          });
-        }
-      } catch (e) {
-        debugPrint('Error starting video recording: $e');
+      setState(() => _recordSeconds++);
+      if (_recordSeconds >= _maxRecordSeconds) {
+        t.cancel();
+        _stopRecording(); // auto-stop at the 30s cap
+      }
+    });
+  }
+
+  String _fmtDuration(int seconds) =>
+      '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+
+  // Hold-to-record: pointer down starts, pointer up/cancel stops.
+  Future<void> _startRecording() async {
+    if (_isRecording || _hasRecording || _startingRecording) return;
+    _startingRecording = true;
+    try {
+      if (_isCameraInitialized && _cameraController != null) {
+        await _cameraController!.startVideoRecording();
+      }
+      if (mounted) {
+        setState(() {
+          _isRecording = true;
+          _recordSeconds = 0;
+        });
+        _startRecordTimer();
+      }
+    } catch (e) {
+      debugPrint('Error starting video recording: $e');
+    } finally {
+      _startingRecording = false;
+      // If the finger lifted while we were still starting, honour it now.
+      if (_stopAfterStart) {
+        _stopAfterStart = false;
+        _stopRecording();
       }
     }
+  }
+
+  Future<void> _stopRecording() async {
+    if (!_isRecording) {
+      // Released before startVideoRecording resolved; defer the stop.
+      if (_startingRecording) _stopAfterStart = true;
+      return;
+    }
+    _recordTimer?.cancel();
+    try {
+      final XFile? file;
+      if (_isCameraInitialized && _cameraController != null) {
+        file = await _cameraController!.stopVideoRecording();
+      } else {
+        file = null;
+      }
+
+      String? finalPath;
+      if (file != null) {
+        final tempDir = await getTemporaryDirectory();
+        finalPath =
+            '${tempDir.path}/video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+        await file.saveTo(finalPath);
+      }
+
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _hasRecording = true;
+          _captureCaptionOpen = true;
+          _recordedVideoPath = finalPath;
+        });
+
+        if (finalPath != null) {
+          final controller = VideoPlayerController.file(File(finalPath));
+          _videoPlayerController = controller;
+          try {
+            await controller.initialize();
+            if (mounted && _videoPlayerController == controller) {
+              await controller.setLooping(true);
+              await controller.play();
+              setState(() {});
+            } else {
+              controller.dispose();
+            }
+          } catch (e) {
+            debugPrint('Error playing preview video: $e');
+            controller.dispose();
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error stopping video recording: $e');
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+        });
+      }
+    }
+  }
+
+  // Discard the captured clip and return to the live camera to retake.
+  void _discardRecording() {
+    _recordTimer?.cancel();
+    _videoPlayerController?.pause();
+    _videoPlayerController?.dispose();
+    _videoPlayerController = null;
+    if (_recordedVideoPath != null) {
+      try {
+        final f = File(_recordedVideoPath!);
+        if (f.existsSync()) f.deleteSync();
+      } catch (e) {
+        debugPrint('Error deleting discarded recording: $e');
+      }
+    }
+    setState(() {
+      _hasRecording = false;
+      _isRecording = false;
+      _recordedVideoPath = null;
+      _captureCaptionOpen = false;
+      _captureCaption.clear();
+      _captureCaptionOffset = const Offset(78, 250);
+      _captureCaptionSize = 24;
+    });
   }
 
   Future<void> _sendToCircle() async {
@@ -288,29 +362,15 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
     );
   }
 
-  String _getUploadStageMessage(UploadStatus status) {
-    switch (status) {
-      case UploadStatus.preparing:
-        return 'Preparing your memory...';
-      case UploadStatus.validating:
-        return 'Checking your upload...';
-      case UploadStatus.compressing:
-        return 'Compressing video...';
-      case UploadStatus.generatingThumbnail:
-        return 'Generating preview...';
-      case UploadStatus.uploading:
-        return 'Uploading your memory...';
-      case UploadStatus.waitingForResponse:
-        return 'Finalizing...';
-      default:
-        return 'Uploading...';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     ref.listen<UploadState>(uploadProvider, (previous, next) async {
       if (next.status == UploadStatus.succeeded) {
+        // Show a success checkmark briefly before clearing the composer.
+        setState(() => _showSuccessTick = true);
+        await Future.delayed(const Duration(milliseconds: 900));
+        if (!mounted || !context.mounted) return;
+
         // Success cleanup
         if (_recordedVideoPath != null) {
           try {
@@ -338,6 +398,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
           _captureCaption.clear();
           _captureCaptionOffset = const Offset(78, 250);
           _captureCaptionSize = 24;
+          _showSuccessTick = false;
         });
 
         showAppMessage(context, 'Memory posted successfully to your Circle!');
@@ -478,52 +539,73 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                                 ),
                               ),
 
+                            // Retake (discard) - bottom left, once a clip exists
+                            if (_hasRecording && !isUploading)
+                              Positioned(
+                                left: 8,
+                                child: MemoryIconButton(
+                                  icon: Icons.close_rounded,
+                                  semanticLabel: 'Retake',
+                                  color: Colors.white,
+                                  iconSize: 28,
+                                  onPressed: _discardRecording,
+                                ),
+                              ),
+
                             // Centre: capture button or send button
                             _hasRecording
                                 ? _sendToCircleButton(dark)
-                                : BouncyTap(
-                                    onTap: _toggleRecording,
-                                    pressedScale: 0.9,
-                                    child: Container(
-                                      width: 82,
-                                      height: 82,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Colors
-                                            .transparent, // Transparent gap
-                                        border: Border.all(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.82,
-                                          ),
-                                          width: 4, // 4px white border
-                                        ),
+                                : Listener(
+                                    // Hold to record; release stops. Listener
+                                    // (raw pointer) avoids the gesture arena so
+                                    // finger drift won't cancel the recording.
+                                    onPointerDown: (_) => _startRecording(),
+                                    onPointerUp: (_) => _stopRecording(),
+                                    onPointerCancel: (_) => _stopRecording(),
+                                    child: AnimatedScale(
+                                      scale: _isRecording ? 0.92 : 1.0,
+                                      duration: const Duration(
+                                        milliseconds: 120,
                                       ),
-                                      padding: const EdgeInsets.all(
-                                        6,
-                                      ), // minimal space/gap between white border and inner button
-                                      child: _isRecording
-                                          ? Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.red,
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                      8,
-                                                    ), // stop recording red square
-                                              ),
-                                            )
-                                          : Container(
-                                              alignment: Alignment.center,
-                                              decoration: const BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: MemoryColors.accent,
-                                              ),
-                                              child: Image.asset(
-                                                'assets/images/memory-logo.png',
-                                                width: 38,
-                                                height: 38,
-                                                fit: BoxFit.contain,
-                                              ),
+                                      child: Container(
+                                        width: 82,
+                                        height: 82,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors
+                                              .transparent, // Transparent gap
+                                          border: Border.all(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.82,
                                             ),
+                                            width: 4, // 4px white border
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.all(
+                                          6,
+                                        ), // minimal space/gap between white border and inner button
+                                        child: _isRecording
+                                            ? Container(
+                                                decoration: const BoxDecoration(
+                                                  color: Colors.red,
+                                                  shape: BoxShape
+                                                      .circle, // circular stop button
+                                                ),
+                                              )
+                                            : Container(
+                                                alignment: Alignment.center,
+                                                decoration: const BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: MemoryColors.accent,
+                                                ),
+                                                child: Image.asset(
+                                                  'assets/images/memory-logo.png',
+                                                  width: 38,
+                                                  height: 38,
+                                                  fit: BoxFit.contain,
+                                                ),
+                                              ),
+                                      ),
                                     ),
                                   ),
 
@@ -613,23 +695,25 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                   index,
                 ) {
                   final f = friendsList[index];
+                  final photoUrl = f.avatarUrl;
                   return Positioned(
                     left: index * 14.0,
                     child: Container(
                       width: 22,
                       height: 22,
-                      decoration: BoxDecoration(
+                      padding: const EdgeInsets.all(1.5),
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 1.5),
-                        color: f.avatar,
+                        color: Colors.black, // ring between overlapping avatars
                       ),
-                      child: Center(
-                        child: Text(
-                          f.initial,
-                          style: MemoryTypography.micro.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
+                      child: MemoryAvatar(
+                        radius: 9.5,
+                        dark: true,
+                        imageUrl: (photoUrl == null || photoUrl.isEmpty)
+                            ? null
+                            : formatImageUrl(photoUrl),
+                        initial: f.initial,
+                        background: f.avatar,
                       ),
                     ),
                   );
@@ -814,6 +898,9 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
     final isUploading =
         uploadState.status == UploadStatus.preparing ||
         uploadState.status == UploadStatus.validating ||
+        uploadState.status == UploadStatus.compressing ||
+        uploadState.status == UploadStatus.generatingThumbnail ||
+        uploadState.status == UploadStatus.queued ||
         uploadState.status == UploadStatus.uploading ||
         uploadState.status == UploadStatus.waitingForResponse;
     return LayoutBuilder(
@@ -934,35 +1021,22 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                       ),
                     ),
 
-                  // 2. REC overlay indicator if recording
+                  // 2. Recording elapsed-time counter (single value, no label,
+                  // no blinking dot, no background), centered at the top so the
+                  // rounded frame corners never clip it.
                   if (_isRecording)
                     Positioned(
                       top: 16,
-                      right: 16,
-                      child: Row(
-                        children: [
-                          const PulseRedDot(),
-                          const SizedBox(width: MemorySpacing.sm),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: MemorySpacing.sm,
-                              vertical: MemorySpacing.xxs,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black38,
-                              borderRadius: BorderRadius.circular(
-                                MemoryRadius.xs,
-                              ),
-                            ),
-                            child: Text(
-                              'REC',
-                              style: MemoryTypography.buttonCompact.copyWith(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Text(
+                          _fmtDuration(_recordSeconds),
+                          style: MemoryTypography.buttonCompact.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
+                        ),
                       ),
                     ),
 
@@ -970,74 +1044,38 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                   if (_hasRecording && _captureCaptionOpen)
                     _captureCaptionEditor(),
 
-                  // 5. Upload progress overlay
-                  if (isUploading)
+                  // 5. Minimal upload overlay: a spinner while posting, then a
+                  // brief checkmark once the memory is confirmed posted.
+                  if (isUploading || _showSuccessTick)
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black54,
+                        color: Colors.black45,
                         child: Center(
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 24),
-                            padding: const EdgeInsets.all(
-                              MemorySpacing.section,
-                            ),
-                            decoration: BoxDecoration(
-                              color: dark ? MemoryColors.ink : Colors.white,
-                              borderRadius: BorderRadius.circular(
-                                MemoryRadius.xl,
-                              ),
-                              border: Border.all(
-                                color:
-                                    (dark
-                                            ? Colors.white
-                                            : MemoryColors.charcoal)
-                                        .withValues(alpha: 0.12),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
+                          child: _showSuccessTick
+                              ? Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: const BoxDecoration(
+                                    color: MemoryColors.accent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_rounded,
+                                    color: MemoryColors.ink,
+                                    size: 40,
+                                  ),
+                                )
+                              : MemoryLoading(
+                                  size: 44,
+                                  value:
+                                      uploadState.status ==
+                                          UploadStatus.uploading
+                                      ? uploadState.progress
+                                      : null,
+                                  color: dark
+                                      ? MemoryColors.accent
+                                      : Colors.white,
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _getUploadStageMessage(uploadState.status),
-                                  style: MemoryTypography.bodyLarge.copyWith(
-                                    color: dark
-                                        ? MemoryColors.cream
-                                        : MemoryColors.charcoal,
-                                  ),
-                                ),
-                                const SizedBox(height: MemorySpacing.gutter),
-                                if (uploadState.status ==
-                                    UploadStatus.uploading) ...[
-                                  MemoryProgressIndicator(
-                                    value: uploadState.progress,
-                                    dark: dark,
-                                  ),
-                                  const SizedBox(height: MemorySpacing.lg),
-                                  Text(
-                                    '${(uploadState.progress * 100).toInt()}%',
-                                    style: MemoryTypography.bodySmall.copyWith(
-                                      color: dark
-                                          ? MemoryColors.accent
-                                          : MemoryColors.ink,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ] else ...[
-                                  MemoryProgressIndicator(
-                                    value: null,
-                                    dark: dark,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
                         ),
                       ),
                     ),
