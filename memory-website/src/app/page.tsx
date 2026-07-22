@@ -445,8 +445,8 @@ export default function Page() {
           .hero-mockup-col { order: -1; }
           .hero-text { align-items: center; }
           .hero-btns { justify-content: center; }
-          .mockup-container { gap: 12px; }
-          .mockup-img { max-height: 440px !important; width: auto !important; max-width: 48% !important; margin: 0; }
+          .mockup-container { gap: 8px !important; }
+          .mockup-img { max-height: 440px !important; height: 440px !important; width: auto !important; max-width: 48% !important; margin: 0; }
 
           /* Sections */
           .sec { padding: 72px 20px; }
@@ -473,7 +473,7 @@ export default function Page() {
           #cta { padding: 72px 16px; }
 
           .hero-grid { gap: 28px; padding-bottom: 48px; }
-          .mockup-img { max-height: 340px !important; max-width: 48% !important; }
+          .mockup-img { max-height: 340px !important; height: 340px !important; max-width: 48% !important; }
 
           .how-card { padding: 28px 22px; }
           .why-card { padding: 28px 22px; }
@@ -491,7 +491,8 @@ export default function Page() {
           #hero { padding: 20px 14px 0; }
           #cta { padding: 60px 14px; }
           .hero-grid { gap: 24px; padding-bottom: 40px; }
-          .mockup-img { max-height: 280px !important; }
+          .mockup-container { gap: -30px !important; }
+          .mockup-img { max-height: 280px !important; height: 280px !important; }
           .how-card, .why-card { padding: 24px 18px; }
           .foot-links { gap: 12px; }
         }
@@ -561,34 +562,36 @@ export default function Page() {
 
           {/* Phone mockup */}
           <div className="_r _d2 hero-mockup-col" style={{ display: "flex", justifyContent: "center", alignItems: "flex-end" }}>
-            <div className="mockup-container" style={{ display: "flex", gap: "20px", justifyContent: "center", alignItems: "flex-end", width: "100%" }}>
+            <div className="mockup-container" style={{ display: "flex", gap: "8px", justifyContent: "center", alignItems: "flex-end", width: "100%" }}>
               <img
                 src="/mockup.png"
                 alt="Memory app login screen mockup"
                 className="mockup-img"
                 style={{
-                  maxHeight: "720px",
-                  width: "48%",
+                  height: "640px",
+                  maxHeight: "640px",
+                  width: "auto",
                   maxWidth: "260px",
                   objectFit: "contain",
                   filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.15))",
                 }}
                 width={260}
-                height={540}
+                height={640}
               />
               <img
                 src="/mockup2.png"
                 alt="Memory app feed screen mockup"
                 className="mockup-img"
                 style={{
-                  maxHeight: "720px",
-                  width: "48%",
+                  height: "640px",
+                  maxHeight: "640px",
+                  width: "auto",
                   maxWidth: "260px",
                   objectFit: "contain",
                   filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.15))",
                 }}
                 width={260}
-                height={540}
+                height={640}
               />
             </div>
           </div>
