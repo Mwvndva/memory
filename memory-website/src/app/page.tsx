@@ -712,6 +712,7 @@ export default function Page() {
             <div className="foot-links">
               <a href="/privacy">Privacy Policy</a>
               <a href="/terms">Terms</a>
+              <a href="/child-safety-standards">Child Safety Standards</a>
               <a href="https://www.instagram.com/mymemoriestoday/" target="_blank" rel="noopener noreferrer">Instagram</a>
               <a href="https://www.tiktok.com/@memoryapp" target="_blank" rel="noopener noreferrer">TikTok</a>
             </div>

@@ -51,6 +51,7 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
   int _selectedCameraIndex = 0;
   bool _isInitializing = false;
   int _lastInitMs = 0;
+  FlashMode _flashMode = FlashMode.off;
 
   // Recording elapsed-time counter and hard cap.
   Timer? _recordTimer;
@@ -115,6 +116,11 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
           setState(() {
             _isCameraInitialized = true;
           });
+          try {
+            await controller.setFlashMode(_flashMode);
+          } catch (e) {
+            debugPrint('[Camera] error setting initial flash mode: $e');
+          }
         }
       }
     } catch (e) {
@@ -152,6 +158,21 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
       await _initCamera();
     } catch (e) {
       debugPrint('[Camera] Error switching camera: $e');
+    }
+  }
+
+  Future<void> _toggleFlash() async {
+    if (!_isCameraInitialized || _cameraController == null) return;
+    final nextMode = _flashMode == FlashMode.off ? FlashMode.torch : FlashMode.off;
+    try {
+      await _cameraController!.setFlashMode(nextMode);
+      if (mounted) {
+        setState(() {
+          _flashMode = nextMode;
+        });
+      }
+    } catch (e) {
+      debugPrint('[Camera] Error toggling flash mode: $e');
     }
   }
 
@@ -909,13 +930,21 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
         final radius = size * 0.20;
         final borderRadius = BorderRadius.circular(radius);
 
-        // The preview is edge-to-edge inside its container: no stroke, no glow,
-        // no inset. The rounded clip is the only shape applied to it.
-        return SizedBox(
+        final yellowProgress = _isRecording ? (_recordSeconds / _maxRecordSeconds).clamp(0.0, 1.0) : 0.0;
+
+        // The preview container with animated yellow progress border during recording
+        return Container(
           width: double.infinity,
           height: double.infinity,
-          child: ClipRRect(
+          decoration: BoxDecoration(
             borderRadius: borderRadius,
+            border: Border.all(
+              color: _isRecording ? MemoryColors.accent : Colors.transparent,
+              width: 3.5,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(radius > 3.5 ? radius - 3.5 : radius),
             child: GestureDetector(
               onTap: _hasRecording
                   ? () => setState(() => _captureCaptionOpen = true)
@@ -1021,22 +1050,34 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
                       ),
                     ),
 
-                  // 2. Recording elapsed-time counter (single value, no label,
-                  // no blinking dot, no background), centered at the top so the
-                  // rounded frame corners never clip it.
+                  // 2. Yellow border progress animation along camera frame edge during 30s recording
                   if (_isRecording)
-                    Positioned(
-                      top: 16,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: Text(
-                          _fmtDuration(_recordSeconds),
-                          style: MemoryTypography.buttonCompact.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: CustomPaint(
+                          painter: _CameraBorderPainter(
+                            progress: yellowProgress,
+                            borderRadius: radius,
                           ),
                         ),
+                      ),
+                    ),
+
+                  // 3. Flash toggle icon button at the bottom-right of the camera frame
+                  if (!_hasRecording && !_isRecording && _isCameraInitialized && _cameraController != null)
+                    Positioned(
+                      bottom: 12,
+                      right: 12,
+                      child: MemoryIconButton(
+                        icon: _flashMode == FlashMode.torch
+                            ? Icons.flash_on_rounded
+                            : Icons.flash_off_rounded,
+                        semanticLabel: 'Toggle flash',
+                        color: _flashMode == FlashMode.torch
+                            ? MemoryColors.accent
+                            : Colors.white,
+                        iconSize: 24,
+                        onPressed: _toggleFlash,
                       ),
                     ),
 
@@ -1117,5 +1158,65 @@ class _CameraCaptureViewState extends ConsumerState<CameraCaptureView>
         ),
       ),
     );
+  }
+}
+
+class _CameraBorderPainter extends CustomPainter {
+  final double progress;
+  final double borderRadius;
+
+  _CameraBorderPainter({
+    required this.progress,
+    required this.borderRadius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0) return;
+
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(
+      rect,
+      Radius.circular(borderRadius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+
+    final contour = metrics.first;
+    final totalLength = contour.length;
+
+    // Start path at top-center (x = width / 2, y = 0), which is at 12.5% (0.125 * totalLength)
+    final startOffset = totalLength * 0.125;
+    final extractLength = totalLength * progress.clamp(0.0, 1.0);
+
+    final extractPath = Path();
+    // Counter-clockwise / right to left travel along the rounded rectangle
+    for (double i = 0; i < extractLength; i += 1.0) {
+      final distance = (startOffset - i + totalLength) % totalLength;
+      final tangent = contour.getTangentForOffset(distance);
+      if (tangent != null) {
+        if (i == 0) {
+          extractPath.moveTo(tangent.position.dx, tangent.position.dy);
+        } else {
+          extractPath.lineTo(tangent.position.dx, tangent.position.dy);
+        }
+      }
+    }
+
+    final paint = Paint()
+      ..color = MemoryColors.accent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.5
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawPath(extractPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CameraBorderPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.borderRadius != borderRadius;
   }
 }

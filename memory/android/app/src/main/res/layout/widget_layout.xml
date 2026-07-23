@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_background">
 
-    <!-- Memory Image -->
+    <!-- Friend's Memory Video / Image Preview -->
     <ImageView
         android:id="@+id/widget_image"
         android:layout_width="match_parent"
@@ -15,23 +15,24 @@
     <!-- Text protection Scrim -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="90dp"
         android:layout_gravity="bottom"
         android:background="@drawable/widget_text_scrim" />
 
-    <!-- Details Overlay -->
+    <!-- Pill Container displaying Friend's Avatar and Username below -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="12dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="12dp">
+        android:background="@drawable/widget_pill_background">
 
-        <!-- Avatar Circle -->
+        <!-- Friend Avatar Circle -->
         <FrameLayout
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
             android:background="@drawable/widget_avatar_background">
 
             <ImageView
@@ -41,34 +42,25 @@
                 android:scaleType="centerCrop" />
         </FrameLayout>
 
-        <LinearLayout
-            android:layout_width="0dp"
+        <!-- Friend Username -->
+        <TextView
+            android:id="@+id/widget_username"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="8dp">
+            android:layout_marginStart="8dp"
+            android:textColor="#FFFDFB"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:text="Memory App"
+            android:ellipsize="end"
+            android:maxLines="1" />
 
-            <TextView
-                android:id="@+id/widget_username"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFDFB"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:text="Memory App"
-                android:ellipsize="end"
-                android:maxLines="1" />
+        <!-- Unused hidden timestamp view to satisfy AppWidgetProvider bindings -->
+        <TextView
+            android:id="@+id/widget_timestamp"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
 
-            <TextView
-                android:id="@+id/widget_timestamp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#CCFFFDFB"
-                android:textSize="9sp"
-                android:text="No memories yet"
-                android:ellipsize="end"
-                android:maxLines="1" />
-
-        </LinearLayout>
     </LinearLayout>
 </FrameLayout>
